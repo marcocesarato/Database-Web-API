@@ -32,7 +32,23 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 
 ## Installation
 * Set the configuration on config.php (Follow the below example to register a new dataset in config.php. Tip: It's best to provide read-only database credentials here.)
-* Edit the `includes/classes/auth.class.php` based your needs and your dataset
+* Edit `includes/classes/auth.class.php` based your needs and your dataset
+* Edit `.hacces` to enable the auth system uncomment and comment these lines
+example:
+BEFORE
+```
+# No auth
+RewriteRule ([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&format=$3 [L,QSA]
+# With auth
+# RewriteRule ([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&format=$3 [L,QSA]
+```
+AFTER
+```
+# No auth
+# RewriteRule ([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&format=$3 [L,QSA]
+# With auth
+RewriteRule ([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&format=$3 [L,QSA]
+```
 * Document the API.
 
 ## How to Register a Dataset
