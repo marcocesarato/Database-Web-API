@@ -333,7 +333,7 @@ update[users][values][username]=Marco&update[users][values][email]=cesarato.deve
 
 Delete data
 
-- Select the row on table: `/[database]/[tabella]/[id].[formato]`
+- Select the row on table: `/[database]/[table]/[id].[format]`
 
 **Examples of DELETE Requests:**
 
