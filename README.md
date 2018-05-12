@@ -34,6 +34,7 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 * Set the configuration on config.php (Follow the below example to register a new dataset in config.php. Tip: It's best to provide read-only database credentials here.)
 * Edit `includes/classes/auth.class.php` based your needs and your dataset
 * Edit `.hacces` to enable the auth system uncomment and comment these lines
+
 example:
 BEFORE
 ```
