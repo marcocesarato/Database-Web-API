@@ -31,10 +31,10 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 * APC (optional)
 
 ## Installation
-* Set the configuration on config.php (Follow the below example to register a new dataset in config.php. Tip: It's best to provide read-only database credentials here.)
+* Set the configuration on config.php (Follow the below example to register a new dataset in config.php
 * If you want config an auth system edit `includes/classes/auth.class.php` based your needs and your dataset
 * If you want enable the auth system rename `.htaccess_auth` to `.htaccess`
-* Document the API.
+* Document the API
 
 ## How to Register a Dataset
 Edit `config.php` to include a a single instance of the following for each dataset (including as many instances as you have datasets):
