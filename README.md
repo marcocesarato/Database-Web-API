@@ -159,7 +159,7 @@ where[column_a][=][column]      = 'column_b'
 
 * `limit`: max elements to retrieve
 
-ex: `/[database]/[tabella]/[colonna]/[valore].[formato]?order_by=[colonna]&direction=[direzione]`
+ex: `/[database]/[tabel]/[colomn]/[value].[format]?order_by=[column]&direction=[direction]`
 
 ## Authentication
 
