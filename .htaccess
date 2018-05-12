@@ -6,17 +6,26 @@
 	#db + table + column + value
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&table=$3&where[$4]=$5&format=$6 [L,QSA]
+	# No auth
+	RewriteRule ([^/]+)/([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?db=$2&table=$3&where[$4]=$5&format=$6 [L,QSA]
+	# With auth
+	# RewriteRule ([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&table=$3&where[$4]=$5&format=$6 [L,QSA]
 
 	#db + limit + table
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ([^/]+)/([^/]+)/([0-9]|[1-8][0-9]|9[0-9]|100)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&limit=$3&table=$4&format=$5 [L,QSA]
+	# No auth
+	RewriteRule ([^/]+)/([0-9]|[1-8][0-9]|9[0-9]|100)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?db=$2&limit=$3&table=$4&format=$5 [L,QSA]
+	# With auth
+	# RewriteRule ([^/]+)/([^/]+)/([0-9]|[1-8][0-9]|9[0-9]|100)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&limit=$3&table=$4&format=$5 [L,QSA]
 
 	#db + table + #id
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ([^/]+)/([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&table=$3&id=$4&format=$5 [L,QSA]
+	# No auth
+	RewriteRule ([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?db=$2&table=$3&id=$4&format=$5 [L,QSA]
+	# With auth
+	# RewriteRule ([^/]+)/([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&table=$3&id=$4&format=$5 [L,QSA]
 
 	#check auth
 	RewriteCond %{REQUEST_FILENAME} !-f
@@ -31,12 +40,18 @@
 	#db + table
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
+	# No auth
 	RewriteRule ([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&table=$3&format=$4 [L,QSA]
+	# With auth
+	# RewriteRule ([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&table=$3&format=$4 [L,QSA]
 
 	#db for POST REQUEST
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
+	# No auth
 	RewriteRule ([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&format=$3 [L,QSA]
+	# With auth
+	# RewriteRule ([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?token=$1&db=$2&format=$3 [L,QSA]
 
 	#all else
 	RewriteCond %{REQUEST_FILENAME} !-f
