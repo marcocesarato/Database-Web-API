@@ -298,14 +298,14 @@ Update data
 
 **Single update:**
 
-- Select the row on URL: `/[database]/[tabella]/[id].[formato]`
-- Update parameter: `update[<nome_colonna>] = <valore>`
+- Select the row on URL: `/[database]/[table]/[id].[format]`
+- Update parameter: `update[<column>] = <value>`
 
 **Multiple update:**
 
-- Select the dataset on URL: `/[database].[formato]`
-- Update parameter: `update[<nome tabella>][values][<nome_colonna>] = <valore>`
-- Multiple update parameter conditions: `update[<nome_tabella>][where][<nome_colonna>] = <valore>`
+- Select the dataset on URL: `/[database].[format]`
+- Update parameter: `update[<table>][values][<column>] = <value>`
+- Multiple update parameter conditions: `update[<table>][where][<column>] = <value>`
 
 **Note**: At the moment you can update only one row for table
 
