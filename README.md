@@ -178,11 +178,7 @@ Host: localhost
 
 **Response example:**
 ```json
-[
-	{
-		"token": "b279fb1d0708ed81e7a194e0c5d928b6"
-	}
-]
+[{"token": "b279fb1d0708ed81e7a194e0c5d928b6"}]
 ```
  **Example of token usage on GET, POST, PUT and DELETE requests:**
 
