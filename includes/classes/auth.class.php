@@ -202,11 +202,13 @@ class Auth
 		// TODO based your need and dataset
 
 		$sql = "'1' = '1'";
-	
+
 		return $sql;
 	}
 
 	public function can_read($table) {
+
+		return true; // <==== REMOVE
 
 		if (in_array($table, $this->table_free_access)) {
 			$this->bypass_access = true;
@@ -223,6 +225,8 @@ class Auth
 
 	public function can_write($table) {
 
+		return true; // <==== REMOVE
+
 		if (in_array($table, $this->table_readonly_access))
 			return false;
 
@@ -236,6 +240,8 @@ class Auth
 
 	public function can_modify($table) {
 
+		return true; // <==== REMOVE
+
 		if (in_array($table, $this->table_readonly_access))
 			return false;
 
@@ -248,6 +254,8 @@ class Auth
 	}
 
 	public function can_delete($table) {
+
+		return true; // <==== REMOVE
 
 		if (in_array($table, $this->table_readonly_access))
 			return false;

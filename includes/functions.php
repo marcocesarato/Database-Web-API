@@ -52,7 +52,7 @@ if (!function_exists('shortcode_atts')):
 		} else {
 			$protocol = 'http://';
 		}
-		return $protocol . preg_replace('#/+#', '/', $hostname . "/api/" . $url);
+		return $protocol . preg_replace('#/+#', '/', $hostname . "/" . $url);
 	}
 
 	function trim_all($input) {
