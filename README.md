@@ -72,8 +72,8 @@ $databases = array(
 			'users' => array(
 			    'password',
 			)
-		**/
-        ),
+			**/
+		),
 	),
 );
 ```
