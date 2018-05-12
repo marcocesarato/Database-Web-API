@@ -324,7 +324,7 @@ update['username']=Marco&update['email']=cesarato.developer@gmail.com&update['pa
 ```http
 PUT /dataset.json HTTP/1.1
 Host: localhost
-update[users][][values][username]=Marco&update[users][values][email]=cesarato.developer@gmail.com&update[users][where][id]=1&update[cities][values][name]=Padova&update[cities][where][id]=1
+update[users][values][username]=Marco&update[users][values][email]=cesarato.developer@gmail.com&update[users][where][id]=1&update[cities][values][name]=Padova&update[cities][where][id]=1
 ```
 
 
