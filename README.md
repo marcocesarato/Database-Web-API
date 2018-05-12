@@ -1,4 +1,4 @@
-#PHP Database Web API
+# PHP Database Web API
 Author: __Marco Cesarato__
 
 ## Description
@@ -52,26 +52,26 @@ $databases = array(
                 'users'
              **/
         ), // Whitelist (Allow only the tables in this list, if empty allow all)
-		'table_blacklist' => array(
-		    /** @example
-		        'secret_table'
-		     **/
+	'table_blacklist' => array(
+	    /** @example
+		'secret_table'
+	     **/
         ),
 		'column_list' => array(
-            /** @example
-                'users' => array(
-                    'username',
-                    'name',
-                    'surname'
-                )
-             **/
+		/** @example
+		'users' => array(
+		    'username',
+		    'name',
+		    'surname'
+		)
+		**/
         ),  // Whitelist  (Allow only the columns in this list, if empty allow all)
 		'column_blacklist' => array(
-            /** @example
-                'users' => array(
-                    'password',
-                )
-            **/
+		/** @example
+		'users' => array(
+		    'password',
+		)
+		**/
         ),
 	),
 );
@@ -208,7 +208,7 @@ Retrieve data from dataset
 - Fetch all joining table:
 
   ```js
-  join[<table>] = array('
+  join[table] = array('
   	'on' => <column_id>,
     	'value' => <value>,           // Colonna tabella o id ad esempio
     	'method' => (left|inner|right) // Opzionale
