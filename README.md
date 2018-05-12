@@ -208,7 +208,7 @@ Retrieve data from dataset
 - Fetch all joining table:
 
   ```js
-  join[table] = array('
+  join[table] = array(
   	'on' => <column_id>,
     	'value' => <value>,           // Colonna tabella o id ad esempio
     	'method' => (left|inner|right) // Opzionale
