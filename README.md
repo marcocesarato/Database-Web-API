@@ -36,6 +36,7 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 * Edit `.hacces` to enable the auth system uncomment and comment these lines
 
 example:
+
 BEFORE
 ```
 # No auth
