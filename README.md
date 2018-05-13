@@ -99,7 +99,7 @@ return true; // <==== REMOVE
    ```Php
    $user = strtolower($query['user_id']);
    
-   $this->api = API::get_instance();
+   $this->api = API::getInstance();
    $this->db = &$this->api->connect('database');
    
    $sth = $this->db->prepare("SELECT id, first_name, last_name, role_id, is_admin, user_hash FROM users WHERE (id = :user_id OR user_name = :username OR email1 = :email)");
@@ -147,7 +147,7 @@ return true; // <==== REMOVE
    
        if ($token_row) {
    
-           $this->api = API::get_instance();
+           $this->api = API::getInstance();
            $this->db = &$this->api->connect('database');
            $sth = $this->db->prepare("SELECT id, role_id, is_admin  FROM users WHERE id = :user_id");
            $sth->bindParam(':user_id', $token_row['user_id']);
