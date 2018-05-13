@@ -266,6 +266,21 @@ class API
 				Request::error('Invalid Table', 404);
 			}
 
+			// check WHERE
+			if (isset($query['where']) && is_array($query['where'])) {
+				foreach ($query['where'] as $column => $value) {
+					$column_table = $query['table'];
+					$_split = explode('.', $column,2);
+					if(count($_split) > 1){
+						$column = $_split[1];
+						$column_table = $_split[0];
+					}
+					if (!$this->verify_column($column, $column_table)) {
+						Request::error('Invalid WHERE column ' . $column_table . '.'. $column, 404);
+					}
+				}
+			}
+
 			// check id
 			if (isset($query['id']) && !empty($query['id'])) {
 				$query["where"][$this->get_first_column($query['table'])] = $query['id'];
@@ -625,12 +640,18 @@ class API
 
 		foreach ($where as $column => $values_column) {
 
-			$table = (!empty($where[$column]['table'])) ? $where[$column]['table'] : $main_table;
+			$table = $main_table;
+			$_split = explode('.', $column,2);
+			if(count($_split) > 1){
+				$table = $_split[0];
+				$column = $_split[1];
+			}
 
 			// Check equal case
-			if (!is_array($values_column) || array_key_exists('table', $values_column)) {
-				if (is_array($values_column) && array_key_exists('table', $values_column) && $this->verify_column(@$values_column['table'], @$values_column['column'])) {
-					$index_value = $values_column['table'] . "." . $values_column['column'];
+			if (!is_array($values_column)) {
+				$_value_split = explode('.', $values_column,2);
+				if(count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])){
+					$index_value = $_value_split[0] . "." . $_value_split[1];
 				} else {
 					$index_key = self::value_index($prefix, $column, $where_values);
 					$index_value = " :" . $index_key;
@@ -646,9 +667,10 @@ class API
 					// Check special cases
 					if (array_key_exists($condition, $cases)) {
 						$bind = $cases[$condition];
-						if (!is_array($value_condition) || array_key_exists('table', $values_column)) {
-							if (is_array($value_condition) && array_key_exists('table', $value_condition) && $this->verify_column(@$value_condition['column'], @$value_condition['table'])) {
-								$index_value = $value_condition['table'] . "." . $value_condition['column'];
+						if (!is_array($value_condition)) {
+							$_value_split = explode('.', $value_condition,2);
+							if(count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])){
+								$index_value = $_value_split[0] . "." . $_value_split[1];
 							} else {
 								$index_key = self::value_index($prefix, $column, $where_values);
 								$index_value = " :" . $index_key;
@@ -672,8 +694,9 @@ class API
 							$value_condition = array($value_condition);
 
 						foreach ($value_condition as $value) {
-							if (is_array($value) && array_key_exists('table', $value) && $this->verify_column(@$value['column'], @$value['table'])) {
-								$index_value = $value['table'] . "." . $value['column'];
+							$_value_split = explode('.', $value,2);
+							if(count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])){
+								$index_value = $_value_split[0] . "." . $_value_split[1];
 							} else {
 								$index_key = self::value_index($prefix, $column, $where_values);
 								$index_value = " :" . $index_key;
@@ -687,8 +710,9 @@ class API
 
 						// Check equal array cases
 					} elseif (!is_array($value_condition) && is_int($condition) || $condition === '=') {
-						if (is_array($value_condition) && array_key_exists('table', $value_condition) && $this->verify_column(@$value_condition['column'], @$value_condition['table'])) {
-							$index_value = $value_condition['table'] . "." . $value_condition['column'];
+						$_value_split = explode('.', $value_condition,2);
+						if(count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])){
+							$index_value = $_value_split[0] . "." . $_value_split[1];
 						} else {
 							$index_key = self::value_index($prefix, $column, $where_values);
 							$index_value = " :" . $index_key;
@@ -832,12 +856,19 @@ class API
 
 			$dbh = &$this->connect($db);
 
-			// check id
+			// Check id
 			if (isset($query['table']) && !empty($query['table']) && isset($query['id']) && !empty($query['id'])) {
+				// Check WHERE
 				if (isset($query['where']) && is_array($query['where'])) {
 					foreach ($query['where'] as $column => $value) {
-						if (!$this->verify_column($column, $query['table'])) {
-							Request::error('Invalid Where column ' . $column, 404);
+						$column_table = $query['table'];
+						$_split = explode('.', $column,2);
+						if(count($_split) > 1){
+							$column = $_split[1];
+							$column_table = $_split[0];
+						}
+						if (!$this->verify_column($column, $column_table)) {
+							Request::error('Invalid WHERE column ' . $column_table . '.'. $column, 404);
 						}
 					}
 					$query['update'][$query['table']]['where'] = $query['where'];
@@ -845,7 +876,7 @@ class API
 				}
 				$query['update'][$query['table']]['values'] = $query['update'];
 				$query['update'][$query['table']]['where'][$this->get_first_column($query['table'])] = $query['id'];
-				// check values
+				// Check values
 			} elseif (!isset($query['update']) && !is_array($query['update']) && count($query['update']) <= 0) {
 				Request::error('Invalid values', 400);
 			} else {

@@ -219,8 +219,8 @@ where[column][%]           = "%1" // column LIKE "%1"
 Search multiple values
 
 ```php
-where[column]              = array(1,5,7)     // IN (...)
-where[column][=]           = array(1,5,7)     // IN (...)
+where[column]              = array(1,5,7)     // IN (...) (IN can be equal to an OR)
+where[column][=]           = array(1,5,7)     // IN (...) 
 where[column][!]           = array(1,5,7)     // NOT IN (...)
 where[column][>]           = array(1,2)       // column > 1 AND column > 2
 where[column][<]           = array(1,2)       // column < 1 AND column < 2
@@ -230,16 +230,24 @@ where[column][%]           = array("%1","%2") // column LIKE "%1" AND column LIK
 Specify column's table
 
 ```php
-where[id][=]           = array(1,5,7)
-where[id][table]       = 'my_table'
+where['table.column'][=] = array(1,5,7)
 ```
 
 Compare between two different table columns
 
 ```php
-where[column_a][table]          = 'table_a'
-where[column_a][=][table]       = 'table_b'
-where[column_a][=][column]      = 'column_b'
+where['table_a.column_a'] = 'table_b.column_b'
+```
+
+Compare between different columns of main table
+
+```php
+where['column_a'] = 'table_a.column_b'
+// OR
+where['table_a.column_a'] = 'table_a.column_b'
+    
+// WRONG
+where['column_a'] = 'column_b'
 ```
 
 
@@ -262,7 +270,7 @@ where[column_a][=][column]      = 'column_b'
   order[username][direction] = 'DESC'
   ```
 
-* `direction`:  `asc` o `desc` (default `asc`)
+* `direction`:  `ASC` or `DESC` (default `ASC`)
 
 * `limit`: max elements to retrieve
 
@@ -312,9 +320,9 @@ Retrieve data from dataset
 
   ```js
   join[table] = array(
-  	'on' => <column_id>,
-    	'value' => <value>,           // Colonna tabella o id ad esempio
-    	'method' => (left|inner|right) // Opzionale
+  	'on' => <column_id>,           // Column of the table joined
+    	'value' => <value>,            // Column of main table or value
+    	'method' => (left|inner|right) // Optional
   )
   ```
 
@@ -329,8 +337,8 @@ Retrieve data from dataset
   **Example with column:**
 
   ```js
-  join[users]['on'] = id        // Colonna della tabella da agganciare
-  join[users]['value'] = user_id    // Colonna della tabella principale (no users)
+  join[users]['on'] = id            // Column of the table joined
+  join[users]['value'] = user_id    // Column of the main table (no users)
   join[users]['method'] = 'INNER'
   ```
 
@@ -477,9 +485,8 @@ $api_client->DATASET = 'dataset';
 $params = array(
     'where' => array(
         'type' => 'C',
-        'address' => array(
+        'accounts_addresses.address' => array(
             '!' => '', // NOT NULL
-            'table' => 'accounts_addresses'
         ),
     ),
     'join' => array(
