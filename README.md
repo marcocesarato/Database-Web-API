@@ -484,7 +484,7 @@ $api_client->DATASET = 'dataset';
 
 $params = array(
     'where' => array(
-        'type' => 'C',
+        'type' => array('C', 'O', 'L'),
         'accounts_addresses.address' => array(
             '!' => '', // NOT NULL
         ),
@@ -492,7 +492,7 @@ $params = array(
     'join' => array(
         'accounts_addresses' => array(
             'on' => 'parent_id',
-            'value' => 'parent_id',
+            'value' => 'id',
             'method' => 'LEFT'
         ),
         'accounts_agents' => array(
