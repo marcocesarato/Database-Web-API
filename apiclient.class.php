@@ -56,7 +56,7 @@ class APIClient
 		$params_query = !empty($params) ? self::_buildQuery($params) : '';
 		$url = self::$_URL . '/' . $table . '.' . $format . '?' . $params_query;
 		$request = self::_request($url);
-		$this->_debug("NeterpriseClient fetch: Sent GET REQUEST to ".$url);
+		$this->_debug("APIClient fetch: Sent GET REQUEST to ".$url);
 
 		$data = $request['content'];
 
@@ -88,7 +88,7 @@ class APIClient
 				}
 			}
 		}
-		$this->_debug("NeterpriseClient searchElement: Elemento non trovato! [".$key." = ".$value."]");
+		$this->_debug("APIClient searchElement: Elemento non trovato! [".$key." = ".$value."]");
 		return null;
 	}
 
