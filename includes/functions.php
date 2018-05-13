@@ -7,7 +7,7 @@
  */
 
 function register_db_api($name, $args) {
-	$API = API::get_instance();
+	$API = API::getInstance();
 	$API->register_db($name, $args);
 }
 
@@ -44,6 +44,7 @@ if (!function_exists('shortcode_atts')):
 	}
 
 	function base_url($url) {
+		$base_dir = '';
 		$hostname = $_SERVER['HTTP_HOST'];
 		if (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on' ||
 				$_SERVER['HTTPS'] == 1) ||
@@ -52,7 +53,9 @@ if (!function_exists('shortcode_atts')):
 		} else {
 			$protocol = 'http://';
 		}
-		return $protocol . preg_replace('#/+#', '/', $hostname . "/" . $url);
+		if(defined("__BASE_DIR__") && !empty(__BASE_DIR__))
+			$base_dir = trim(__BASE_DIR__, '/') . '/';
+		return $protocol . preg_replace('#/+#', '/', $hostname . "/" . $base_dir . $url);
 	}
 
 	function trim_all($input) {

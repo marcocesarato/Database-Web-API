@@ -7,7 +7,8 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
-class DatabaseErrorParser {
+class DatabaseErrorParser
+{
 	public function __construct() {
 	}
 

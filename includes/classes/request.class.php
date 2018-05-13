@@ -212,7 +212,7 @@ class Request
 	public static function error($error, $code = '500') {
 		if (is_object($error) && method_exists($error, 'getMessage') && method_exists($error, 'getCode')) {
 			$message = DatabaseErrorParser::errorMessage($error);
-			$api = API::get_instance();
+			$api = API::getInstance();
 			$results = array(
 				"response" => (object)array('status' => 400, 'message' => $message),
 			);
@@ -223,5 +223,3 @@ class Request
 		die(self::sanitize_htmlentities($error));
 	}
 }
-
-$request = new Request();

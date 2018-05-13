@@ -26,13 +26,13 @@ class API
 	public function __construct() {
 		self::$instance = &$this;
 		$this->request = Request::get_instance();
-		$this->auth = Auth::get_instance();
+		$this->auth = Auth::getInstance();
 	}
 
 	/**
 	 * Returns static reference to the class instance
 	 */
-	public static function &get_instance() {
+	public static function &getInstance() {
 		return self::$instance;
 	}
 
@@ -321,7 +321,7 @@ class API
 			if (isset($query['order_by']) && !empty($query['order_by'])) {
 
 				$order_by = $query['order_by'];
-				if(!is_array($order_by))
+				if (!is_array($order_by))
 					$order_by = explode(",", $order_by);
 
 				$order_query = array();
@@ -340,7 +340,7 @@ class API
 					}
 					$order_query[] = "{$order_table}.{$column} {$direction}";
 				}
-				if(empty($query['direction'])) $query['direction'] = "";
+				if (empty($query['direction'])) $query['direction'] = "";
 				$sql .= " ORDER BY " . implode(",", $order_query) . " {$query['direction']}";
 			}
 
@@ -501,26 +501,15 @@ class API
 	}
 
 	/**
-	 * Verify a column exists
-	 * @param string $column the column to check
-	 * @param string $table the table to check
-	 * @param string $db (optional) the db to check
-	 * @retrun bool true if exists, otherwise false
+	 * Returns the first column in a table
+	 * @param string $table the table
+	 * @param string $db the datbase slug
+	 * @return string the column name
 	 */
-	public function verify_column($column, $table, $db = null) {
-
-		if (!$this->auth->is_admin) {
-			if (!empty($db->column_list[$table]) && is_array($db->column_list[$table])) {
-				if (!in_array($column, $db->column_list[$table])) return false;
-			}
-
-			if (!empty($db->column_blacklist[$table]) && is_array($db->column_blacklist[$table])) {
-				if (in_array($column, $db->column_blacklist[$table])) return false;
-			}
-		}
+	public function get_first_column($table, $db = null) {
 
 		$columns = $this->get_columns($table, $db);
-		return in_array($column, $columns);
+		return reset($columns);
 
 	}
 
@@ -580,15 +569,26 @@ class API
 	}
 
 	/**
-	 * Returns the first column in a table
-	 * @param string $table the table
-	 * @param string $db the datbase slug
-	 * @return string the column name
+	 * Verify a column exists
+	 * @param string $column the column to check
+	 * @param string $table the table to check
+	 * @param string $db (optional) the db to check
+	 * @retrun bool true if exists, otherwise false
 	 */
-	public function get_first_column($table, $db = null) {
+	public function verify_column($column, $table, $db = null) {
+
+		if (!$this->auth->is_admin) {
+			if (!empty($db->column_list[$table]) && is_array($db->column_list[$table])) {
+				if (!in_array($column, $db->column_list[$table])) return false;
+			}
+
+			if (!empty($db->column_blacklist[$table]) && is_array($db->column_blacklist[$table])) {
+				if (in_array($column, $db->column_blacklist[$table])) return false;
+			}
+		}
 
 		$columns = $this->get_columns($table, $db);
-		return reset($columns);
+		return in_array($column, $columns);
 
 	}
 
@@ -1148,6 +1148,3 @@ class API
 
 	}
 }
-
-
-$API = new API();

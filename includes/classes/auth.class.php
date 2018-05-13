@@ -36,9 +36,9 @@ class Auth
 		$this->createTokensDatabase();
 	}
 
-    /**
-     * Create database for tokens
-     */
+	/**
+	 * Create database for tokens
+	 */
 	private function createTokensDatabase() {
 		try {
 			$this->sqlite_db->exec("
@@ -57,21 +57,21 @@ class Auth
 	/**
 	 * Returns static reference to the class instance
 	 */
-	public static function &get_instance() {
+	public static function &getInstance() {
 		return self::$instance;
 	}
 
-    /**
-     * Returns if authentication is valid
-     * @param $query
-     * @return bool
-     */
+	/**
+	 * Returns if authentication is valid
+	 * @param $query
+	 * @return bool
+	 */
 	public function validate($query) {
 		if (isset($query['token']) && $this->validateToken($query['token'])) {
 			return true;
 		} elseif (isset($query['check_token']) && $this->validateToken($query['check_token'])) {
 
-			$this->api = API::get_instance();
+			$this->api = API::getInstance();
 			$results = array(
 				"user" => (object)array(
 					"id" => $this->user_id,
@@ -86,11 +86,11 @@ class Auth
 
 		} elseif (isset($query['user_id']) && isset($query['password'])) {
 
-            return true; // <==== REMOVE
+			return true; // <==== REMOVE
 
-            // TODO based your dataset
+			// TODO based your dataset
 
-            /** @example
+			/* @example
 
 			$user = strtolower($query['user_id']);
 
@@ -106,41 +106,47 @@ class Auth
 			$user_row = $sth->fetch();
 
 			if ($user_row) {
-
 				$password = strtolower($query['password']);
-
-				if ($user_row['user_hash'] == $password) {
-					$token = $this->generateToken($user_row['id']);
-					$this->user_id = $user_row['id'];
-					$this->role_id = $user_row['role_id'];
-					$this->is_admin = $user_row['is_admin'];
-					// Render
-					$results = array((object)array(
-						"token" => $token,
-						"id" => $user_row['id'],
-						"first_name" => $user_row['first_name'],
-						"last_name" => $user_row['last_name'],
-						"role_id" => $user_row['role_id'],
-						"is_admin" => (($user_row['is_admin'] == 'on') ? true : false),
-					));
-					$renderer = 'render_' . $query['format'];
-
-					die($this->api->$renderer($results, $query));
-				}
-			}
+			        if ($user_row['user_hash'] == $password) {
+			            $token = $this->generateToken($user_row['id']);
+						$this->user_id = $user_row['id'];
+						$this->role_id = $user_row['role_id'];
+			            $this->is_admin = $user_row['is_admin'];
+			            / Render
+						$results = array((object)array(
+						    "token" => $token,
+			                "id" => $user_row['id'],
+			                "first_name" => $user_row['first_name'],
+			                "last_name" => $user_row['last_name'],
+							"role_id" => $user_row['role_id'],
+			                "is_admin" => (($user_row['is_admin'] == 'on') ? true : false),
+						));
+			            $renderer = 'render_' . $query['format'];
+						die($this->api->$renderer($results, $query));
+					}
+			    }
 			Request::error("Invalid authentication!", 401);
-             */
+
+			 */
 		}
+
+		return true; // <==== REMOVE
+
 		Request::error("Forbidden!", 403);
 		return false;
 	}
 
+	/**
+	 * Validate token
+	 * @param $token
+	 * @return bool
+	 */
 	private function validateToken($token) {
 
-	    return true; // <==== REMOVE
+		return true; // <==== REMOVE
 
-        // TODO based your dataset
-        /** @example
+		// TODO based your dataset
+		/* @example
 
 		try {
 			$sth = $this->sqlite_db->prepare("SELECT * FROM tokens WHERE token = :token");
@@ -152,28 +158,139 @@ class Auth
 
 				$this->api = API::get_instance();
 				$this->db = &$this->api->connect('database');
-
 				$sth = $this->db->prepare("SELECT id, role_id, is_admin  FROM users WHERE id = :user_id");
 				$sth->bindParam(':user_id', $token_row['user_id']);
 
 				$sth->execute();
-				$user_row = $sth->fetch();
+		        $user_row = $sth->fetch();
 
 				if ($user_row) {
-					$this->user_id = $user_row['id'];
+				$this->user_id = $user_row['id'];
 					$this->role_id = $user_row['role_id'];
 					$this->is_admin = (($user_row['is_admin'] == 'on') ? true : false);
 					return true;
 				}
 
 			}
-			return false;
+		    return false;
 		} catch (PDOException $e) {
 			Request::error($e->getMessage(), 500);
 		}
-         */
+		*/
 	}
 
+	/**
+	 * Add at the end of SELECT, UPDATE and DELETE queries some restriction based on permissions (you can do a subquery with the user/role id)
+	 * @param $table
+	 * @param $permission
+	 * @return string
+	 */
+	public function sql_restriction($table, $permission /*(READ|MODIFY|DELETE)*/) {
+
+		// All allowed
+		if ($this->is_admin == true || $this->role_id == '')
+			return "'1' = '1'";
+
+		/* REMOVE COMMENTS
+		// All denied (default)
+		$sql = "'1' = '0'";
+		$value = 'None';
+		*/
+
+		// TODO based your need and dataset
+
+		$sql = "'1' = '1'";
+
+		return $sql;
+	}
+
+	/**
+	 * Return if the user can read on this table
+	 * @param $table
+	 * @return bool
+	 */
+	public function can_read($table) {
+
+		return true; // <==== REMOVE
+
+		if (in_array($table, $this->table_free_access)) {
+			$this->bypass_access = true;
+			return true;
+		}
+
+		if ($this->is_admin == true)
+			return true;
+
+		// TODO based your need and dataset
+
+		return false;
+	}
+
+	/**
+	 * Return if the user can insert on this table
+	 * @param $table
+	 * @return bool
+	 */
+	public function can_write($table) {
+
+		return false; // <==== REMOVE
+
+		if (in_array($table, $this->table_readonly_access))
+			return false;
+
+		if ($this->is_admin == true)
+			return true;
+
+		// TODO based your need and dataset
+
+		return false;
+	}
+
+	/**
+	 * Return if the user can update on this table
+	 * @param $table
+	 * @return bool
+	 */
+	public function can_modify($table) {
+
+		return false; // <==== REMOVE
+
+		if (in_array($table, $this->table_readonly_access))
+			return false;
+
+		if ($this->is_admin == true)
+			return true;
+
+		// TODO based your need and dataset
+
+		return false;
+	}
+
+	/**
+	 * Return if the user can delete on this table
+	 * @param $table
+	 * @return bool
+	 */
+	public function can_delete($table) {
+
+		return false; // <==== REMOVE
+
+		if (in_array($table, $this->table_readonly_access))
+			return false;
+
+		if ($this->is_admin == true)
+			return true;
+
+		// TODO based your need and dataset
+
+		return false;
+	}
+
+	/**
+	 * Token generator
+	 * @param $user_id
+	 * @return null|string
+	 */
 	private function generateToken($user_id) {
 		try {
 			$token = md5(uniqid(rand(), true));
@@ -188,84 +305,4 @@ class Auth
 			Request::error($e->getMessage(), 500);
 		}
 	}
-
-	public function sql_restriction($table, $permission /*(READ|MODIFY|DELETE)*/) {
-
-		// All allowed
-		if ($this->is_admin == true || $this->role_id == '')
-			return "'1' = '1'";
-
-		/*// All denied (default)
-		$sql = "'1' = '0'";
-		$value = 'None';*/
-
-		// TODO based your need and dataset
-
-		$sql = "'1' = '1'";
-
-		return $sql;
-	}
-
-	public function can_read($table) {
-
-		return true; // <==== REMOVE
-
-		if (in_array($table, $this->table_free_access)) {
-			$this->bypass_access = true;
-			return true;
-		}
-
-		if ($this->is_admin == true)
-			return true;
-
-        // TODO based your need and dataset
-
-		return false;
-	}
-
-	public function can_write($table) {
-
-		return true; // <==== REMOVE
-
-		if (in_array($table, $this->table_readonly_access))
-			return false;
-
-		if ($this->is_admin == true)
-			return true;
-
-        // TODO based your need and dataset
-
-		return false;
-	}
-
-	public function can_modify($table) {
-
-		return true; // <==== REMOVE
-
-		if (in_array($table, $this->table_readonly_access))
-			return false;
-
-		if ($this->is_admin == true)
-			return true;
-
-        // TODO based your need and dataset
-
-		return false;
-	}
-
-	public function can_delete($table) {
-
-		return true; // <==== REMOVE
-
-		if (in_array($table, $this->table_readonly_access))
-			return false;
-
-		if ($this->is_admin == true)
-			return true;
-
-        // TODO based your need and dataset
-
-		return false;
-	}
 }
-$AUTH = new Auth();
