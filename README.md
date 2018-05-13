@@ -113,21 +113,20 @@ return true; // <==== REMOVE
    if ($user_row) {
        $password = strtolower($query['password']);
        if ($user_row['user_hash'] == $password) {
-           $token = $this->generateToken($user_row['id']);
-           $this->user_id = $user_row['id'];
-           $this->role_id = $user_row['role_id'];
-           $this->is_admin = $user_row['is_admin'];
-           / Render
-               $results = array((object)array(
-                   "token" => $token,
-                   "id" => $user_row['id'],
-                   "first_name" => $user_row['first_name'],
-                   "last_name" => $user_row['last_name'],
-                   "role_id" => $user_row['role_id'],
-                   "is_admin" => (($user_row['is_admin'] == 'on') ? true : false),
-               ));
-           $renderer = 'render_' . $query['format'];
-           die($this->api->$renderer($results, $query));
+		$token = $this->generateToken($user_row['id']);
+		$this->user_id = $user_row['id'];
+		$this->role_id = $user_row['role_id'];
+		$this->is_admin = $user_row['is_admin'];
+		$results = array((object)array(
+		   "token" => $token,
+		   "id" => $user_row['id'],
+		   "first_name" => $user_row['first_name'],
+		   "last_name" => $user_row['last_name'],
+		   "role_id" => $user_row['role_id'],
+		   "is_admin" => (($user_row['is_admin'] == 'on') ? true : false),
+		));
+		$renderer = 'render_' . $query['format'];
+		die($this->api->$renderer($results, $query));
        }
    }
    Request::error("Invalid authentication!", 401);
