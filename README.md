@@ -461,9 +461,52 @@ __Class name:__ APIClient
 
 | Method        | Params                                         | Return | Description                                    |
 | ------------- | ---------------------------------------------- | ------ | ---------------------------------------------- |
-| getInstance   | \$URL, \$ACCESS_TOKEN                          | Void   | Returns static reference to the class instance |
+| getInstance   | -                                              | Void   | Returns static reference to the class instance |
 | fetch         | \$table, \$format = 'json', \$params = array() | Object | Fetch data                                     |
 | searchElement | \$array, \$key, \$value                        | Object | Search object in array                         |
+
+#### Usage
+
+```Php
+$api_client = APIClient::getInstance();
+
+$api_client->DEBUG = true;
+$api_client->URL = 'http://localhost';
+$api_client->ACCESS_TOKEN = '4gw7j8erfgerf6werf8fwerf8erfwfer';
+$api_client->DATASET = 'dataset';
+
+$params = array(
+    'where' => array(
+        'type' => 'C',
+        'address' => array(
+            '!' => '', // NOT NULL
+            'table' => 'accounts_addresses'
+        ),
+    ),
+    'join' => array(
+        'accounts_addresses' => array(
+            'on' => 'parent_id',
+            'value' => 'parent_id',
+            'method' => 'LEFT'
+        ),
+        'accounts_agents' => array(
+            'on' => 'parent_id',
+            'value' => 'id'
+        ),
+    ),
+    'order_by' => array(
+        'address' => array(
+            'table' => 'accounts_addresses',
+            'direction' => 'DESC'
+        ),
+        'type' => array(
+            'table' => 'accounts_addresses',
+            'direction' => 'ASC'
+        )
+    ),
+);
+$records = $api_client->fetch('accounts', 'json', $params);
+```
 
 
 

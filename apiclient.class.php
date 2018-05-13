@@ -12,20 +12,19 @@ class APIClient
 {
 	// Public
 	public $DEBUG = false;
+	public $URL = '';
+	public $ACCESS_TOKEN = '';
+	public $DATASET = '';
 
 	// Protected
 	protected static $instance = null;
 
-	// Private
-	private static $_URL;
-	private static $_ACCESS_TOKEN;
-
 	/**
 	 * Returns static reference to the class instance
 	 */
-	public static function getInstance($_URL, $_ACCESS_TOKEN) {
+	public static function getInstance() {
 		if (null === self::$instance) {
-			self::$instance = new static($_URL, $_ACCESS_TOKEN);
+			self::$instance = new static();
 		}
 		return self::$instance;
 	}
@@ -33,9 +32,7 @@ class APIClient
 	/**
 	 * Singleton constructor
 	 */
-	protected function __construct($_URL, $_ACCESS_TOKEN) {
-		self::$_URL = $_URL;
-		self::$_ACCESS_TOKEN = $_ACCESS_TOKEN;
+	protected function __construct() {
 	}
 
 	private function __clone() {
@@ -53,8 +50,11 @@ class APIClient
 	 */
 	public function fetch($table, $format = 'json', $params = array()) {
 
+		$this->URL = trim($this->URL, '/');
+		$this->ACCESS_TOKEN = empty($this->ACCESS_TOKEN) ? '' : $this->ACCESS_TOKEN.'/';
+
 		$params_query = !empty($params) ? self::_buildQuery($params) : '';
-		$url = self::$_URL . '/' . $table . '.' . $format . '?' . $params_query;
+		$url = $this->URL . '/'. $this->ACCESS_TOKEN. $this->DATASET . '/' . $table . '.' . $format . '?' . $params_query;
 		$request = self::_request($url);
 		$this->_debug("APIClient fetch: Sent GET REQUEST to ".$url);
 
