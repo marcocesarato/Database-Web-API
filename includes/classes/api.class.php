@@ -346,6 +346,7 @@ class API
 					$order_table = $query['table'];
 					$direction = '';
 					if(!is_int($column)) {
+						$column = trim($column);
 						$_split = array_map('trim', explode('.', $column, 2));
 						if (count($_split) > 1 && $this->verify_column(@$_split[1], @$_split[0])) {
 							$order_table = trim($_split[0]);
