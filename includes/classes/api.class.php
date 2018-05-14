@@ -337,14 +337,14 @@ class API
 
 				$order_by = $query['order_by'];
 				if (!is_array($order_by))
-					$order_by = explode(",", $order_by);
+					$order_by = array_map('trim', explode(',', $order_by));
 
 				$order_query = array();
 				foreach ($order_by as $column => $column_direction) {
-					$order_table = $table;
+					$order_table = $query['table'];
 					$direction = '';
 					if(!is_int($column)) {
-						$_split = explode('.', $column, 2);
+						$_split = array_map('trim', explode('.', $column, 2));
 						if (count($_split) > 1 && $this->verify_column(@$_split[1], @$_split[0])) {
 							$order_table = trim($_split[0]);
 							$column = trim($_split[1]);
@@ -359,7 +359,7 @@ class API
 						if (!empty($order_direction) && in_array(strtoupper($order_direction), array('ASC', 'DESC')))
 							$direction = $order_direction;
 					} else {
-						$_split = explode('.', $column_direction, 2);
+						$_split = array_map('trim', explode('.', $column_direction, 2));
 						if (count($_split) > 1 && $this->verify_column(@$_split[1], @$_split[0])) {
 							$order_table = $_split[0];
 							$column = $_split[1];
