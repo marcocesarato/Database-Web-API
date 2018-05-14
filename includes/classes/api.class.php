@@ -340,18 +340,38 @@ class API
 					$order_by = explode(",", $order_by);
 
 				$order_query = array();
-				foreach ($order_by as $column_table => $column) {
+				foreach ($order_by as $column => $column_direction) {
 					$order_table = $table;
 					$direction = '';
-					if (is_array($column) && !empty($column['table'])) {
-						$order_table = trim($column['table']);
-						$order_direction = trim($column['direction']);
-						$column = trim($column_table);
+					if(!is_int($column)) {
+						$_split = explode('.', $column, 2);
+						if (count($_split) > 1 && $this->verify_column(@$_split[1], @$_split[0])) {
+							$order_table = trim($_split[0]);
+							$column = trim($_split[1]);
+						} else if (!$this->verify_column($column, $order_table)) {
+							if (count($_split) > 1) {
+								Request::error('Invalid order column ' . $_split[0] . '.' . $_split[1], 404);
+							} else {
+								Request::error('Invalid order column ' . $order_table . '.' . $column, 404);
+							}
+						}
+						$order_direction = trim($column_direction);
 						if (!empty($order_direction) && in_array(strtoupper($order_direction), array('ASC', 'DESC')))
 							$direction = $order_direction;
-					}
-					if (!$this->verify_column($column, $order_table)) {
-						Request::error('Invalid order column ' . $order_table . '.' . $column, 404);
+					} else {
+						$_split = explode('.', $column_direction, 2);
+						if (count($_split) > 1 && $this->verify_column(@$_split[1], @$_split[0])) {
+							$order_table = $_split[0];
+							$column = $_split[1];
+						} else if ($this->verify_column($column_direction, $order_table)) {
+							$column = $column_direction;
+						} else {
+							if (count($_split) > 1) {
+								Request::error('Invalid order column ' . $_split[0] . '.' . $_split[1], 404);
+							} else {
+								Request::error('Invalid order column ' . $order_table . '.' . $column_direction, 404);
+							}
+						}
 					}
 					$order_query[] = "{$order_table}.{$column} {$direction}";
 				}

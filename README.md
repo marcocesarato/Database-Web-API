@@ -260,14 +260,14 @@ where['column_a'] = 'column_b'
 
   ```php
   order_by = 'username, name, surname'
-  order_by[] = 'username'
+  // OR
+  order_by = array('username', 'name', 'surname')
   ```
 
   for more specific order direction
 
   ```php
-  order[username][table]     = 'users'
-  order[username][direction] = 'DESC'
+  order['users.username'] = 'DESC'
   ```
 
 * `direction`:  `ASC` or `DESC` (default `ASC`)
