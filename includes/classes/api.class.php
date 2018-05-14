@@ -337,7 +337,9 @@ class API
 
 				$order_by = $query['order_by'];
 				if (!is_array($order_by))
-					$order_by = array_map('trim', explode(',', $order_by));
+					$order_by = explode(',', $order_by);
+
+				$order_by = array_map('trim', $order_by);
 
 				$order_query = array();
 				foreach ($order_by as $column => $column_direction) {
