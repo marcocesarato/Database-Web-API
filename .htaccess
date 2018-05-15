@@ -5,51 +5,54 @@
 
 	RewriteEngine On
 	RewriteBase /
+	
+	RewriteCond $0#%{REQUEST_URI} ([^#]*)#(.*)\1$ 
+	RewriteRule ^.*$ - [E=CWD:%2] 
 
 	#db + table + column + value
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	# No auth
-	RewriteRule ([^/]+)/([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?db=$1&table=$2&where[$3]=$4&format=$5 [L,QSA]
+	RewriteRule ([^/]+)/([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?db=$1&table=$2&where[$3]=$4&format=$5 [L,QSA]
 
 	#db + limit + table
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	# No auth
-	RewriteRule ([^/]+)/([0-9]|[1-8][0-9]|9[0-9]|100)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?db=$1&limit=$2&table=$3&format=$4 [L,QSA]
+	RewriteRule ([^/]+)/([0-9]|[1-8][0-9]|9[0-9]|100)/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?db=$1&limit=$2&table=$3&format=$4 [L,QSA]
 
 	#db + table + #id
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	# No auth
-	RewriteRule ([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?db=$1&table=$2&id=$3&format=$4 [L,QSA]
+	RewriteRule ([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?db=$1&table=$2&id=$3&format=$4 [L,QSA]
 
 	#check auth
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule auth/check/([^/]+)\.([a-zA-Z]{3,4})$  index.php?check_token=$1&format=$2 [L,QSA]
+	RewriteRule auth/check/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?check_token=$1&format=$2 [L,QSA]
 
 	#auth
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule auth/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?password=$1&user_id=$2&format=$3 [L,QSA]
+	RewriteRule auth/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?password=$1&user_id=$2&format=$3 [L,QSA]
 
 	#db + table
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	# No auth
-	RewriteRule ([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  index.php?&db=$1&table=$2&format=$3 [L,QSA]
+	RewriteRule ([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?&db=$1&table=$2&format=$3 [L,QSA]
 
 	#db for POST REQUEST
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	# No auth
-	RewriteRule ([^/]+)\.([a-zA-Z]{3,4})$  index.php?db=$1&format=$2 [L,QSA]
+	RewriteRule ([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?db=$1&format=$2 [L,QSA]
 
 	#all else
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule . index.php [L,QSA]
+	RewriteRule . %{ENV:CWD}index.php [L,QSA]
 
 </IfModule>
 
