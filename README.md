@@ -83,7 +83,7 @@ __Note:__ All fields (other than the dataset name) are optional and will default
 
 ### How configure the authentication system
 
-At the moment is a little complicate configure the authentication system. 
+At the moment is a little complicated the configuration of the authentication system. 
 
 __Just follow the instructions:__
 
