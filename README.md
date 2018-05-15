@@ -267,7 +267,7 @@ where['column_a'] = 'column_b'
   for more specific order direction
 
   ```php
-  order['users.username'] = 'DESC'
+  order_by['users.username'] = 'DESC'
   ```
 
 * `direction`:  `ASC` or `DESC` (default `ASC`)
