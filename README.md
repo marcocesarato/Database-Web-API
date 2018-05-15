@@ -4,15 +4,15 @@ Author: __Marco Cesarato__
 ## Description
 Dynamically generate RESTful APIs from the contents of a database table. Provides JSON, XML, and HTML. Supports most popular databases.
 
-## What Problem This Solves
+## What problem this solves
 Creating an API to access information within existing database tables is laborious task, when done as a bespoke task. This is often dealt with by exporting the contents of the database as CSV files, and providing downloads of them as a “good enough” solution.
 
-## How This Solves It
+## How this solves it
 Database Web API acts as a filter, sitting between a database and the browser, allowing users to interact with that database as if it was a native API. The column names function as the key names. This obviates the need for custom code for each database layer.
 
 When Alternative PHP Cache (APC) is installed, parsed data is stored within APC, which accelerates its functionality substantially. While APC is not required, it is recommended highly.
 
-## Databases Supported
+## Databases supported
 * 4D
 * CUBRID
 * Firebird/Interbase
@@ -85,9 +85,7 @@ __Note:__ All fields (other than the dataset name) are optional and will default
 
 At the moment is a little complicate configure the authentication system. 
 
-
-Just follow the instructions:
-
+__Just follow the instructions:__
 
 We need to edit the file `includes/classes/auth.class.php`.
 
