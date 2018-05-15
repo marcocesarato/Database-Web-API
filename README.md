@@ -32,7 +32,7 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 
 ## Installation
 * Set the configuration on config.php (Follow the below example to register a new dataset in config.php
-* If you want config an auth system edit `includes/classes/auth.class.php` based your needs and your dataset (the default configuration is read only but if you configure as the example below the `auth.class.php` you could insert/update and delete from your database)
+* If you want config an auth system you must compile on the config the constant \_\_AUTH\_\_ as on the example below
 * If you want enable the auth system rename `.htaccess_auth` to `.htaccess`
 * Document the API
 
@@ -42,6 +42,44 @@ Edit `config.php` to include a single instance of the following for each dataset
 ```php
 define("__API_NAME__", "Database Web API");
 define("__BASE_DIR__", "");
+define("__AUTH__",  serialize(array( // Set null for disable authentication
+    'database' => 'dataset',
+    'users' => array(
+        'table' => 'users',
+        'columns' => array(
+            'id' => 'user_id',
+            'email' => 'email',
+            'role' => 'role_id',
+            'username' => 'username',
+            'password' => 'password',
+            'super_admin' => array('is_admin' => 'on') // Super admin bypass all black/whitelists. Set NULL for disable
+        ),
+        'search' => array('user_id', 'email', 'username'), // Search user by these fields
+        'check' => array(
+            'active' => 1  // Check if the user is active the have the column 'active' with value '1'
+        )
+    ),
+    'roles' => array(
+        'table' => 'roles',
+        'columns' => array(
+            'id' => 'role_id',
+            'data' => 'table', // Table name column
+            'can_read' => array(
+                'read' => 1
+            ),
+            'can_write' => array(
+                'write' => 1
+            ),
+            'can_edit' => array(
+                'edit' => 1
+            ),
+            'can_delete' => array(
+                'delete' => 1
+            ),
+        )
+    ),
+    'callbacks' => array(),
+)));
 define("__DATASETS__", serialize(array(
 	'dataset' => array(
 		'name' => 'database_name',
@@ -80,117 +118,6 @@ define("__DATASETS__", serialize(array(
 )));
 ```
 __Note:__ All fields (other than the dataset name) are optional and will default to the above.
-
-### How configure the authentication system
-
-At the moment is a little complicated the configuration of the authentication system. 
-
-__Just follow the instructions:__
-
-We need to edit the file `includes/classes/auth.class.php`.
-
-The authentication system at the moment work with a sqlite database on your root folder (but if you want you can change it)  where are stored all tokens user info (user_id, is_admin and role_id) and client info (user_agent, last_access and date_created for manage the active sessions).
-
-__Note:__ You have to remove the following line foreach methods listed to enable the auth
-
-```php
-return true; // <==== REMOVE
-```
-
-#### Instructions
-
-1. Edit method `public validate($query)`
-
-   This function check if authentication is valid. Here an example:
-
-   ```Php
-   $user = strtolower($query['user_id']);
-   
-   $this->api = API::getInstance();
-   $this->db = &$this->api->connect('database');
-   
-   $sth = $this->db->prepare("SELECT id, first_name, last_name, role_id, is_admin, user_hash FROM users WHERE (id = :user_id OR user_name = :username OR email1 = :email)");
-   $sth->bindParam(':user_id', $user);
-   $sth->bindParam(':username', $user);
-   $sth->bindParam(':email', $user);
-   
-   $sth->execute();
-   $user_row = $sth->fetch();
-   
-   if ($user_row) {
-       $password = strtolower($query['password']);
-       if ($user_row['user_hash'] == $password) {
-		$token = $this->generateToken($user_row['id']);
-		$this->user_id = $user_row['id'];
-		$this->role_id = $user_row['role_id'];
-		$this->is_admin = $user_row['is_admin'];
-		$results = array((object)array(
-		   "token" => $token,
-		   "id" => $user_row['id'],
-		   "first_name" => $user_row['first_name'],
-		   "last_name" => $user_row['last_name'],
-		   "role_id" => $user_row['role_id'],
-		   "is_admin" => (($user_row['is_admin'] == 'on') ? true : false),
-		));
-		$renderer = 'render_' . $query['format'];
-		die($this->api->$renderer($results, $query));
-       }
-   }
-   Request::error("Invalid authentication!", 401);
-   ```
-
-   
-
-2. Edit method `private validateToken($token)`
-
-   This method validate the token. Here an example
-
-   ```php
-   try {
-       $sth = $this->sqlite_db->prepare("SELECT * FROM tokens WHERE token = :token");
-       $sth->bindParam(':token', $token);
-       $sth->execute();
-       $token_row = $sth->fetch();
-   
-       if ($token_row) {
-   
-           $this->api = API::getInstance();
-           $this->db = &$this->api->connect('database');
-           $sth = $this->db->prepare("SELECT id, role_id, is_admin  FROM users WHERE id = :user_id");
-           $sth->bindParam(':user_id', $token_row['user_id']);
-   
-           $sth->execute();
-           $user_row = $sth->fetch();
-   
-           if ($user_row) {
-               $this->user_id = $user_row['id'];
-               $this->role_id = $user_row['role_id'];
-               $this->is_admin = (($user_row['is_admin'] == 'on') ? true : false);
-               return true;
-           }
-   
-       }
-   	return false;
-   } catch (PDOException $e) {
-   	Request::error($e->getMessage(), 500);
-   }
-   ```
-
-   
-
-3. Edit `public sql_restriction($table, $permission = (string) [READ|EDIT|DELETE] )`
-
-   This method add at the end of SELECT, UPDATE and DELETE queries some restriction based on permissions (you can do a subquery with the user/role id)
-
-4. At the end you have to edit `public can_[read/write/edit/delete]($table)`
-
-   These methods return if the user can read/insert/update and delete a table
-
-   Default is read only
-
-5. Rename `.htaccess_auth` to `.htaccess`
-
-
 
 ## API Structure
 

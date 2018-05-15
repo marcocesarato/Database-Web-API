@@ -18,20 +18,16 @@ define("__AUTH__",  serialize(array(
             'role' => 'role_id',
             'username' => 'username',
             'password' => 'password',
-            'super_admin' => array(
-                'is_admin' => 'on'  // Super admin bypass all black/whitelists. Set NULL for disable
-            )
+            'super_admin' => array('is_admin' => 'on') // Super admin bypass all black/whitelists. Set NULL for disable
         ),
         'search' => array('user_id', 'email', 'username'), // Search user by these fields
-        'check' => array(
-            'active' => 1  // Check if the user is active the have the column 'active' with value '1'
-        )
+        'check' => array('active' => 1) // Check if the user is active the have the column 'active' with value '1'. Set NULL for disable
     ),
     'roles' => array(
         'table' => 'roles',
         'columns' => array(
             'id' => 'role_id',
-            'data' => 'table', // Table name with te permissions
+            'data' => 'table', // Table name column
             'can_read' => array(
                 'read' => 1
             ),

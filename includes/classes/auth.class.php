@@ -110,12 +110,14 @@ class Auth
             }
             $where_sql = implode(" OR ", $where);
 
-            $where = array();
-            foreach(self::$settings['users']['check'] as $col => $value){
-                $bind_values[$col] = $value;
-                $where[$col] = "$col = :$col";
+            if(!empty(self::$settings['users']['check'])) {
+                $where = array();
+                foreach (self::$settings['users']['check'] as $col => $value) {
+                    $bind_values[$col] = $value;
+                    $where[$col] = "$col = :$col";
+                }
+                $where_sql = (!empty($where_sql) ? " ($where_sql) AND " : "") . implode(" OR ", $where);
             }
-            $where_sql = (!empty($where_sql) ? " ($where_sql) AND " : "").implode(" OR ", $where);
 
 			$this->api = API::getInstance();
 			$this->db = &$this->api->connect(self::$settings['database']);
