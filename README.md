@@ -83,6 +83,14 @@ __Note:__ All fields (other than the dataset name) are optional and will default
 
 ### How configure the authentication system
 
+At the moment is a little complicate configure the authentication system. 
+
+
+Just follow the instructions:
+
+
+We need to edit the file `includes/classes/auth.class.php`.
+
 The authentication system at the moment work with a sqlite database on your root folder (but if you want you can change it)  where are stored all tokens user info (user_id, is_admin and role_id) and client info (user_agent, last_access and date_created for manage the active sessions).
 
 __Note:__ You have to remove the following line foreach methods listed to enable the auth
@@ -91,6 +99,7 @@ __Note:__ You have to remove the following line foreach methods listed to enable
 return true; // <==== REMOVE
 ```
 
+#### Instructions
 
 1. Edit method `public validate($query)`
 
