@@ -1,12 +1,17 @@
 <?php
 /**
- * Config
+ * Compatibility
  *
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  *
  * If your version of PHP does not include this function:
  */
+
+if(!class_exists('PDO')) {
+    include __ROOT__ . '/includes/classes/PDO/PDO.class.php';
+}
+
 if (!function_exists('http_response_code')) {
 	function http_response_code($code = NULL) {
 

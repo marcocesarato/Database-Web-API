@@ -8,6 +8,47 @@
 
 define("__API_NAME__", "Database Web API");
 define("__BASE_DIR__", "");
+define("__AUTH__",  serialize(array(
+    'database' => 'dataset',
+    'users' => array(
+        'table' => 'users',
+        'columns' => array(
+            'id' => 'user_id',
+            'email' => 'email',
+            'role' => 'role_id',
+            'username' => 'username',
+            'password' => 'password',
+            'super_admin' => array(
+                'is_admin' => 'on'  // Super admin bypass all black/whitelists. Set NULL for disable
+            )
+        ),
+        'search' => array('user_id', 'email', 'username'), // Search user by these fields
+        'check' => array(
+            'active' => 1  // Check if the user is active the have the column 'active' with value '1'
+        )
+    ),
+    'roles' => array(
+        'table' => 'roles',
+        'columns' => array(
+            'id' => 'role_id',
+            'data' => 'table', // Table name with te permissions
+            'can_read' => array(
+                'read' => 1
+            ),
+            'can_write' => array(
+                'write' => 1
+            ),
+            'can_edit' => array(
+                'edit' => 1
+            ),
+            'can_delete' => array(
+                'delete' => 1
+            ),
+        )
+    ),
+    'callbacks' => array(),
+)));
+
 define("__DATASETS__", serialize(array(
 	'dataset' => array(
 		'name' => 'database_name',

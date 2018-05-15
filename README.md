@@ -178,11 +178,11 @@ return true; // <==== REMOVE
 
    
 
-3. Edit `public sql_restriction($table, $permission = (string) [READ|MODIFY|DELETE] )`
+3. Edit `public sql_restriction($table, $permission = (string) [READ|EDIT|DELETE] )`
 
    This method add at the end of SELECT, UPDATE and DELETE queries some restriction based on permissions (you can do a subquery with the user/role id)
 
-4. At the end you have to edit `public can_[read/write/modify/delete]($table)`
+4. At the end you have to edit `public can_[read/write/edit/delete]($table)`
 
    These methods return if the user can read/insert/update and delete a table
 

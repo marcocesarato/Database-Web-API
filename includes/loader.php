@@ -19,7 +19,6 @@ set_time_limit(3600);
 define("__ROOT__", realpath(dirname(__FILE__) . '/..'));
 include __ROOT__ . '/includes/compatibility.php';
 include __ROOT__ . '/includes/functions.php';
-include __ROOT__ . '/includes/classes/PDO/PDO.class.php';
 include __ROOT__ . '/includes/classes/db_errorparser.class.php';
 include __ROOT__ . '/includes/classes/request.class.php';
 include __ROOT__ . '/includes/classes/auth.class.php';
