@@ -314,7 +314,7 @@ Retrieve data from dataset
 
 - Fetch: `/[token]/[database]/[table]/[ID].[format]`
 
-- Fetch search by coolumn: `/[token]/[database]/[table]/[column]/[value].[format]`
+- Fetch search by column: `/[token]/[database]/[table]/[column]/[value].[format]`
 
 - Fetch all joining table:
 
