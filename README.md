@@ -41,8 +41,8 @@ Edit `config.php` to include a single instance of the following for each dataset
 
 __EXAMPLE with explanation__
 ```php
-define("__API_NAME__", "Database Web API");
-define("__BASE_DIR__", "");
+define("__API_NAME__", "Database Web API"); // API Name
+define("__BASE_DIR__", ""); // Dir relative to the http root where is located
 
 define("__AUTH__",  serialize(array( // Set null for disable authentication
     'database' => 'dataset',

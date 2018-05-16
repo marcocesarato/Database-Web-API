@@ -6,10 +6,10 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
-define("__API_NAME__", "Database Web API");
-define("__BASE_DIR__", "");
+define("__API_NAME__", "Database Web API"); // API Name
+define("__BASE_DIR__", ""); // Dir relative to the http root where is located
 
-define("__AUTH__",  serialize(array(
+define("__AUTH__",  serialize(array( // Set null for disable authentication
     'database' => 'dataset',
     'users' => array(
     	'table' => 'users', // Table where users are stored
