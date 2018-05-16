@@ -14,10 +14,8 @@
  */
 function callback_sql_restriction($table, $permission){
 
-	$AUTH = Auth::getInstance();
-	$user = $AUTH->getUser(); // User row
-	$API = API::getInstance();
-	$db = $API->connect(); // You can specify dataset. Return PDO Object
+	$user = Auth::getUser(); // User row
+	$db = API::getDatabase(); // You can specify dataset. Return PDO Object
 
 	// All denied
 	$sql = "'1' = '0'";
@@ -47,10 +45,8 @@ function callback_sql_restriction($table, $permission){
  * @return null|bool
  */
 function callback_can_read($table){
-	$AUTH = Auth::getInstance();
-	$user = $AUTH->getUser(); // User row
-	$API = API::getInstance();
-	$db = $API->connect(); // You can specify dataset. Return PDO Object
+	$user = Auth::getUser(); // User row
+	$db = API::getDatabase(); // You can specify dataset. Return PDO Object
 	return null; // Continue or return bool
 }
 
@@ -60,10 +56,8 @@ function callback_can_read($table){
  * @return null|bool
  */
 function callback_can_write($table){
-	$AUTH = Auth::getInstance();
-	$user = $AUTH->getUser(); // User row
-	$API = API::getInstance();
-	$db = $API->connect(); // You can specify dataset. Return PDO Object
+	$user = Auth::getUser(); // User row
+	$db = API::getDatabase(); // You can specify dataset. Return PDO Object
 	return null; // Continue or return bool
 }
 
@@ -73,10 +67,8 @@ function callback_can_write($table){
  * @return null|bool
  */
 function callback_can_edit($table){
-	$AUTH = Auth::getInstance();
-	$user = $AUTH->getUser(); // User row
-	$API = API::getInstance();
-	$db = $API->connect(); // You can specify dataset. Return PDO Object
+	$user = Auth::getUser(); // User row
+	$db = API::getDatabase(); // You can specify dataset. Return PDO Object
 	return null; // Continue or return bool
 }
 
@@ -86,9 +78,7 @@ function callback_can_edit($table){
  * @return null|bool
  */
 function callback_can_delete($table){
-	$AUTH = Auth::getInstance();
-	$user = $AUTH->getUser(); // User row
-	$API = API::getInstance();
-	$db = $API->connect(); // You can specify dataset. Return PDO Object
+	$user = Auth::getUser(); // User row
+	$db = API::getDatabase(); // You can specify dataset. Return PDO Object
 	return null; // Continue or return bool
 }

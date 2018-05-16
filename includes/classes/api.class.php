@@ -28,7 +28,7 @@ class API
 	 */
 	public function __construct() {
 		self::$instance = &$this;
-		$this->request = Request::get_instance();
+		$this->request = Request::getInstance();
 		$this->auth = Auth::getInstance();
 	}
 
@@ -37,6 +37,13 @@ class API
 	 */
 	public static function &getInstance() {
 		return self::$instance;
+	}
+
+	/**
+	 * Returns a database connection
+	 */
+	public static function getDatabase($db = null) {
+		return self::$instance->connect($db);
 	}
 
 	/**

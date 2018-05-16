@@ -195,7 +195,7 @@ class Request
 	/**
 	 * Returns static reference to the class instance
 	 */
-	public static function &get_instance() {
+	public static function &getInstance() {
 		return self::$instance;
 	}
 

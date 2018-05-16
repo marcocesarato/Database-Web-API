@@ -128,10 +128,8 @@ function callback_can_delete($table)
 You can use this code fo have a database instance and the current user authenticated row:
 
 ```php
-$AUTH = Auth::getInstance();
-$user = $AUTH->getUser(); // User row
-$API = API::getInstance();
-$db = $API->connect(); // You can specify dataset. Return PDO Object
+$user = Auth::getUser(); // User row
+$db = API::getDatabase('dataset'); // You can specify dataset. Return PDO Object
 ```
 
 **Note:** All callbacks if return NULL will use default values with readonly permissions.

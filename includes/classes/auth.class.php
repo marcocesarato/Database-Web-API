@@ -318,7 +318,11 @@ class Auth
 		}
 	}
 
-	public function getUser(){
-		return $this->user;
+	/**
+	 * Get user row
+	 * @return array
+	 */
+	public static function getUser(){
+		return self::getInstance()->user;
 	}
 }
