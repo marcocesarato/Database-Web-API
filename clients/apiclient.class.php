@@ -4,6 +4,9 @@
  *
  * @package    Database API Platform
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
+ * @copyright  Copyright (c) 2018
+ * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
+ * @link       https://github.com/marcocesarato/Database-Web-API
  */
 
 set_time_limit(3600); // Depends from data weight
@@ -89,7 +92,7 @@ class APIClient
 				}
 			}
 		}
-		$this->_debug("APIClient searchElement: Elemento non trovato! [".$key." = ".$value."]");
+		$this->_debug("APIClient searchElement: Element not found! [".$key." = ".$value."]");
 		return null;
 	}
 	
@@ -114,7 +117,7 @@ class APIClient
 				}
 			}
 		}
-		$this->_debug("NeterpriseClient filter: Trovati ".count($result)." elementi! [".$key." = ".$value."]");
+		$this->_debug("NeterpriseClient filter: Found ".count($result)." elements! [".$key." = ".$value."]");
 		return $result;
 	}
 

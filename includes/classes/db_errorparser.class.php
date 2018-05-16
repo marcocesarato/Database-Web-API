@@ -5,6 +5,9 @@
  *
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
+ * @copyright  Copyright (c) 2018
+ * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
+ * @link       https://github.com/marcocesarato/Database-Web-API
  */
 
 class DatabaseErrorParser
@@ -17,7 +20,7 @@ class DatabaseErrorParser
 		$code = $error->getCode();
 		$message = $error->getMessage();
 
-		$error = "($code) Ops qualcosa e' andato storto";
+		$error = "Ops something is gone wrong (ERROR CODE: $code)";
 
 		switch ($db_type) {
 			case 'pgsql':
