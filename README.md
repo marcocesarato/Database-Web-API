@@ -56,7 +56,7 @@ define("__AUTH__",  serialize(array( // Set null for disable authentication
         'search' => array('user_id', 'email', 'username'), // Search user by these fields
         'check' => array('active' => 1) // Check if the user is active the have the column 'active' with value '1'
     ),
-    'callbacks' => array( // Functions stored in callbacks.php that you can customize. Set NULL for disable (readonly)
+    'callbacks' => array( // Functions stored in includes/callbacks.php that you can customize. Set NULL for disable (readonly)
         'sql_restriction' => 'callback_sql_restriction',
         'can_read' => 'callback_can_read',
         'can_write' => 'callback_can_write',
@@ -111,6 +111,99 @@ array(
     'column_list' => array(),
     'ttl' => 3600,
 );
+```
+
+### Callbacks
+
+Callbacks availables (Prepared versions on `includes/callbacks.php`):
+
+```php
+function callback_sql_restriction($table, $permission)
+function callback_can_read($table)
+function callback_can_write($table){
+function callback_can_edit($table)
+function callback_can_delete($table)
+```
+
+You can use this code fo have a database instance and the current user authenticated row:
+
+```php
+$AUTH = Auth::getInstance();
+$user = $AUTH->getUser(); // User row
+$API = API::getInstance();
+$db = $API->connect(); // You can specify dataset. Return PDO Object
+```
+
+__Note:__ All callbacks if return NULL will use default values with readonly permissions.
+
+#### List
+
+* `sql_restriction`
+
+  **Description:** Return a string to append in where condition
+
+  **Parameters:** \$table, \$permission
+
+  **Options of *$permission*:**
+
+  ```
+  case 'READ':
+  case 'WRITE':
+  case 'EDIT':
+  case 'DELETE':
+  ```
+  **Return**
+  ```
+   // All denied
+  $sql = "'1' = '0'";
+  // All allowed
+  $sql = "'1' = '1'";
+  ```
+
+* `can_read`
+
+  **Description:** Return if can GET/SELECT
+
+  **Parameters:** \$table
+
+  **Return:** Boolean
+
+* `can_write`
+
+  **Description:** Return if can POST/INSERT
+
+  **Parameters:** \$table
+
+  **Return:** Boolean
+
+* `can_edit`
+
+  **Description:** Return if can PUT/UPDATE
+
+  **Parameters:** \$table
+
+  **Return:** Boolean
+
+* `can_delete`
+
+* **Description:** Return if can DELETE
+
+  **Parameters:** \$table
+
+  **Return:** Boolean
+
+#### Configuration
+
+For implement the callbacks you need to add  the callbacks array to the \_\_AUTH\_\_ constant:
+
+```php
+'callbacks' => array( // Set NULL for disable (readonly)
+     'sql_restriction' => 'callback_sql_restriction',
+     'can_read' => 'callback_can_read',
+     'can_write' => 'callback_can_write',
+     'can_edit' => 'callback_can_edit',
+     'can_delete' => 'callback_can_delete',
+ ),
 ```
 
 ## API Structure

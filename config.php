@@ -21,7 +21,13 @@ define("__AUTH__",  serialize(array(
         'search' => array('user_id', 'email', 'username'), // Search user by these fields
         'check' => array('active' => 1) // Check if the user is active the have the column 'active' with value '1'. Set NULL for disable
     ),
-    'callbacks' => array(),
+	'callbacks' => array( // Set NULL for disable (readonly)
+		'sql_restriction' => 'callback_sql_restriction',
+		'can_read' => 'callback_can_read',
+		'can_write' => 'callback_can_write',
+		'can_edit' => 'callback_can_edit',
+		'can_delete' => 'callback_can_delete',
+	),
 )));
 
 define("__DATASETS__", serialize(array(
@@ -32,7 +38,6 @@ define("__DATASETS__", serialize(array(
 		'server' => 'localhost',  // localhost default
 		'port' => 3306, // 3306 is default
 		'type' => 'mysql', // mysql is default
-		'private' => false,
 		'table_list' => array(), // Tables's whitelist (Allow only the tables in this list, if empty allow all)
 		'table_blacklist' => array(), // Tables's blacklist
 		'column_list' => array(), // Columns's whitelist (Allow only the columns in this list, if empty allow all)

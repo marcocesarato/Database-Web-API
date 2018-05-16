@@ -208,9 +208,7 @@ class Auth
 			if(!empty($callback)) return $callback;
 		}
 
-		$sql = "'1' = '1'";
-
-		return $sql;
+		return "'1' = '1'";
 	}
 
 	/**
