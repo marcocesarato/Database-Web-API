@@ -14,15 +14,23 @@
  */
 function callback_sql_restriction($table, $permission){
 
-	 // All denied
-	$sql = "'1' = '0'";
-	// All allowed
-	$sql = "'1' = '1'";
-
 	$AUTH = Auth::getInstance();
 	$user = $AUTH->getUser(); // User row
 	$API = API::getInstance();
 	$db = $API->connect(); // You can specify dataset. Return PDO Object
+
+	// All denied
+	$sql = "'1' = '0'";
+	// All allowed
+	$sql = "'1' = '1'";
+
+	/* @example
+	// Only owned
+	$sql = 'created_by = '.$user['id'];
+	// Only Team
+	$sql = 'created_by IN ('.implode(',',$teams_ids).')';
+	*/
+
 	switch ($permission){
 		case 'READ':
 		case 'WRITE':

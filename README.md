@@ -1,5 +1,5 @@
 # PHP Database Web API
-Author: __Marco Cesarato__
+Author: **Marco Cesarato**
 
 ## Description
 Dynamically generate RESTful APIs from the contents of a database table. Provides JSON, XML, and HTML. Supports most popular databases.
@@ -39,7 +39,7 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 ## Configuration
 Edit `config.php` to include a single instance of the following for each dataset (including as many instances as you have datasets):
 
-__EXAMPLE with explanation__
+**EXAMPLE with explanation**
 ```php
 define("__API_NAME__", "Database Web API"); // API Name
 define("__BASE_DIR__", ""); // Dir relative to the http root where is located
@@ -94,9 +94,9 @@ define("__DATASETS__", serialize(array(
 	),
 )));
 ```
-___Note:__ All fields of \_\_DATASETS\_\_ (except the name of database) are optional and will default to the above._
+**_Note:** All fields of \_\_DATASETS\_\_ (except the name of database) are optional and will default to the above._
 
-__Default dataset values:__
+**Default dataset values:**
 ```php
 array(
     'name' => null,
@@ -113,7 +113,7 @@ array(
 );
 ```
 
-### Callbacks
+## Callbacks
 
 Callbacks availables (Prepared versions on `includes/callbacks.php`):
 
@@ -134,9 +134,9 @@ $API = API::getInstance();
 $db = $API->connect(); // You can specify dataset. Return PDO Object
 ```
 
-__Note:__ All callbacks if return NULL will use default values with readonly permissions.
+**Note:** All callbacks if return NULL will use default values with readonly permissions.
 
-#### List
+### List
 
 * `sql_restriction`
 
@@ -146,18 +146,25 @@ __Note:__ All callbacks if return NULL will use default values with readonly per
 
   **Options of *$permission*:**
 
-  ```
+  ```php
   case 'READ':
   case 'WRITE':
   case 'EDIT':
   case 'DELETE':
   ```
   **Return**
-  ```
-   // All denied
+  ```php
+  // All denied
   $sql = "'1' = '0'";
   // All allowed
   $sql = "'1' = '1'";
+  ```
+  **Examples:**
+  ```php
+  // Only Created
+  $sql = 'created_by = '.$user['id'];
+  // Only Team
+  $sql = 'created_by IN ('.implode(',',$teams_ids).')';
   ```
 
 * `can_read`
@@ -192,7 +199,7 @@ __Note:__ All callbacks if return NULL will use default values with readonly per
 
   **Return:** Boolean
 
-#### Configuration
+### Configuration
 
 For implement the callbacks you need to add  the callbacks array to the \_\_AUTH\_\_ constant:
 
@@ -206,13 +213,15 @@ For implement the callbacks you need to add  the callbacks array to the \_\_AUTH
  ),
 ```
 
+
+
 ## API Structure
 
 ### Format availables:
 
 - JSON
 - XML
-- HTML
+- HTML (for debug)
 
 ### Generic URL format for all kind of request:
 
@@ -224,7 +233,7 @@ For implement the callbacks you need to add  the callbacks array to the \_\_AUTH
 
 ### Advanced search:
 
-__Note:__ These examples are valid only for **GET** and **PUT** requests
+**Note:** These examples are valid only for **GET** and **PUT** requests
 
 Search single value
 
@@ -483,9 +492,9 @@ Host: localhost
 
 ### PHP API Client
 
-__Filename:__ `apiclient.class.php`
+**Filename:** `apiclient.class.php`
 
-__Class name:__ APIClient
+**Class name:** APIClient
 
 | Method        | Params                                         | Return | Description                                    |
 | ------------- | ---------------------------------------------- | ------ | ---------------------------------------------- |
