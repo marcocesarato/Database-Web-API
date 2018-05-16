@@ -6,7 +6,7 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
-set_time_limit(3600);
+set_time_limit(3600); // Depends from data weight
 
 class APIClient
 {
