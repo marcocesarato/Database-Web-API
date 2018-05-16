@@ -77,6 +77,7 @@ class APIClient
 	 * @return mixed
 	 */
 	public function searchElement($array, $key, $value){
+		if(is_null($value)) return null;
 		foreach($array as $elem) {
 			if(is_object($elem)) {
 				if (!empty($elem->{$key}) && $value == $elem->{$key}) {
@@ -90,6 +91,31 @@ class APIClient
 		}
 		$this->_debug("APIClient searchElement: Elemento non trovato! [".$key." = ".$value."]");
 		return null;
+	}
+	
+	/**
+	 * Filter object in array
+	 * @param $array
+	 * @param $key
+	 * @param $value
+	 * @return mixed
+	 */
+	public function filter($key, $value, $array){
+		if(is_null($value)) return null;
+		$result = array();
+		foreach($array as $elem) {
+			if(is_object($elem)) {
+				if (!empty($elem->$key) && $value == $elem->$key) {
+					$result[] = $elem;
+				}
+			} else if(is_array($elem)) {
+				if (!empty($elem[$key]) && $value == $elem[$key]) {
+					$result[] = $elem;
+				}
+			}
+		}
+		$this->_debug("NeterpriseClient filter: Trovati ".count($result)." elementi! [".$key." = ".$value."]");
+		return $result;
 	}
 
 	/**
