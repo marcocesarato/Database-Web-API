@@ -501,6 +501,7 @@ Host: localhost
 | getInstance   | -                                              | Void   | Returns static reference to the class instance |
 | fetch         | \$table, \$format = 'json', \$params = array() | Object | Fetch data                                     |
 | searchElement | \$array, \$key, \$value                        | Object | Search object in array                         |
+| filter        | \$array, \$key, \$value                        | Array  | Filter results array                           |
 
 #### Usage
 
