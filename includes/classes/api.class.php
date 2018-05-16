@@ -451,7 +451,7 @@ class API
 	 * @return object the PDO object
 	 * @todo support port #s and test on each database
 	 */
-	public function &connect($db) {
+	public function &connect($db = null) {
 
 		// check for existing connection
 		if (isset($this->connections[$db])) {

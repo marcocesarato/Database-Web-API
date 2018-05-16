@@ -39,85 +39,79 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 ## Configuration
 Edit `config.php` to include a single instance of the following for each dataset (including as many instances as you have datasets):
 
+__EXAMPLE with explanation__
 ```php
 define("__API_NAME__", "Database Web API");
 define("__BASE_DIR__", "");
+
 define("__AUTH__",  serialize(array( // Set null for disable authentication
     'database' => 'dataset',
     'users' => array(
-        'table' => 'users',
+        'table' => 'users', // Table where users are stored
         'columns' => array(
             'id' => 'user_id',
-            'email' => 'email',
-            'role' => 'role_id',
-            'username' => 'username',
             'password' => 'password',
-            'super_admin' => array('is_admin' => 'on') // Super admin bypass all black/whitelists. Set NULL for disable
+            'dmin' => array('is_admin' => 'on') // Admin bypass all black/whitelists. Set NULL for disable
         ),
         'search' => array('user_id', 'email', 'username'), // Search user by these fields
-        'check' => array(
-            'active' => 1  // Check if the user is active the have the column 'active' with value '1'
-        )
+        'check' => array('active' => 1) // Check if the user is active the have the column 'active' with value '1'
     ),
-    'roles' => array(
-        'table' => 'roles',
-        'columns' => array(
-            'id' => 'role_id',
-            'data' => 'table', // Table name column
-            'can_read' => array(
-                'read' => 1
-            ),
-            'can_write' => array(
-                'write' => 1
-            ),
-            'can_edit' => array(
-                'edit' => 1
-            ),
-            'can_delete' => array(
-                'delete' => 1
-            ),
-        )
+    'callbacks' => array( // Functions stored in callbacks.php that you can customize. Set NULL for disable (readonly)
+        'sql_restriction' => 'callback_sql_restriction',
+        'can_read' => 'callback_can_read',
+        'can_write' => 'callback_can_write',
+        'can_edit' => 'callback_can_edit',
+        'can_delete' => 'callback_can_delete',
     ),
-    'callbacks' => array(),
 )));
+
 define("__DATASETS__", serialize(array(
 	'dataset' => array(
-		'name' => 'database_name',
-		'username' => 'username',
-		'password' => 'password',
-		'server' => 'localhost',
-		'port' => 3306,
-		'type' => 'mysql',
-		'table_list' => array(
-			/** @example
-				'users'
-			 **/
-		), // Whitelist (Allow only the tables in this list, if empty allow all)
-		'table_blacklist' => array(
-			/** @example
-				'passwords'
-			 **/
+		'name' => 'database_name', // Database name
+		'username' => 'user', // root is default
+		'password' => 'passwd', // root is default
+		'server' => 'localhost',  // localhost default
+		'port' => 5432, // 3306 is default
+		'type' => 'pgsql', // mysql is default
+		'table_list' => array( // Tables's whitelist (Allow only the tables in this list, if empty allow all)
+			'users'
 		),
-		'column_list' => array(
-			/** @example
-				'users' => array(
-					'username',
-					'name',
-					'surname'
-				)
-			 **/
-		),  // Whitelist  (Allow only the columns in this list, if empty allow all)
-		'column_blacklist' => array(
-			/** @example
-				'users' => array(
-					'password',
-				)
-			 **/
+		'table_blacklist' => array( // Tables's blacklist
+            'passwords'
+		),
+		'column_list' => array( // Columns's whitelist (Allow only the columns in this list, if empty allow all)
+            'users' => array(
+                'username',
+                'name',
+                'surname'
+            )
+		),
+		'column_blacklist' => array( // Columns's blacklist
+            'users' => array(
+                'password',
+            )
 		),
 	),
 )));
 ```
-__Note:__ All fields (other than the dataset name) are optional and will default to the above.
+___Note:__ All fields of \_\_DATASETS\_\_ (except the name of database) are optional and will default to the above._
+
+__Default dataset values:__
+```php
+array(
+    'name' => null,
+    'username' => 'root',
+    'password' => 'root',
+    'server' => 'localhost',
+    'port' => 3306,
+    'type' => 'mysql',
+    'table_blacklist' => array(),
+    'table_list' => array(),
+    'column_blacklist' => array(),
+    'column_list' => array(),
+    'ttl' => 3600,
+);
+```
 
 ## API Structure
 
