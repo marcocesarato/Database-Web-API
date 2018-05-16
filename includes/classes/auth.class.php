@@ -11,15 +11,12 @@ class Auth
 {
 
 	public static $instance;
+	public static $settings = null;
 	public $user_id = null;
-	public $role_id = null;
 	public $is_admin = false;
 	private $api;
 	private $db;
-	private $bypass_access = false;
-	private $sqlite_db;
-	private $table_free_access = array();
-	private $table_readonly_access = array();
+	private $user = array();
 
 	/**
 	 * Singleton constructor
@@ -32,8 +29,14 @@ class Auth
 		} catch (PDOException $e) {
 			Request::error($e->getMessage(), 500);
 		}
+
 		//create the database
 		$this->createTokensDatabase();
+
+        if(defined('__AUTH__')) {
+            self::$settings = unserialize(__AUTH__);
+        }
+
 	}
 
 	/**
@@ -70,15 +73,13 @@ class Auth
 		if (isset($query['token']) && $this->validateToken($query['token'])) {
 			return true;
 		} elseif (isset($query['check_token']) && $this->validateToken($query['check_token'])) {
-
 			$this->api = API::getInstance();
 			$results = array(
 				"user" => (object)array(
 					"id" => $this->user_id,
-					"role_id" => $this->role_id,
 					"is_admin" => $this->is_admin
 				),
-				"response" => (object)array('status' => 200, 'message' => 'OK')
+				"response" => (object) array('status' => 200, 'message' => 'OK')
 			);
 
 			$renderer = 'render_' . $query['format'];
@@ -86,51 +87,62 @@ class Auth
 
 		} elseif (isset($query['user_id']) && isset($query['password'])) {
 
-			return true; // <==== REMOVE
+			if(empty(self::$settings))
+			    return true;
 
-			// TODO based your dataset
+            $bind_values = array();
 
-			/* @example
+			$users_table = self::$settings['users']['table'];
+            $users_columns = self::$settings['users']['columns'];
 
-			$user = strtolower($query['user_id']);
+            $user = strtolower($query['user_id']);
 
-			$this->api = API::get_instance();
-			$this->db = &$this->api->connect('database');
+            $where = array();
+            foreach(self::$settings['users']['search'] as $col){
+                $bind_values[$col] = $user;
+                $where[$col] = "$col = :$col";
+            }
+            $where_sql = implode(" OR ", $where);
 
-			$sth = $this->db->prepare("SELECT id, first_name, last_name, role_id, is_admin, user_hash FROM users WHERE (id = :user_id OR user_name = :username OR email1 = :email)");
-			$sth->bindParam(':user_id', $user);
-			$sth->bindParam(':username', $user);
-			$sth->bindParam(':email', $user);
+            if(!empty(self::$settings['users']['check'])) {
+                $where = array();
+                foreach (self::$settings['users']['check'] as $col => $value) {
+                    $bind_values[$col] = $value;
+                    $where[$col] = "$col = :$col";
+                }
+                $where_sql = (!empty($where_sql) ? " ($where_sql) AND " : "") . implode(" OR ", $where);
+            }
+
+			$this->api = API::getInstance();
+			$this->db = &$this->api->connect(self::$settings['database']);
+
+			$sth = $this->db->prepare("SELECT * FROM $users_table WHERE $where_sql");
+			foreach($bind_values as $col => $value){
+                $sth->bindParam(":$col", $value);
+            }
 
 			$sth->execute();
 			$user_row = $sth->fetch();
 
 			if ($user_row) {
 				$password = strtolower($query['password']);
-			        if ($user_row['user_hash'] == $password) {
-			            $token = $this->generateToken($user_row['id']);
-						$this->user_id = $user_row['id'];
-						$this->role_id = $user_row['role_id'];
-			            $this->is_admin = $user_row['is_admin'];
-			            / Render
-						$results = array((object)array(
-						    "token" => $token,
-			                "id" => $user_row['id'],
-			                "first_name" => $user_row['first_name'],
-			                "last_name" => $user_row['last_name'],
-							"role_id" => $user_row['role_id'],
-			                "is_admin" => (($user_row['is_admin'] == 'on') ? true : false),
-						));
-			            $renderer = 'render_' . $query['format'];
-						die($this->api->$renderer($results, $query));
-					}
-			    }
+                if ($user_row[$users_columns['password']] == $password) {
+                    $token = $this->generateToken($user_row['id']);
+                    $this->user_id = $user_row[$users_columns['id']];
+                    $this->is_admin = !empty($users_columns['admin']) ? $user_row[key(reset($users_columns['admin']))] : false;
+                    // Render
+                    $results = array((object) array(
+                        "token" => $token,
+                    ));
+                    $renderer = 'render_' . $query['format'];
+                    die($this->api->$renderer($results, $query));
+                }
+            }
 			Request::error("Invalid authentication!", 401);
-
-			 */
 		}
 
-		return true; // <==== REMOVE
+        if(empty(self::$settings))
+            return true;
 
 		Request::error("Forbidden!", 403);
 		return false;
@@ -143,10 +155,11 @@ class Auth
 	 */
 	private function validateToken($token) {
 
-		return true; // <==== REMOVE
+        if(empty(self::$settings))
+            return true;
 
-		// TODO based your dataset
-		/* @example
+        $users_table = self::$settings['users']['table'];
+        $users_columns = self::$settings['users']['columns'];
 
 		try {
 			$sth = $this->sqlite_db->prepare("SELECT * FROM tokens WHERE token = :token");
@@ -157,17 +170,17 @@ class Auth
 			if ($token_row) {
 
 				$this->api = API::get_instance();
-				$this->db = &$this->api->connect('database');
-				$sth = $this->db->prepare("SELECT id, role_id, is_admin  FROM users WHERE id = :user_id");
+				$this->db = &$this->api->connect(self::$settings['database']);
+				$sth = $this->db->prepare("SELECT * FROM $users_table WHERE ".$users_columns['id']." = :user_id");
 				$sth->bindParam(':user_id', $token_row['user_id']);
 
 				$sth->execute();
 		        $user_row = $sth->fetch();
 
 				if ($user_row) {
-				$this->user_id = $user_row['id'];
-					$this->role_id = $user_row['role_id'];
-					$this->is_admin = (($user_row['is_admin'] == 'on') ? true : false);
+					$this->user = $user_row;
+				    $this->user_id = $user_row[$users_columns['id']];
+					$this->is_admin = (($user_row['is_admin'] == reset($users_columns['admin'])) ? true : false);
 					return true;
 				}
 
@@ -176,7 +189,6 @@ class Auth
 		} catch (PDOException $e) {
 			Request::error($e->getMessage(), 500);
 		}
-		*/
 	}
 
 	/**
@@ -185,23 +197,18 @@ class Auth
 	 * @param $permission
 	 * @return string
 	 */
-	public function sql_restriction($table, $permission /*(READ|MODIFY|DELETE)*/) {
+	public function sql_restriction($table, $permission) {
 
 		// All allowed
-		if ($this->is_admin == true || $this->role_id == '')
+		if ($this->is_admin == true)
 			return "'1' = '1'";
 
-		/* REMOVE COMMENTS
-		// All denied (default)
-		$sql = "'1' = '0'";
-		$value = 'None';
-		*/
+		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['sql_restriction']){
+			$callback = call_user_func(self::$settings['callbacks']['sql_restriction'], $table, $permission);
+			if(!empty($callback)) return $callback;
+		}
 
-		// TODO based your need and dataset
-
-		$sql = "'1' = '1'";
-
-		return $sql;
+		return "'1' = '1'";
 	}
 
 	/**
@@ -211,17 +218,16 @@ class Auth
 	 */
 	public function can_read($table) {
 
-		return true; // <==== REMOVE
-
-		if (in_array($table, $this->table_free_access)) {
-			$this->bypass_access = true;
-			return true;
-		}
+        if(empty(self::$settings))
+            return true;
 
 		if ($this->is_admin == true)
 			return true;
 
-		// TODO based your need and dataset
+		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['can_read']){
+			$callback = call_user_func(self::$settings['callbacks']['can_read'], $table);
+			if(!empty($callback)) return $callback;
+		}
 
 		return false;
 	}
@@ -233,15 +239,16 @@ class Auth
 	 */
 	public function can_write($table) {
 
-		return false; // <==== REMOVE
-
-		if (in_array($table, $this->table_readonly_access))
+		if(empty(self::$settings))
 			return false;
 
 		if ($this->is_admin == true)
 			return true;
 
-		// TODO based your need and dataset
+		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['can_write']){
+			$callback = call_user_func(self::$settings['callbacks']['can_write'], $table);
+			if(!empty($callback)) return $callback;
+		}
 
 		return false;
 	}
@@ -251,17 +258,18 @@ class Auth
 	 * @param $table
 	 * @return bool
 	 */
-	public function can_modify($table) {
+	public function can_edit($table) {
 
-		return false; // <==== REMOVE
-
-		if (in_array($table, $this->table_readonly_access))
+		if(empty(self::$settings))
 			return false;
 
 		if ($this->is_admin == true)
 			return true;
 
-		// TODO based your need and dataset
+		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['can_edit']){
+			$callback = call_user_func(self::$settings['callbacks']['can_edit'], $table);
+			if(!empty($callback)) return $callback;
+		}
 
 		return false;
 	}
@@ -273,15 +281,16 @@ class Auth
 	 */
 	public function can_delete($table) {
 
-		return false; // <==== REMOVE
-
-		if (in_array($table, $this->table_readonly_access))
+		if(empty(self::$settings))
 			return false;
 
 		if ($this->is_admin == true)
 			return true;
 
-		// TODO based your need and dataset
+		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['can_delete']){
+			$callback = call_user_func(self::$settings['callbacks']['can_delete'], $table);
+			if(!empty($callback)) return $callback;
+		}
 
 		return false;
 	}
@@ -304,5 +313,9 @@ class Auth
 		} catch (PDOException $e) {
 			Request::error($e->getMessage(), 500);
 		}
+	}
+
+	public function getUser(){
+		return $this->user;
 	}
 }

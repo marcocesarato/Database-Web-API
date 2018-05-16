@@ -32,165 +32,179 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 
 ## Installation
 * Set the configuration on config.php (Follow the below example to register a new dataset in config.php
-* If you want config an auth system edit `includes/classes/auth.class.php` based your needs and your dataset (the default configuration is read only but if you configure as the example below the `auth.class.php` you could insert/update and delete from your database)
+* If you want config an auth system you must compile on the config the constant \_\_AUTH\_\_ as on the example below
 * If you want enable the auth system rename `.htaccess_auth` to `.htaccess`
 * Document the API
 
 ## Configuration
 Edit `config.php` to include a single instance of the following for each dataset (including as many instances as you have datasets):
 
+__EXAMPLE with explanation__
 ```php
 define("__API_NAME__", "Database Web API");
 define("__BASE_DIR__", "");
+
+define("__AUTH__",  serialize(array( // Set null for disable authentication
+    'database' => 'dataset',
+    'users' => array(
+        'table' => 'users', // Table where users are stored
+        'columns' => array(
+            'id' => 'user_id',
+            'password' => 'password',
+            'dmin' => array('is_admin' => 'on') // Admin bypass all black/whitelists. Set NULL for disable
+        ),
+        'search' => array('user_id', 'email', 'username'), // Search user by these fields
+        'check' => array('active' => 1) // Check if the user is active the have the column 'active' with value '1'
+    ),
+    'callbacks' => array( // Functions stored in includes/callbacks.php that you can customize. Set NULL for disable (readonly)
+        'sql_restriction' => 'callback_sql_restriction',
+        'can_read' => 'callback_can_read',
+        'can_write' => 'callback_can_write',
+        'can_edit' => 'callback_can_edit',
+        'can_delete' => 'callback_can_delete',
+    ),
+)));
+
 define("__DATASETS__", serialize(array(
 	'dataset' => array(
-		'name' => 'database_name',
-		'username' => 'username',
-		'password' => 'password',
-		'server' => 'localhost',
-		'port' => 3306,
-		'type' => 'mysql',
-		'table_list' => array(
-			/** @example
-				'users'
-			 **/
-		), // Whitelist (Allow only the tables in this list, if empty allow all)
-		'table_blacklist' => array(
-			/** @example
-				'passwords'
-			 **/
+		'name' => 'database_name', // Database name
+		'username' => 'user', // root is default
+		'password' => 'passwd', // root is default
+		'server' => 'localhost',  // localhost default
+		'port' => 5432, // 3306 is default
+		'type' => 'pgsql', // mysql is default
+		'table_list' => array( // Tables's whitelist (Allow only the tables in this list, if empty allow all)
+			'users'
 		),
-		'column_list' => array(
-			/** @example
-				'users' => array(
-					'username',
-					'name',
-					'surname'
-				)
-			 **/
-		),  // Whitelist  (Allow only the columns in this list, if empty allow all)
-		'column_blacklist' => array(
-			/** @example
-				'users' => array(
-					'password',
-				)
-			 **/
+		'table_blacklist' => array( // Tables's blacklist
+            'passwords'
+		),
+		'column_list' => array( // Columns's whitelist (Allow only the columns in this list, if empty allow all)
+            'users' => array(
+                'username',
+                'name',
+                'surname'
+            )
+		),
+		'column_blacklist' => array( // Columns's blacklist
+            'users' => array(
+                'password',
+            )
 		),
 	),
 )));
 ```
-__Note:__ All fields (other than the dataset name) are optional and will default to the above.
+___Note:__ All fields of \_\_DATASETS\_\_ (except the name of database) are optional and will default to the above._
 
-### How configure the authentication system
-
-At the moment is a little complicated the configuration of the authentication system. 
-
-__Just follow the instructions:__
-
-We need to edit the file `includes/classes/auth.class.php`.
-
-The authentication system at the moment work with a sqlite database on your root folder (but if you want you can change it)  where are stored all tokens user info (user_id, is_admin and role_id) and client info (user_agent, last_access and date_created for manage the active sessions).
-
-__Note:__ You have to remove the following line foreach methods listed to enable the auth
-
+__Default dataset values:__
 ```php
-return true; // <==== REMOVE
+array(
+    'name' => null,
+    'username' => 'root',
+    'password' => 'root',
+    'server' => 'localhost',
+    'port' => 3306,
+    'type' => 'mysql',
+    'table_blacklist' => array(),
+    'table_list' => array(),
+    'column_blacklist' => array(),
+    'column_list' => array(),
+    'ttl' => 3600,
+);
 ```
 
-#### Instructions
+### Callbacks
 
-1. Edit method `public validate($query)`
+Callbacks availables (Prepared versions on `includes/callbacks.php`):
 
-   This function check if authentication is valid. Here an example:
+```php
+function callback_sql_restriction($table, $permission)
+function callback_can_read($table)
+function callback_can_write($table){
+function callback_can_edit($table)
+function callback_can_delete($table)
+```
 
-   ```Php
-   $user = strtolower($query['user_id']);
-   
-   $this->api = API::getInstance();
-   $this->db = &$this->api->connect('database');
-   
-   $sth = $this->db->prepare("SELECT id, first_name, last_name, role_id, is_admin, user_hash FROM users WHERE (id = :user_id OR user_name = :username OR email1 = :email)");
-   $sth->bindParam(':user_id', $user);
-   $sth->bindParam(':username', $user);
-   $sth->bindParam(':email', $user);
-   
-   $sth->execute();
-   $user_row = $sth->fetch();
-   
-   if ($user_row) {
-       $password = strtolower($query['password']);
-       if ($user_row['user_hash'] == $password) {
-		$token = $this->generateToken($user_row['id']);
-		$this->user_id = $user_row['id'];
-		$this->role_id = $user_row['role_id'];
-		$this->is_admin = $user_row['is_admin'];
-		$results = array((object)array(
-		   "token" => $token,
-		   "id" => $user_row['id'],
-		   "first_name" => $user_row['first_name'],
-		   "last_name" => $user_row['last_name'],
-		   "role_id" => $user_row['role_id'],
-		   "is_admin" => (($user_row['is_admin'] == 'on') ? true : false),
-		));
-		$renderer = 'render_' . $query['format'];
-		die($this->api->$renderer($results, $query));
-       }
-   }
-   Request::error("Invalid authentication!", 401);
-   ```
+You can use this code fo have a database instance and the current user authenticated row:
 
-   
+```php
+$AUTH = Auth::getInstance();
+$user = $AUTH->getUser(); // User row
+$API = API::getInstance();
+$db = $API->connect(); // You can specify dataset. Return PDO Object
+```
 
-2. Edit method `private validateToken($token)`
+__Note:__ All callbacks if return NULL will use default values with readonly permissions.
 
-   This method validate the token. Here an example
+#### List
 
-   ```php
-   try {
-       $sth = $this->sqlite_db->prepare("SELECT * FROM tokens WHERE token = :token");
-       $sth->bindParam(':token', $token);
-       $sth->execute();
-       $token_row = $sth->fetch();
-   
-       if ($token_row) {
-   
-           $this->api = API::getInstance();
-           $this->db = &$this->api->connect('database');
-           $sth = $this->db->prepare("SELECT id, role_id, is_admin  FROM users WHERE id = :user_id");
-           $sth->bindParam(':user_id', $token_row['user_id']);
-   
-           $sth->execute();
-           $user_row = $sth->fetch();
-   
-           if ($user_row) {
-               $this->user_id = $user_row['id'];
-               $this->role_id = $user_row['role_id'];
-               $this->is_admin = (($user_row['is_admin'] == 'on') ? true : false);
-               return true;
-           }
-   
-       }
-   	return false;
-   } catch (PDOException $e) {
-   	Request::error($e->getMessage(), 500);
-   }
-   ```
+* `sql_restriction`
 
-   
+  **Description:** Return a string to append in where condition
 
-3. Edit `public sql_restriction($table, $permission = (string) [READ|MODIFY|DELETE] )`
+  **Parameters:** \$table, \$permission
 
-   This method add at the end of SELECT, UPDATE and DELETE queries some restriction based on permissions (you can do a subquery with the user/role id)
+  **Options of *$permission*:**
 
-4. At the end you have to edit `public can_[read/write/modify/delete]($table)`
+  ```
+  case 'READ':
+  case 'WRITE':
+  case 'EDIT':
+  case 'DELETE':
+  ```
+  **Return**
+  ```
+   // All denied
+  $sql = "'1' = '0'";
+  // All allowed
+  $sql = "'1' = '1'";
+  ```
 
-   These methods return if the user can read/insert/update and delete a table
+* `can_read`
 
-   Default is read only
+  **Description:** Return if can GET/SELECT
 
-5. Rename `.htaccess_auth` to `.htaccess`
+  **Parameters:** \$table
 
+  **Return:** Boolean
 
+* `can_write`
+
+  **Description:** Return if can POST/INSERT
+
+  **Parameters:** \$table
+
+  **Return:** Boolean
+
+* `can_edit`
+
+  **Description:** Return if can PUT/UPDATE
+
+  **Parameters:** \$table
+
+  **Return:** Boolean
+
+* `can_delete`
+
+* **Description:** Return if can DELETE
+
+  **Parameters:** \$table
+
+  **Return:** Boolean
+
+#### Configuration
+
+For implement the callbacks you need to add  the callbacks array to the \_\_AUTH\_\_ constant:
+
+```php
+'callbacks' => array( // Set NULL for disable (readonly)
+     'sql_restriction' => 'callback_sql_restriction',
+     'can_read' => 'callback_can_read',
+     'can_write' => 'callback_can_write',
+     'can_edit' => 'callback_can_edit',
+     'can_delete' => 'callback_can_delete',
+ ),
+```
 
 ## API Structure
 

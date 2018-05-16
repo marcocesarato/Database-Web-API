@@ -41,7 +41,7 @@ class API
 	 * @param string $name the dataset name
 	 * @param array $args the dataset properties
 	 */
-	public function register_db($name = null, $args = array()) {
+	public function register($name = null, $args = array()) {
 
 		$defaults = array(
 			'name' => null,
@@ -228,7 +228,7 @@ class API
 					return $this->post_query($query, $db);
 				break;
 			case 'PUT':
-				if ($this->auth->can_modify($query['table']))
+				if ($this->auth->can_edit($query['table']))
 					return $this->put_query($query, $db);
 				break;
 			case 'DELETE':
@@ -451,7 +451,11 @@ class API
 	 * @return object the PDO object
 	 * @todo support port #s and test on each database
 	 */
-	public function &connect($db) {
+	public function &connect($db = null) {
+
+		if ($db == null && !is_null($this->db)) {
+			return $this->db;
+		}
 
 		// check for existing connection
 		if (isset($this->connections[$db])) {
@@ -934,7 +938,7 @@ class API
 				$sql .= ' SET ' . implode(', ', $values_index);
 
 				// build WHERE query
-				$restriction = $this->auth->sql_restriction($query['table'], 'MODIFY');
+				$restriction = $this->auth->sql_restriction($query['table'], 'EDIT');
 				if (is_array($where)) {
 					$where_parse = $this->parse_where($table, $where, $sql);
 					$sql = $where_parse["sql"] . ' AND ' . $restriction;
