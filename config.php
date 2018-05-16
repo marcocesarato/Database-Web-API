@@ -19,7 +19,7 @@ define("__AUTH__",  serialize(array(
             'admin' => array('is_admin' => 1) // Admin bypass all black/whitelists and permissions. Set NULL for disable
         ),
         'search' => array('user_id', 'email', 'username'), // Search user by these fields
-        'check' => array('active' => 1) // Check if the user is active the have the column 'active' with value '1'. Set NULL for disable
+        'check' => array('active' => 1) // Some validation checks. In this case if the column 'active' with value '1'. Set NULL for disable
     ),
 	'callbacks' => array( // Set NULL for disable (readonly)
 		'sql_restriction' => 'callback_sql_restriction',
