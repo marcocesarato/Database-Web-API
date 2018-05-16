@@ -76,7 +76,7 @@ class APIClient
 	 * @param $value
 	 * @return mixed
 	 */
-	public function searchElement($array, $key, $value){
+	public function searchElement($key, $value, $array){
 		if(is_null($value)) return null;
 		foreach($array as $elem) {
 			if(is_object($elem)) {
