@@ -98,9 +98,9 @@ class APIClient
 	
 	/**
 	 * Filter object in array
-	 * @param $array
 	 * @param $key
 	 * @param $value
+	 * @param $array
 	 * @param $limit
 	 * @return mixed
 	 */
@@ -119,14 +119,14 @@ class APIClient
 				}
 			}
 		}
-		$this->_debug("NeterpriseClient filter: Found ".count($result)." elements! [".$key." = ".$value."]");
+		$this->_debug("NeterpriseClient filter: Trovati ".count($result)." elementi! [".$key." = ".$value."]");
 		return $result;
 	}
 
 	/**
 	 * Filter object in array
 	 * @param $values
-	 * @param $value
+	 * @param $array
 	 * @param $limit
 	 * @return mixed
 	 */
@@ -149,7 +149,7 @@ class APIClient
 			}
 			if($found) $result[] = $elem;
 		}
-		$this->_debug("NeterpriseClient filter: Found ".count($result)." elements! [".http_build_query($value)."]");
+		$this->_debug("NeterpriseClient filter: Trovati ".count($result)." elementi! [".$key." = ".$value."]");
 		return $result;
 	}
 
