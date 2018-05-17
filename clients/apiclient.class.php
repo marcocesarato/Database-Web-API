@@ -101,12 +101,14 @@ class APIClient
 	 * @param $array
 	 * @param $key
 	 * @param $value
+	 * @param $limit
 	 * @return mixed
 	 */
-	public function filter($key, $value, $array){
+	public function filterBy($key, $value, $array, $limit = null){
 		if(is_null($value)) return null;
 		$result = array();
 		foreach($array as $elem) {
+			if(!empty($limit) && count($result) == $limit) break;
 			if(is_object($elem)) {
 				if (!empty($elem->$key) && $value == $elem->$key) {
 					$result[] = $elem;
@@ -118,6 +120,36 @@ class APIClient
 			}
 		}
 		$this->_debug("NeterpriseClient filter: Found ".count($result)." elements! [".$key." = ".$value."]");
+		return $result;
+	}
+
+	/**
+	 * Filter object in array
+	 * @param $values
+	 * @param $value
+	 * @param $limit
+	 * @return mixed
+	 */
+	public function filter($values, $array, $limit = null){
+		if(is_null($values)) return null;
+		$result = array();
+		foreach($array as $elem) {
+			if(!empty($limit) && count($result) == $limit) break;
+			$found = true;
+			foreach ($values as $key => $value) {
+				if (is_object($elem)) {
+					if (!empty($elem->$key) && $value != $elem->$key) {
+						$found = false;
+					}
+				} else if (is_array($elem)) {
+					if (!empty($elem[$key]) && $value != $elem[$key]) {
+						$found = false;
+					}
+				}
+			}
+			if($found) $result[] = $elem;
+		}
+		$this->_debug("NeterpriseClient filter: Found ".count($result)." elements! [".http_build_query($value)."]");
 		return $result;
 	}
 
