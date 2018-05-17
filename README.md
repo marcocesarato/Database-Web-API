@@ -499,7 +499,8 @@ Host: localhost
 | getInstance   | -                                              | Void   | Returns static reference to the class instance |
 | fetch         | \$table, \$format = 'json', \$params = array() | Object | Fetch data                                     |
 | searchElement | \$key, \$value, \$array                        | Object | Search object in array                         |
-| filter        | \$key, \$value, \$array                        | Array  | Filter results array                           |
+| filterBy      | \$key, \$value, \$array, \$limit = null        | Array  | Filter results array by single key             |
+| filter        | \$value, \$array, $limit = null                | Array  | Filter results array by multiple values        |
 
 #### Usage
 
