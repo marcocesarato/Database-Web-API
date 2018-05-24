@@ -463,12 +463,10 @@ class API
 	 */
 	public function &connect($db = null) {
 
-		if ($db == null && !is_null($this->db)) {
-			return $this->db;
-		}
-
 		// check for existing connection
-		if (isset($this->connections[$db])) {
+		if (empty($db) && !empty($this->db->name) && isset($this->connections[$this->db->name])) {
+			return $this->connections[$db];
+		} else if (isset($this->connections[$db])) {
 			return $this->connections[$db];
 		}
 
@@ -833,6 +831,8 @@ class API
 	private function post_query($query, $db = null) {
 
 
+		$dbh = &$this->connect($db);
+
 		// check values
 		if (!empty($query['insert']) && !is_array($query['insert']) && count($query['insert']) <= 0) {
 			Request::error('Invalid values', 400);
@@ -870,10 +870,10 @@ class API
 			if (self::is_array_multi($columns)) {
 				$all_columns = $columns;
 				foreach ($all_columns as $columns) {
-					$this->execute_insert($table, $columns, $db);
+					$this->execute_insert($table,$columns,$dbh);
 				}
 			} else {
-				$this->execute_insert($table, $columns, $db);
+				$this->execute_insert($table,$columns,$dbh);
 			}
 		}
 
@@ -886,9 +886,8 @@ class API
 	 * @param $columns
 	 * @param null $db
 	 */
-	private function execute_insert($table, $columns, $db = null) {
+	private function execute_insert($table, $columns, $dbh) {
 		try {
-			$dbh = &$this->connect($db);
 			$sql = 'INSERT INTO ' . $table . ' (' . implode(', ', array_keys($columns)) . ') VALUES (:' . implode(', :', array_keys($columns)) . ')';
 			$sth = $dbh->prepare($sql);
 
