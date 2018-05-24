@@ -280,13 +280,13 @@ class API
 			if (isset($query['where']) && is_array($query['where'])) {
 				foreach ($query['where'] as $column => $value) {
 					$column_table = $query['table'];
-					$_split = explode('.', $column,2);
-					if(count($_split) > 1){
+					$_split = explode('.', $column, 2);
+					if (count($_split) > 1) {
 						$column = $_split[1];
 						$column_table = $_split[0];
 					}
 					if (!$this->verify_column($column, $column_table)) {
-						Request::error('Invalid WHERE column ' . $column_table . '.'. $column, 404);
+						Request::error('Invalid WHERE column ' . $column_table . '.' . $column, 404);
 					}
 				}
 			}
@@ -355,7 +355,7 @@ class API
 				foreach ($order_by as $column => $column_direction) {
 					$order_table = $query['table'];
 					$direction = '';
-					if(!is_int($column)) {
+					if (!is_int($column)) {
 						$column = trim($column);
 						$_split = array_map('trim', explode('.', $column, 2));
 						if (count($_split) > 1 && $this->verify_column(@$_split[1], @$_split[0])) {
@@ -678,16 +678,16 @@ class API
 		foreach ($where as $column => $values_column) {
 
 			$table = $main_table;
-			$_split = explode('.', $column,2);
-			if(count($_split) > 1){
+			$_split = explode('.', $column, 2);
+			if (count($_split) > 1) {
 				$table = $_split[0];
 				$column = $_split[1];
 			}
 
 			// Check equal case
 			if (!is_array($values_column)) {
-				$_value_split = explode('.', $values_column,2);
-				if(count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])){
+				$_value_split = explode('.', $values_column, 2);
+				if (count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])) {
 					$index_value = $_value_split[0] . "." . $_value_split[1];
 				} else {
 					$index_key = self::value_index($prefix, $column, $where_values);
@@ -705,8 +705,8 @@ class API
 					if (array_key_exists($condition, $cases)) {
 						$bind = $cases[$condition];
 						if (!is_array($value_condition)) {
-							$_value_split = explode('.', $value_condition,2);
-							if(count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])){
+							$_value_split = explode('.', $value_condition, 2);
+							if (count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])) {
 								$index_value = $_value_split[0] . "." . $_value_split[1];
 							} else {
 								$index_key = self::value_index($prefix, $column, $where_values);
@@ -731,8 +731,8 @@ class API
 							$value_condition = array($value_condition);
 
 						foreach ($value_condition as $value) {
-							$_value_split = explode('.', $value,2);
-							if(count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])){
+							$_value_split = explode('.', $value, 2);
+							if (count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])) {
 								$index_value = $_value_split[0] . "." . $_value_split[1];
 							} else {
 								$index_key = self::value_index($prefix, $column, $where_values);
@@ -747,8 +747,8 @@ class API
 
 						// Check equal array cases
 					} elseif (!is_array($value_condition) && is_int($condition) || $condition === '=') {
-						$_value_split = explode('.', $value_condition,2);
-						if(count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])){
+						$_value_split = explode('.', $value_condition, 2);
+						if (count($_value_split) > 1 && $this->verify_column(@$_value_split[1], @$_value_split[0])) {
 							$index_value = $_value_split[0] . "." . $_value_split[1];
 						} else {
 							$index_key = self::value_index($prefix, $column, $where_values);
@@ -832,46 +832,89 @@ class API
 	 */
 	private function post_query($query, $db = null) {
 
-		try {
 
-			$dbh = &$this->connect($db);
+		// check values
+		if (!empty($query['insert']) && !is_array($query['insert']) && count($query['insert']) <= 0) {
+			Request::error('Invalid values', 400);
+		}
 
-			// check values
-			if (!isset($query['insert']) && !is_array($query['insert']) && count($query['insert']) <= 0) {
-				Request::error('Invalid values', 400);
+		if(!empty($query['table']) && !self::is_array_multi($query['insert'])){
+			$query['insert'][$query['table']] = $query['insert'];
+		}
+
+		foreach ($query['insert'] as $table => $values) {
+			$columns = array();
+			if (!$this->verify_table($table)) {
+				Request::error('Invalid Table', 404);
 			}
 
-			foreach ($query['insert'] as $table => $values) {
-				$columns = array();
-				if (!$this->verify_table($table)) {
-					Request::error('Invalid Table', 404);
-				}
-				// check columns name
-				foreach ($values as $key => $value) {
+			$i = 0;
+			// check columns name
+			foreach ($values as $key => $value) {
+				if (is_array($value) && !$this->verify_column($key, $table)) {
+					foreach ($values as $column => $column_value) {
+						if (!$this->verify_column($column, $table)) {
+							Request::error('Invalid column. The column ' . $table . '.' . $column . ' not exists!', 404);
+						}
+						$columns[$i][$column] = $column_value;
+					}
+					$i++;
+				} else {
 					if (!$this->verify_column($key, $table)) {
 						Request::error('Invalid column. The column ' . $table . '.' . $key . ' not exists!', 404);
 					}
-					$columns[] = $key;
+					$columns[$key] = $value;
 				}
-
-				$sql = 'INSERT INTO ' . $table . ' (' . implode(', ', $columns) . ') VALUES (:' . implode(', :', $columns) . ')';
-
-				$sth = $dbh->prepare($sql);
-
-				// bind POST values
-				foreach ($values as $key => $value) {
-					if (is_array($value)) $value = serialize($value);
-					$key = ':' . $key;
-					$sth->bindValue($key, $value);
-				}
-
-				$sth->execute();
 			}
-		} catch (PDOException $e) {
-			Request::error($e);
+
+			if (self::is_array_multi($columns)) {
+				$all_columns = $columns;
+				foreach ($all_columns as $columns) {
+					$this->execute_insert($table, $columns, $db);
+				}
+			} else {
+				$this->execute_insert($table, $columns, $db);
+			}
 		}
 
 		return self::reponse_success();
+	}
+
+	/**
+	 * Execute an insert
+	 * @param $table
+	 * @param $columns
+	 * @param null $db
+	 */
+	private function execute_insert($table, $columns, $db = null) {
+		try {
+			$dbh = &$this->connect($db);
+			$sql = 'INSERT INTO ' . $table . ' (' . implode(', ', array_keys($columns)) . ') VALUES (:' . implode(', :', array_keys($columns)) . ')';
+			$sth = $dbh->prepare($sql);
+
+			// bind POST values
+			foreach ($columns as $column => $value) {
+				if (is_array($value)) $value = serialize($value);
+				$column = ':' . $column;
+				$sth->bindValue($column, $value);
+			}
+
+			$sth->execute();
+		} catch (PDOException $e) {
+			Request::error($e);
+		}
+	}
+
+	/**
+	 * Detect if is a multidimensional array
+	 * @param $a
+	 * @return bool
+	 */
+	private static function is_array_multi($a) {
+		foreach ($a as $v) {
+			if (is_array($v)) return true;
+		}
+		return false;
 	}
 
 	/**
@@ -899,13 +942,13 @@ class API
 				if (isset($query['where']) && is_array($query['where'])) {
 					foreach ($query['where'] as $column => $value) {
 						$column_table = $query['table'];
-						$_split = explode('.', $column,2);
-						if(count($_split) > 1){
+						$_split = explode('.', $column, 2);
+						if (count($_split) > 1) {
 							$column = $_split[1];
 							$column_table = $_split[0];
 						}
 						if (!$this->verify_column($column, $column_table)) {
-							Request::error('Invalid WHERE column ' . $column_table . '.'. $column, 404);
+							Request::error('Invalid WHERE column ' . $column_table . '.' . $column, 404);
 						}
 					}
 					$query['update'][$query['table']]['where'] = $query['where'];

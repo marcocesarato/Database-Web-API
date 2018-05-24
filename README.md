@@ -410,9 +410,12 @@ Insert data
 **Multiple insert:**
 
 - Select dataset on URL: `/[database].[format]`
-- Insert parameter: `insert[<table>][<column>] = <value>`
+- Insert parameter: `insert[<table>][] = <value>`
 
-**Note**: At the moment you can add only one row for table
+**Multiple insert on the same table:**
+
+- Select dataset on URL: `/[database].[format]`
+- Insert parameter: `insert[<table>][<$i>][<column>] = <value>` 
 
 **Examples of POST requests:**
 
@@ -429,7 +432,16 @@ insert[username]=Marco&insert[email]=cesarato.developer@gmail.com&insert[passwor
 ```http
 POST /dataset.json HTTP/1.1
 Host: localhost
-insert[users][username]=Marco&insert[users][email]=cesarato.developer@gmail.com&insert[users][password]=3vwjehvdfjhefejjvw&insert[users][is_active]=1
+insert[users][id]=1000&insert[users][username]=Marco&insert[users][email]=cesarato.developer@gmail.com&insert[users][password]=3vwjehvdfjhefejjvw&insert[users][is_active]=1&
+insert[admin][user_id]=1000
+```
+
+**Multiple insert on the same table:**
+
+```http
+POST /dataset.json HTTP/1.1
+Host: localhost
+insert[users][0][username]=Marco&insert[users][0][email]=cesarato.developer@gmail.com&insert[users][0][password]=3vwjehvdfjhefejjvw&insert[users][0][is_active]=1&insert[users][1][username]=Brad&insert[users][1][email]=brad@gmail.com&insert[users][1][password]=erwerwerffweeqewrf&insert[users][1][is_active]=1
 ```
 
 
