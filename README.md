@@ -1,4 +1,6 @@
 # PHP Database Web API
+![](cover.png)
+
 Author: **Marco Cesarato**
 
 ## Description
