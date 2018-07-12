@@ -1,7 +1,11 @@
 # PHP Database Web API
 ![](cover.png)
 
-Author: **Marco Cesarato**
+**Version:** 0.3.62 beta
+
+**Github:** https://github.com/marcocesarato/Database-Web-API
+
+**Author:** Marco Cesarato
 
 ## Description
 Dynamically generate RESTful APIs from the contents of a database table. Provides JSON, XML, and HTML. Supports most popular databases.
