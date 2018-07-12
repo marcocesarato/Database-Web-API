@@ -515,7 +515,7 @@ class API
 	 */
 	public function verify_table($query_table, $db = null) {
 
-		if (!$this->auth->is_admin) {
+		if ($this->auth->authenticated && !$this->auth->is_admin) {
 			if (!empty($db->table_list) && is_array($db->table_list)) {
 				if (!in_array($query_table, $db->table_list)) return false;
 			}
@@ -627,7 +627,7 @@ class API
 	 */
 	public function verify_column($column, $table, $db = null) {
 
-		if (!$this->auth->is_admin) {
+		if ($this->auth->authenticated && !$this->auth->is_admin) {
 			if (!empty($db->column_list[$table]) && is_array($db->column_list[$table])) {
 				if (!in_array($column, $db->column_list[$table])) return false;
 			}

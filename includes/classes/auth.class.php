@@ -17,6 +17,7 @@ class Auth
 	public static $settings = null;
 	public $user_id = null;
 	public $is_admin = false;
+	public $authenticated = false;
 	private $api;
 	private $db;
 	private $user = array();
@@ -133,6 +134,7 @@ class Auth
                     $token = $this->generateToken($user_row['id']);
                     $this->user_id = $user_row[$users_columns['id']];
                     $this->is_admin = !empty($users_columns['admin']) ? $user_row[key(reset($users_columns['admin']))] : false;
+                    $this->authenticated = true;
                     // Render
                     $results = array((object) array(
                         "token" => $token,
