@@ -9,11 +9,33 @@
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
 
+/**
+ * Register database
+ * @param $name
+ * @param $args
+ */
 function register_db_api($name, $args) {
 	$API = API::getInstance();
 	$API->register($name, $args);
 }
 
+/**
+ * Detect if is a multidimensional array
+ * @param $a
+ * @return bool
+ */
+function is_multi_array($a) {
+    foreach ($a as $v) {
+        if (is_array($v)) return true;
+    }
+    return false;
+}
+
+/**
+ * Site base url
+ * @param $url
+ * @return string
+ */
 function base_url($url) {
 	$base_dir = '';
 	$hostname = $_SERVER['HTTP_HOST'];
@@ -29,6 +51,11 @@ function base_url($url) {
 	return $protocol . preg_replace('#/+#', '/', $hostname . "/" . $base_dir . $url);
 }
 
+/**
+ * Trim recursive
+ * @param $input
+ * @return array|string
+ */
 function trim_all($input) {
 	if (!is_array($input))
 		return trim($input);
@@ -37,6 +64,7 @@ function trim_all($input) {
 
 
 if (!function_exists('shortcode_atts')) {
+
 	/**
 	 * Combine user attributes with known attributes and fill in defaults when needed.
 	 *
@@ -66,4 +94,5 @@ if (!function_exists('shortcode_atts')) {
 		}
 		return $out;
 	}
+
 }

@@ -7,12 +7,10 @@
  * @copyright  Copyright (c) 2018
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link       https://github.com/marcocesarato/Database-Web-API
- * @version    0.3.63
+ * @version    0.4.64
  */
 
-include dirname(__FILE__) . '/includes/loader.php';
-$AUTH = Auth::getInstance();
-$API = API::getInstance();
+include dirname(__FILE__).'/includes/loader.php';
 $query = $API->parse_params();
 $results = $API->query();
 $renderer = 'render_' . $query['format'];

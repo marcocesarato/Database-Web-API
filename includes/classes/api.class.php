@@ -41,6 +41,8 @@ class API
 
 	/**
 	 * Returns a database connection
+	 * @param null $db
+	 * @return object
 	 */
 	public static function getDatabase($db = null) {
 		return self::$instance->connect($db);
@@ -62,6 +64,8 @@ class API
 			'type' => 'mysql',
 			'table_blacklist' => array(),
 			'table_list' => array(),
+			'table_free' => array(),
+			'table_readonly' => array(),
 			'column_blacklist' => array(),
 			'column_list' => array(),
 			'ttl' => $this->ttl,
@@ -77,6 +81,8 @@ class API
 	/**
 	 * Modifies a string to remove all non-ASCII characters and spaces.
 	 * http://snipplr.com/view.php?codeview&id=22741
+	 * @param $text
+	 * @return null|string|string[]
 	 */
 	private function slugify($text) {
 
@@ -109,6 +115,7 @@ class API
 
 	/**
 	 * Parses rewrite and actual params var and sanitizes
+	 * @param null $parts
 	 * @return array the params array parsed
 	 */
 	public function parse_params($parts = null) {
@@ -223,7 +230,8 @@ class API
 	/**
 	 * Detect method of the request and execute the main database query
 	 * @param array $query the database query ASSUMES SANITIZED
-	 * @return array an array of results
+	 * @param null $db
+	 * @return array|bool
 	 */
 	public function query($query = null, $db = null) {
 		if ($query == null)
@@ -440,6 +448,8 @@ class API
 
 	/**
 	 * Retrieve data from Alternative PHP Cache (APC).
+	 * @param $key
+	 * @return bool|mixed
 	 */
 	private function cache_get($key) {
 
@@ -511,7 +521,7 @@ class API
 	 * Verify a table exists, used to sanitize queries
 	 * @param string $query_table the table being queried
 	 * @param string $db the database to check
-	 * @param return bool true if table exists, otherwise false
+	 * @return bool true if table exists, otherwise false
 	 */
 	public function verify_table($query_table, $db = null) {
 
@@ -615,7 +625,7 @@ class API
 
 		$this->cache[$key] = $value;
 
-
+		return true;
 	}
 
 	/**
@@ -627,7 +637,7 @@ class API
 	 */
 	public function verify_column($column, $table, $db = null) {
 
-		if ($this->auth->authenticated && !$this->auth->is_admin) {
+		if (!$this->auth->is_admin) {
 			if (!empty($db->column_list[$table]) && is_array($db->column_list[$table])) {
 				if (!in_array($column, $db->column_list[$table])) return false;
 			}
@@ -851,8 +861,8 @@ class API
 			$i = 0;
 			// check columns name
 			foreach ($values as $key => $value) {
-				if (is_array($value) && !$this->verify_column($key, $table)) {
-					foreach ($values as $column => $column_value) {
+				if (is_array($value)) {
+					foreach ($value as $column => $column_value) {
 						if (!$this->verify_column($column, $table)) {
 							Request::error('Invalid column. The column ' . $table . '.' . $column . ' not exists!', 404);
 						}
@@ -974,6 +984,7 @@ class API
 				$where = $values['where'];
 				$values = $values['values'];
 				$values_index = array();
+				$column_values = array();
 
 				if (!$this->verify_table($table)) {
 					Request::error('Invalid Table', 404);
@@ -981,8 +992,10 @@ class API
 				// check columns name
 				foreach ($values as $key => $value) {
 					if (!$this->verify_column($key, $table)) {
+						continue;
 						Request::error('Invalid column. The column ' . $table . '.' . $key . ' not exists!', 404);
 					}
+					$column_values[$key] = $value; 
 					$values_index[] = $key . ' = :' . $key;
 				}
 
@@ -990,13 +1003,13 @@ class API
 				$sql .= ' SET ' . implode(', ', $values_index);
 
 				// build WHERE query
-				$restriction = $this->auth->sql_restriction($query['table'], 'EDIT');
+				$restriction = $this->auth->sql_restriction($query['table'], 'MODIFY');
 				if (is_array($where)) {
 					$where_parse = $this->parse_where($table, $where, $sql);
 					$sql = $where_parse["sql"] . ' AND ' . $restriction;
 					$where_values = $where_parse["values"];
 				} else if (!empty($restriction)) {
-					$sql .= ' WHERE ' . $restriction;
+					Request::error('Invalid condition', 404);
 				}
 
 
@@ -1004,7 +1017,7 @@ class API
 				$sql_compiled = $sql;
 
 				// bind PUT values
-				foreach ($values as $key => $value) {
+				foreach ($column_values as $key => $value) {
 					if (is_array($value)) $value = serialize($value);
 					$key = ':' . $key;
 					$sql_compiled = str_replace($key, "'" . $value . "'", $sql_compiled);
@@ -1063,7 +1076,7 @@ class API
 				$sql = $where["sql"] . ' AND ' . $restriction;
 				$where_values = $where["values"];
 			} else if (!empty($restriction)) {
-				$sql .= ' WHERE ' . $restriction;
+				Request::error('Invalid condition', 404);
 			}
 
 			$sth = $dbh->prepare($sql);
@@ -1105,13 +1118,25 @@ class API
 
 	/**
 	 * Output JSON encoded data.
-	 * @todo Support JSONP, with callback filtering.
+	 * @param $data
+	 * @param $query
 	 */
 	public function render_json($data, $query) {
 
 		header('Content-type: application/json');
 
-		$output = json_encode($data);
+		
+		if(self::is_array_multi($data)) {
+			$prefix = '';
+			$output = '[';
+			foreach($data as $row) {
+				$output .= $prefix . json_encode($row);
+				$prefix = ',';
+			}
+			$output .= ']';
+		} else {
+			$output = json_encode($data);
+		}
 		//ie(var_dump(json_last_error()));
 
 		// Prepare a JSONP callback.
@@ -1130,6 +1155,8 @@ class API
 
 	/**
 	 * Prevent malicious callbacks from being used in JSONP requests.
+	 * @param $callback
+	 * @return bool
 	 */
 	private function jsonp_callback_filter($callback) {
 
@@ -1144,6 +1171,7 @@ class API
 
 	/**
 	 * Output data as an HTML table.
+	 * @param $data
 	 */
 	public function render_html($data) {
 
@@ -1196,6 +1224,7 @@ class API
 
 	/**
 	 * Output data as XML.
+	 * @param $data
 	 */
 	public function render_xml($data) {
 
@@ -1247,6 +1276,8 @@ class API
 
 	/**
 	 * Clean up XML domdocument formatting and return as string
+	 * @param $xml
+	 * @return string
 	 */
 	private function tidy_xml($xml) {
 
@@ -1258,3 +1289,5 @@ class API
 
 	}
 }
+
+$API = new API();

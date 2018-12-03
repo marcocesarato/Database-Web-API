@@ -37,7 +37,7 @@ class Request
 		parse_str($source, $params);
 
 		// Parse POST, PUT, DELETE params
-		if (self::method() != 'GET') {
+		if (self::method() != 'GET' && self::method() != 'DELETE') {
 			$source_input = file_get_contents("php://input");
 			parse_str($source_input, $params_input);
 			$params = array_merge($params, $params_input);
@@ -219,10 +219,12 @@ class Request
 			$results = array(
 				"response" => (object)array('status' => 400, 'message' => $message),
 			);
-			$renderer = 'render_' . $api->query['format'];
+			$renderer = 'render_' . (isset($api->query['format']) ? $api->query['format'] : 'json');
 			die($api->$renderer($results, $api->query));
 		}
 		http_response_code($code);
 		die(self::sanitize_htmlentities($error));
 	}
 }
+
+$request = new Request();

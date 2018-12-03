@@ -21,7 +21,6 @@ class Auth
 	private $api;
 	private $db;
 	private $user = array();
-
 	/**
 	 * Singleton constructor
 	 */
@@ -74,10 +73,10 @@ class Auth
 	 * @return bool
 	 */
 	public function validate($query) {
+		$this->api = API::getInstance();
 		if (isset($query['token']) && $this->validateToken($query['token'])) {
 			return true;
 		} elseif (isset($query['check_token']) && $this->validateToken($query['check_token'])) {
-			$this->api = API::getInstance();
 			$results = array(
 				"user" => (object)array(
 					"id" => $this->user_id,
@@ -117,7 +116,6 @@ class Auth
                 $where_sql = (!empty($where_sql) ? " ($where_sql) AND " : "") . implode(" OR ", $where);
             }
 
-			$this->api = API::getInstance();
 			$this->db = &$this->api->connect(self::$settings['database']);
 
 			$sth = $this->db->prepare("SELECT * FROM $users_table WHERE $where_sql");
@@ -223,11 +221,12 @@ class Auth
 	 */
 	public function can_read($table) {
 
-        if(empty(self::$settings))
-            return true;
+		$db_settings = $this->api->get_db();
+		$this->table_free = $db_settings->table_free;
 
-		if ($this->is_admin == true)
+        if(empty(self::$settings) || $this->is_admin == true || in_array($table, $this->table_free)) {
 			return true;
+		}
 
 		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['can_read']){
 			$callback = call_user_func(self::$settings['callbacks']['can_read'], $table);
@@ -244,7 +243,10 @@ class Auth
 	 */
 	public function can_write($table) {
 
-		if(empty(self::$settings))
+		$db_settings = $this->api->get_db();
+		$this->table_readonly = $db_settings->table_readonly;
+
+		if(empty(self::$settings) || in_array($table, $this->table_readonly))
 			return false;
 
 		if ($this->is_admin == true)
@@ -264,8 +266,11 @@ class Auth
 	 * @return bool
 	 */
 	public function can_edit($table) {
+		
+		$db_settings = $this->api->get_db();
+		$this->table_readonly = $db_settings->table_readonly;
 
-		if(empty(self::$settings))
+		if(empty(self::$settings) || in_array($table, $this->table_readonly))
 			return false;
 
 		if ($this->is_admin == true)
@@ -285,8 +290,11 @@ class Auth
 	 * @return bool
 	 */
 	public function can_delete($table) {
+		
+		$db_settings = $this->api->get_db();
+		$this->table_readonly = $db_settings->table_readonly;
 
-		if(empty(self::$settings))
+		if(empty(self::$settings) || in_array($table, $this->table_readonly))
 			return false;
 
 		if ($this->is_admin == true)
@@ -328,3 +336,4 @@ class Auth
 		return self::getInstance()->user;
 	}
 }
+$AUTH = new Auth();

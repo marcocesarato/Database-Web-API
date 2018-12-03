@@ -42,6 +42,8 @@ define("__DATASETS__", serialize(array(
 		'port' => 3306, // 3306 is default
 		'type' => 'mysql', // mysql is default
 		'table_list' => array(), // Tables's whitelist (Allow only the tables in this list, if empty allow all)
+		'table_free' => array(), // Tables's with free access (no permissions needed)
+		'table_readonly' => array(), // Tables with readonly permissions (usually when no permissions needed)
 		'table_blacklist' => array(), // Tables's blacklist
 		'column_list' => array(), // Columns's whitelist (Allow only the columns in this list, if empty allow all)
 		'column_blacklist' => array(), // Columns's blacklist

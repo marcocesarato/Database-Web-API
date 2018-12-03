@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.3.63 beta
+**Version:** 0.4.64 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -85,6 +85,8 @@ define("__DATASETS__", serialize(array(
 		'table_blacklist' => array( // Tables's blacklist
             'passwords'
 		),
+		'table_free' => array(), // Tables's with free access (no permissions needed)
+        'table_readonly' => array(), // Tables with readonly permissions (usually when no permissions needed)
 		'column_list' => array( // Columns's whitelist (Allow only the columns in this list, if empty allow all)
             'users' => array(
                 'username',

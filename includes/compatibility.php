@@ -10,12 +10,13 @@
  *
  * If your version of PHP does not include this function:
  */
-
-if(!class_exists('PDO')) {
-    include __ROOT__ . '/includes/classes/PDO/PDO.class.php';
-}
-
 if (!function_exists('http_response_code')) {
+
+	/**
+	 * Http response code
+	 * @param null $code
+	 * @return int|mixed|null
+	 */
 	function http_response_code($code = NULL) {
 
 		if ($code !== NULL) {
