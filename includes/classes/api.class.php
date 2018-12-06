@@ -1003,7 +1003,7 @@ class API
 				$sql .= ' SET ' . implode(', ', $values_index);
 
 				// build WHERE query
-				$restriction = $this->auth->sql_restriction($query['table'], 'MODIFY');
+				$restriction = $this->auth->sql_restriction($query['table'], 'EDIT');
 				if (is_array($where)) {
 					$where_parse = $this->parse_where($table, $where, $sql);
 					$sql = $where_parse["sql"] . ' AND ' . $restriction;
