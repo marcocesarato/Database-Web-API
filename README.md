@@ -51,24 +51,24 @@ define("__API_NAME__", "Database Web API"); // API Name
 define("__BASE_DIR__", ""); // Dir relative to the http root where is located
 
 define("__AUTH__",  serialize(array( // Set null for disable authentication
-    'database' => 'dataset',
-    'users' => array(
-        'table' => 'users', // Table where users are stored
-        'columns' => array(
-            'id' => 'user_id',
-            'password' => 'password',
-            'dmin' => array('is_admin' => 'on') // Admin bypass all black/whitelists. Set NULL for disable
-        ),
-        'search' => array('user_id', 'email', 'username'), // Search user by these fields
-        'check' => array('active' => 1) // Some validation checks. In this case if the column 'active' with value '1'. Set NULL for disable
-    ),
-    'callbacks' => array( // Functions stored in includes/callbacks.php that you can customize. Set NULL for disable (readonly)
-        'sql_restriction' => 'callback_sql_restriction',
-        'can_read' => 'callback_can_read',
-        'can_write' => 'callback_can_write',
-        'can_edit' => 'callback_can_edit',
-        'can_delete' => 'callback_can_delete',
-    ),
+	'database' => 'dataset',
+	'users' => array(
+		'table' => 'users', // Table where users are stored
+		'columns' => array(
+			'id' => 'user_id',
+			'password' => 'password',
+			'dmin' => array('is_admin' => 'on') // Admin bypass all black/whitelists. Set NULL for disable
+		),
+		'search' => array('user_id', 'email', 'username'), // Search user by these fields
+		'check' => array('active' => 1) // Some validation checks. In this case if the column 'active' with value '1'. Set NULL for disable
+	),
+	'callbacks' => array( // Functions stored in includes/callbacks.php that you can customize. Set NULL for disable (readonly)
+		'sql_restriction' => 'callback_sql_restriction',
+		'can_read' => 'callback_can_read',
+		'can_write' => 'callback_can_write',
+		'can_edit' => 'callback_can_edit',
+		'can_delete' => 'callback_can_delete',
+	),
 )));
 
 define("__DATASETS__", serialize(array(
@@ -83,21 +83,21 @@ define("__DATASETS__", serialize(array(
 			'users'
 		),
 		'table_blacklist' => array( // Tables's blacklist
-            'passwords'
+			'passwords'
 		),
 		'table_free' => array(), // Tables's with free access (no permissions needed)
-        'table_readonly' => array(), // Tables with readonly permissions (usually when no permissions needed)
+		'table_readonly' => array(), // Tables with readonly permissions (usually when no permissions needed)
 		'column_list' => array( // Columns's whitelist (Allow only the columns in this list, if empty allow all)
-            'users' => array(
-                'username',
-                'name',
-                'surname'
-            )
+			'users' => array(
+				'username',
+				'name',
+				'surname'
+			)
 		),
 		'column_blacklist' => array( // Columns's blacklist
-            'users' => array(
-                'password',
-            )
+			'users' => array(
+				'password',
+			)
 		),
 	),
 )));
@@ -107,17 +107,17 @@ define("__DATASETS__", serialize(array(
 **Default dataset values:**
 ```php
 array(
-    'name' => null,
-    'username' => 'root',
-    'password' => 'root',
-    'server' => 'localhost',
-    'port' => 3306,
-    'type' => 'mysql',
-    'table_blacklist' => array(),
-    'table_list' => array(),
-    'column_blacklist' => array(),
-    'column_list' => array(),
-    'ttl' => 3600,
+	'name' => null,
+	'username' => 'root',
+	'password' => 'root',
+	'server' => 'localhost',
+	'port' => 3306,
+	'type' => 'mysql',
+	'table_blacklist' => array(),
+	'table_list' => array(),
+	'column_blacklist' => array(),
+	'column_list' => array(),
+	'ttl' => 3600,
 );
 ```
 
@@ -211,11 +211,11 @@ For implement the callbacks you need to add  the callbacks array to the \_\_AUTH
 
 ```php
 'callbacks' => array( // Set NULL for disable (readonly)
-     'sql_restriction' => 'callback_sql_restriction',
-     'can_read' => 'callback_can_read',
-     'can_write' => 'callback_can_write',
-     'can_edit' => 'callback_can_edit',
-     'can_delete' => 'callback_can_delete',
+	 'sql_restriction' => 'callback_sql_restriction',
+	 'can_read' => 'callback_can_read',
+	 'can_write' => 'callback_can_write',
+	 'can_edit' => 'callback_can_edit',
+	 'can_delete' => 'callback_can_delete',
  ),
 ```
 
@@ -281,7 +281,7 @@ Compare between different columns of main table
 where['column_a'] = 'table_a.column_b'
 // OR
 where['table_a.column_a'] = 'table_a.column_b'
-    
+	
 // WRONG
 where['column_a'] = 'column_b'
 ```
@@ -356,9 +356,9 @@ Retrieve data from dataset
 
   ```js
   join[table] = array(
-  	'on' => <column_id>,           // Column of the table joined
-    	'value' => <value>,            // Column of main table or value
-    	'method' => (left|inner|right) // Optional
+	'on' => <column_id>,           // Column of the table joined
+		'value' => <value>,            // Column of main table or value
+		'method' => (left|inner|right) // Optional
   )
   ```
 
@@ -533,33 +533,33 @@ $api_client->ACCESS_TOKEN = '4gw7j8erfgerf6werf8fwerf8erfwfer';
 $api_client->DATASET = 'dataset';
 
 $params = array(
-    'where' => array(
-        'type' => array('C', 'O', 'L'),
-        'accounts_addresses.address' => array(
-            '!' => '', // NOT NULL
-        ),
-    ),
-    'join' => array(
-        'accounts_addresses' => array(
-            'on' => 'parent_id',
-            'value' => 'id',
-            'method' => 'LEFT'
-        ),
-        'accounts_agents' => array(
-            'on' => 'parent_id',
-            'value' => 'id'
-        ),
-    ),
-    'order_by' => array(
-        'address' => array(
-            'table' => 'accounts_addresses',
-            'direction' => 'DESC'
-        ),
-        'type' => array(
-            'table' => 'accounts_addresses',
-            'direction' => 'ASC'
-        )
-    ),
+	'where' => array(
+		'type' => array('C', 'O', 'L'),
+		'accounts_addresses.address' => array(
+			'!' => '', // NOT NULL
+		),
+	),
+	'join' => array(
+		'accounts_addresses' => array(
+			'on' => 'parent_id',
+			'value' => 'id',
+			'method' => 'LEFT'
+		),
+		'accounts_agents' => array(
+			'on' => 'parent_id',
+			'value' => 'id'
+		),
+	),
+	'order_by' => array(
+		'address' => array(
+			'table' => 'accounts_addresses',
+			'direction' => 'DESC'
+		),
+		'type' => array(
+			'table' => 'accounts_addresses',
+			'direction' => 'ASC'
+		)
+	),
 );
 $records = $api_client->fetch('accounts', 'json', $params);
 ```
