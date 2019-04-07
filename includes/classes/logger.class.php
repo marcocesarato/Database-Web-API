@@ -121,8 +121,10 @@ class Logger {
 		// Grab time - based on timezone in php.ini
 		$time = date($this->params['dateFormat']);
 
+		$ip = Request::getIPAddress();
+
 		// Write time, url, & message to end of file
-		@fwrite($this->file, "[$time] [$severity] [$method] [$path]:"  . PHP_EOL . "\t$message" . PHP_EOL . PHP_EOL);
+		@fwrite($this->file, "[$time] [$severity] [method $method] [url $path] [client $ip]: $message" . PHP_EOL);
 	}
 
 	/**

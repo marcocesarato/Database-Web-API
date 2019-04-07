@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.66 beta
+**Version:** 0.5.67 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -337,6 +337,8 @@ For get auto-documentation of a database table:
 - Documentation URL format: `/[database]/docs/[table].[format]`
 
 - Documentation URL format with Authentication: `/[token]/[database]/docs/[table].[format]`
+
+For have a separated file where document your database you can use `/docs.php`
 
 ## POST Request
 
