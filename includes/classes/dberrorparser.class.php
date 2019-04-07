@@ -14,12 +14,14 @@ class DatabaseErrorParser {
 	}
 
 	public static function errorMessage($error) {
+
 		$code = $error->getCode();
 		$message = $error->getMessage();
-        $error = "($code) $message";
+
+        $error = "($code) Oops something's gone wrong!";
 
 		$logger = Logger::getInstance();
-		$logger->error($error);
+		$logger->error("($code) $message");
 		return $error;
 	}
 }
