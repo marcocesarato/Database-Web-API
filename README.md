@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.69 beta
+**Version:** 0.5.70 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -50,22 +50,22 @@ Edit `config.php` to include a single instance of the following for each dataset
 define("__API_NAME__", "Database Web API"); // API Name
 
 define("__AUTH__",  serialize(array( // Set null for disable authentication
-    'sqlite' => false, // Enabled save token on SQLite file
-    'sqlite_database' => 'api_token', // SQLite filename (only with sqlite = true)
-    'api_database' => 'dataset', // Authentication database
-    'api_table' => 'api_authentications', // API token table name
-    'users' => array(
-        'database' => 'dataset', // Database where users are stored
-        'table' => 'users', // Table where users are stored
-        'columns' => array(
-            'id' => 'user_id', // Id column name
-            'username' => 'user_name', // Username column name
-            'password' => 'password', // Password column name
-            'admin' => array('is_admin' => 1) // Admin bypass condition. With this condition true API bypass all black/whitelists and permissions. Set NULL for disable
-        ),
-        'search' => array('user_id', 'email', 'username'), // Search user by these fields
-        'check' => array('active' => 1) // Some validation checks. In this case if the column 'active' with value '1'. Set NULL for disable
-    ),
+	'sqlite' => false, // Enabled save token on SQLite file
+	'sqlite_database' => 'api_token', // SQLite filename (only with sqlite = true)
+	'api_database' => 'dataset', // Authentication database
+	'api_table' => 'api_authentications', // API token table name
+	'users' => array(
+		'database' => 'dataset', // Database where users are stored
+		'table' => 'users', // Table where users are stored
+		'columns' => array(
+			'id' => 'user_id', // Id column name
+			'username' => 'user_name', // Username column name
+			'password' => 'password', // Password column name
+			'admin' => array('is_admin' => 1) // Admin bypass condition. With this condition true API bypass all black/whitelists and permissions. Set NULL for disable
+		),
+		'search' => array('user_id', 'email', 'username'), // Search user by these fields
+		'check' => array('active' => 1) // Some validation checks. In this case if the column 'active' with value '1'. Set NULL for disable
+	),
 )));
 
 define("__DATASETS__", serialize(array(
@@ -76,33 +76,33 @@ define("__DATASETS__", serialize(array(
 		'server' => 'localhost',  // localhost default
 		'port' => 5432, // 3306 is default
 		'type' => 'pgsql', // mysql is default
-        'table_docs' => array(
-        	/*
-        	'table' => array(
-        		"column" => array(
-                    "description" => "Column description",
-                    "example" => "1",
-                ),
-            ),
-        	*/
-        ), // For Autodocoumentation, url ex. /dataset/docs/table.html
+		'table_docs' => array(
+			/*
+			'table' => array(
+				"column" => array(
+					"description" => "Column description",
+					 "example" => "1",
+				),
+			),
+			*/
+		), // For Autodocoumentation, url ex. /dataset/docs/table.html
 		'table_list' => array( // Tables's whitelist (Allow only the tables in this list, if empty allow all)
 			'users'
 		),
 		'table_blacklist' => array( // Tables's blacklist
-            'passwords'
+			'passwords'
 		),
 		'column_list' => array( // Columns's whitelist (Allow only the columns in this list, if empty allow all)
-            'users' => array(
-                'username',
-                'name',
-                'surname'
-            )
+			'users' => array(
+				'username',
+				'name',
+				'surname'
+			)
 		),
 		'column_blacklist' => array( // Columns's blacklist
-            'users' => array(
-                'password',
-            )
+			'users' => array(
+				'password',
+			)
 		),
 	),
 )));
@@ -112,18 +112,18 @@ define("__DATASETS__", serialize(array(
 **Default dataset values:**
 ```php
 array(
-    'name' => null,
-    'username' => 'root',
-    'password' => 'root',
-    'server' => 'localhost',
-    'port' => 3306,
-    'type' => 'mysql',
-    'table_docs' => $docs['dataset'],
-    'table_blacklist' => array(),
-    'table_list' => array(),
-    'column_blacklist' => array(),
-    'column_list' => array(),
-    'ttl' => 3600,
+	'name' => null,
+	'username' => 'root',
+	'password' => 'root',
+	'server' => 'localhost',
+	'port' => 3306,
+	'type' => 'mysql',
+	'table_docs' => $docs['dataset'],
+	'table_blacklist' => array(),
+	'table_list' => array(),
+	'column_blacklist' => array(),
+	'column_list' => array(),
+	'ttl' => 3600,
 );
 ```
 
@@ -207,9 +207,9 @@ Retrieve data from dataset
 
   ```js
   join[table] = array(
-  	'on' => <column_id>,           // Column of the table joined
-    	'value' => <value>,            // Column of main table or value
-    	'method' => (left|inner|right) // Optional
+  	'on' => <column_id>,		   // Column of the table joined
+		'value' => <value>,			// Column of main table or value
+		'method' => (left|inner|right) // Optional
   )
   ```
 
@@ -224,8 +224,8 @@ Retrieve data from dataset
   **Example with column:**
 
   ```js
-  join[users]['on'] = id            // Column of the table joined
-  join[users]['value'] = user_id    // Column of the main table (no users)
+  join[users]['on'] = id			// Column of the table joined
+  join[users]['value'] = user_id	// Column of the main table (no users)
   join[users]['method'] = 'INNER'
   ```
 
@@ -262,23 +262,23 @@ Host: localhost
 Search single value
 
 ```php
-where[column]              = 1    // column = 1
-where[column][=]           = 1    // column = 1
-where[column][!]           = 1    // column != 1
-where[column][>]           = 1    // column > 1
-where[column][<]           = 1    // column < 1
-where[column][%]           = "%1" // column LIKE "%1"
+where[column]			  = 1	// column = 1
+where[column][=]		   = 1	// column = 1
+where[column][!]		   = 1	// column != 1
+where[column][>]		   = 1	// column > 1
+where[column][<]		   = 1	// column < 1
+where[column][%]		   = "%1" // column LIKE "%1"
 ```
 
 Search multiple values
 
 ```php
-where[column]              = array(1,5,7)     // IN (...) (IN can be equal to an OR)
-where[column][=]           = array(1,5,7)     // IN (...) 
-where[column][!]           = array(1,5,7)     // NOT IN (...)
-where[column][>]           = array(1,2)       // column > 1 AND column > 2
-where[column][<]           = array(1,2)       // column < 1 AND column < 2
-where[column][%]           = array("%1","%2") // column LIKE "%1" AND column LIKE "%2"
+where[column]			  = array(1,5,7)	 // IN (...) (IN can be equal to an OR)
+where[column][=]		   = array(1,5,7)	 // IN (...) 
+where[column][!]		   = array(1,5,7)	 // NOT IN (...)
+where[column][>]		   = array(1,2)	   // column > 1 AND column > 2
+where[column][<]		   = array(1,2)	   // column < 1 AND column < 2
+where[column][%]		   = array("%1","%2") // column LIKE "%1" AND column LIKE "%2"
 ```
 
 Specify column's table
@@ -299,7 +299,7 @@ Compare between different columns of main table
 where['column_a'] = 'table_a.column_b'
 // OR
 where['table_a.column_a'] = 'table_a.column_b'
-    
+	
 // WRONG
 where['column_a'] = 'column_b'
 ```
@@ -628,16 +628,16 @@ $hooks->add_filter('check_login_request','filter_check_login_request');
 
 **Class name:** APIClient
 
-| Method        | Params                                         | Return | Description                                    |
+| Method		| Params										 | Return | Description									|
 | ------------- | ---------------------------------------------- | ------ | ---------------------------------------------- |
-| getInstance   | -                                              | Void   | Returns static reference to the class instance |
-| get           | \$table, \$format = 'json', \$params = array() | Object | Fetch data                                     |
-| insert        | \$format = 'json', \$params = array()          | Object | Insert data                                    |
-| update        | \$format = 'json', \$params = array()          | Object | Update data                                    |
-| delete        | \$table, \$format = 'json', \$params = array() | Object | Delete data                                    |
-| searchElement | \$key, \$value, \$array                        | Object | Search object in array                         |
-| filterBy      | \$key, \$value, \$array, \$limit = null        | Array  | Filter results array by single key             |
-| filter        | \$value, \$array, $limit = null                | Array  | Filter results array by multiple values        |
+| getInstance   | -											  | Void   | Returns static reference to the class instance |
+| get		   | \$table, \$format = 'json', \$params = array() | Object | Fetch data									 |
+| insert		| \$format = 'json', \$params = array()		  | Object | Insert data									|
+| update		| \$format = 'json', \$params = array()		  | Object | Update data									|
+| delete		| \$table, \$format = 'json', \$params = array() | Object | Delete data									|
+| searchElement | \$key, \$value, \$array						| Object | Search object in array						 |
+| filterBy	  | \$key, \$value, \$array, \$limit = null		| Array  | Filter results array by single key			 |
+| filter		| \$value, \$array, $limit = null				| Array  | Filter results array by multiple values		|
 
 #### Usage
 
@@ -650,33 +650,33 @@ APIClient::$ACCESS_TOKEN = '4gw7j8erfgerf6werf8fwerf8erfwfer';
 APIClient::$DATASET = 'dataset';
 
 $params = array(
-    'where' => array(
-        'type' => array('C', 'O', 'L'),
-        'accounts_addresses.address' => array(
-            '!' => '', // NOT NULL
-        ),
-    ),
-    'join' => array(
-        'accounts_addresses' => array(
-            'on' => 'parent_id',
-            'value' => 'id',
-            'method' => 'LEFT'
-        ),
-        'accounts_agents' => array(
-            'on' => 'parent_id',
-            'value' => 'id'
-        ),
-    ),
-    'order_by' => array(
-        'address' => array(
-            'table' => 'accounts_addresses',
-            'direction' => 'DESC'
-        ),
-        'type' => array(
-            'table' => 'accounts_addresses',
-            'direction' => 'ASC'
-        )
-    ),
+	'where' => array(
+		'type' => array('C', 'O', 'L'),
+		'accounts_addresses.address' => array(
+			'!' => '', // NOT NULL
+		),
+	),
+	'join' => array(
+		'accounts_addresses' => array(
+			'on' => 'parent_id',
+			'value' => 'id',
+			'method' => 'LEFT'
+		),
+		'accounts_agents' => array(
+			'on' => 'parent_id',
+			'value' => 'id'
+		),
+	),
+	'order_by' => array(
+		'address' => array(
+			'table' => 'accounts_addresses',
+			'direction' => 'DESC'
+		),
+		'type' => array(
+			'table' => 'accounts_addresses',
+			'direction' => 'ASC'
+		)
+	),
 );
 $records = $api_client->fetch('accounts', 'json', $params);
 ```

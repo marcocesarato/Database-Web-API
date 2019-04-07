@@ -9,19 +9,20 @@
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
 
-class DatabaseErrorParser {
-	public function __construct() {
-	}
+class DatabaseErrorParser
+{
+    public function __construct() {
+    }
 
-	public static function errorMessage($error) {
+    public static function errorMessage($error) {
 
-		$code = $error->getCode();
-		$message = $error->getMessage();
+        $code = $error->getCode();
+        $message = $error->getMessage();
 
         $error = "($code) Oops something's gone wrong!";
 
-		$logger = Logger::getInstance();
-		$logger->error("($code) $message");
-		return $error;
-	}
+        $logger = Logger::getInstance();
+        $logger->error("($code) $message");
+        return $error;
+    }
 }
