@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.4.65 beta
+**Version:** 0.5.66 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -48,27 +48,24 @@ Edit `config.php` to include a single instance of the following for each dataset
 **EXAMPLE with explanation**
 ```php
 define("__API_NAME__", "Database Web API"); // API Name
-define("__BASE_DIR__", ""); // Dir relative to the http root where is located
 
 define("__AUTH__",  serialize(array( // Set null for disable authentication
-	'database' => 'dataset',
-	'users' => array(
-		'table' => 'users', // Table where users are stored
-		'columns' => array(
-			'id' => 'user_id',
-			'password' => 'password',
-			'dmin' => array('is_admin' => 'on') // Admin bypass all black/whitelists. Set NULL for disable
-		),
-		'search' => array('user_id', 'email', 'username'), // Search user by these fields
-		'check' => array('active' => 1) // Some validation checks. In this case if the column 'active' with value '1'. Set NULL for disable
-	),
-	'callbacks' => array( // Functions stored in includes/callbacks.php that you can customize. Set NULL for disable (readonly)
-		'sql_restriction' => 'callback_sql_restriction',
-		'can_read' => 'callback_can_read',
-		'can_write' => 'callback_can_write',
-		'can_edit' => 'callback_can_edit',
-		'can_delete' => 'callback_can_delete',
-	),
+    'sqlite' => false, // Enabled save token on SQLite file
+    'sqlite_database' => 'api_token', // SQLite filename (only with sqlite = true)
+    'api_database' => 'dataset', // Authentication database
+    'api_table' => 'api_authentications', // API token table name
+    'users' => array(
+        'database' => 'dataset', // Database where users are stored
+        'table' => 'users', // Table where users are stored
+        'columns' => array(
+            'id' => 'user_id', // Id column name
+            'username' => 'user_name', // Username column name
+            'password' => 'password', // Password column name
+            'admin' => array('is_admin' => 1) // Admin bypass condition. With this condition true API bypass all black/whitelists and permissions. Set NULL for disable
+        ),
+        'search' => array('user_id', 'email', 'username'), // Search user by these fields
+        'check' => array('active' => 1) // Some validation checks. In this case if the column 'active' with value '1'. Set NULL for disable
+    ),
 )));
 
 define("__DATASETS__", serialize(array(
@@ -79,144 +76,55 @@ define("__DATASETS__", serialize(array(
 		'server' => 'localhost',  // localhost default
 		'port' => 5432, // 3306 is default
 		'type' => 'pgsql', // mysql is default
+        'table_docs' => array(
+        	/*
+        	'table' => array(
+        		"column" => array(
+                    "description" => "Column description",
+                    "example" => "1",
+                ),
+            ),
+        	*/
+        ), // For Autodocoumentation, url ex. /dataset/docs/table.html
 		'table_list' => array( // Tables's whitelist (Allow only the tables in this list, if empty allow all)
 			'users'
 		),
 		'table_blacklist' => array( // Tables's blacklist
-			'passwords'
+            'passwords'
 		),
-		'table_free' => array(), // Tables's with free access (no permissions needed)
-		'table_readonly' => array(), // Tables with readonly permissions (usually when no permissions needed)
 		'column_list' => array( // Columns's whitelist (Allow only the columns in this list, if empty allow all)
-			'users' => array(
-				'username',
-				'name',
-				'surname'
-			)
+            'users' => array(
+                'username',
+                'name',
+                'surname'
+            )
 		),
 		'column_blacklist' => array( // Columns's blacklist
-			'users' => array(
-				'password',
-			)
+            'users' => array(
+                'password',
+            )
 		),
 	),
 )));
 ```
-**_Note:** All fields of \_\_DATASETS\_\_ (except the name of database) are optional and will default to the above._
+**Note:** All fields of \_\_DATASETS\_\_ (except the name of database) are optional and will default to the above.
 
 **Default dataset values:**
 ```php
 array(
-	'name' => null,
-	'username' => 'root',
-	'password' => 'root',
-	'server' => 'localhost',
-	'port' => 3306,
-	'type' => 'mysql',
-	'table_blacklist' => array(),
-	'table_list' => array(),
-	'column_blacklist' => array(),
-	'column_list' => array(),
-	'ttl' => 3600,
+    'name' => null,
+    'username' => 'root',
+    'password' => 'root',
+    'server' => 'localhost',
+    'port' => 3306,
+    'type' => 'mysql',
+    'table_docs' => $docs['dataset'],
+    'table_blacklist' => array(),
+    'table_list' => array(),
+    'column_blacklist' => array(),
+    'column_list' => array(),
+    'ttl' => 3600,
 );
-```
-
-## Callbacks
-
-Callbacks availables (Prepared versions on `includes/callbacks.php`):
-
-```php
-function callback_sql_restriction($table, $permission)
-function callback_can_read($table)
-function callback_can_write($table){
-function callback_can_edit($table)
-function callback_can_delete($table)
-```
-
-You can use this code fo have a database instance and the current user authenticated row:
-
-```php
-$user = Auth::getUser(); // User row
-$db = API::getDatabase('dataset'); // You can specify dataset. Return PDO Object
-```
-
-**Note:** All callbacks if return NULL will use default values with readonly permissions.
-
-### List
-
-* `sql_restriction`
-
-  **Description:** Return a string to append in where condition
-
-  **Parameters:** \$table, \$permission
-
-  **Options of *$permission*:**
-
-  ```php
-  case 'READ':
-  case 'WRITE':
-  case 'EDIT':
-  case 'DELETE':
-  ```
-  **Return**
-  ```php
-  // All denied
-  $sql = "'1' = '0'";
-  // All allowed
-  $sql = "'1' = '1'";
-  ```
-  **Examples:**
-  ```php
-  // Only Created
-  $sql = 'created_by = '.$user['id'];
-  // Only Team
-  $sql = 'created_by IN ('.implode(',',$teams_ids).')';
-  ```
-
-* `can_read`
-
-  **Description:** Return if can GET/SELECT
-
-  **Parameters:** \$table
-
-  **Return:** Boolean
-
-* `can_write`
-
-  **Description:** Return if can POST/INSERT
-
-  **Parameters:** \$table
-
-  **Return:** Boolean
-
-* `can_edit`
-
-  **Description:** Return if can PUT/UPDATE
-
-  **Parameters:** \$table
-
-  **Return:** Boolean
-
-* `can_delete`
-
-* **Description:** Return if can DELETE
-
-  **Parameters:** \$table
-
-  **Return:** Boolean
-
-### Configuration
-
-For implement the callbacks you need to add  the callbacks array to the \_\_AUTH\_\_ constant:
-
-```php
-'callbacks' => array( // Set NULL for disable (readonly)
-	 'sql_restriction' => 'callback_sql_restriction',
-	 'can_read' => 'callback_can_read',
-	 'can_write' => 'callback_can_write',
-	 'can_edit' => 'callback_can_edit',
-	 'can_delete' => 'callback_can_delete',
- ),
 ```
 
 
@@ -226,91 +134,12 @@ For implement the callbacks you need to add  the callbacks array to the \_\_AUTH
 ### Format availables:
 
 - JSON
+
 - XML
-- HTML (for debug)
 
-### Generic URL format for all kind of request:
+- HTML
 
-* Fetch all: `/[token]/[database]/[table].[format]`
-* Fetch all with limit: `/[token]/[database]/[limit]/[table].[format]`
-* Fetch: `/[token]/[database]/[table]/[ID].[format]`
-* Fetch search by coolumn: `/[token]/[database]/[table]/[column]/[value].[format]`
-
-
-### Advanced search:
-
-**Note:** These examples are valid only for **GET** and **PUT** requests
-
-Search single value
-
-```php
-where[column]              = 1    // column = 1
-where[column][=]           = 1    // column = 1
-where[column][!]           = 1    // column != 1
-where[column][>]           = 1    // column > 1
-where[column][<]           = 1    // column < 1
-where[column][%]           = "%1" // column LIKE "%1"
-```
-
-Search multiple values
-
-```php
-where[column]              = array(1,5,7)     // IN (...) (IN can be equal to an OR)
-where[column][=]           = array(1,5,7)     // IN (...) 
-where[column][!]           = array(1,5,7)     // NOT IN (...)
-where[column][>]           = array(1,2)       // column > 1 AND column > 2
-where[column][<]           = array(1,2)       // column < 1 AND column < 2
-where[column][%]           = array("%1","%2") // column LIKE "%1" AND column LIKE "%2"
-```
-
-Specify column's table
-
-```php
-where['table.column'][=] = array(1,5,7)
-```
-
-Compare between two different table columns
-
-```php
-where['table_a.column_a'] = 'table_b.column_b'
-```
-
-Compare between different columns of main table
-
-```php
-where['column_a'] = 'table_a.column_b'
-// OR
-where['table_a.column_a'] = 'table_a.column_b'
-	
-// WRONG
-where['column_a'] = 'column_b'
-```
-
-
-
-## Additional parameters
-
-* `order_by`: column_name
-
-  Can be and array or a string
-
-  ```php
-  order_by = 'username, name, surname'
-  // OR
-  order_by = array('username', 'name', 'surname')
-  ```
-
-  for more specific order direction
-
-  ```php
-  order_by['users.username'] = 'DESC'
-  ```
-
-* `direction`:  `ASC` or `DESC` (default `ASC`)
-
-* `limit`: max elements to retrieve
-
-ex: `/[database]/[tabel]/[colomn]/[value].[format]?order_by=[column]&direction=[direction]`
+  
 
 ## Authentication
 
@@ -328,15 +157,37 @@ Host: localhost
 ```
 
 **Response example:**
+
 ```json
 [{"token": "b279fb1d0708ed81e7a194e0c5d928b6"}]
 ```
+
  **Example of token usage on GET, POST, PUT and DELETE requests:**
 
 ```http
 GET /bfee499dfa1387648ec8ce9d621db120/database/users.json` HTTP/1.1
 Host: localhost
 ```
+
+
+
+### Generic URL format for all kind of request:
+
+#### Standard
+
+* Fetch all: `/[database]/[table].[format]`
+* Fetch all with limit: `/[database]/[limit]/[table].[format]`
+* Fetch: `/[database]/[table]/[ID].[format]`
+* Fetch search by coolumn: `/[database]/[table]/[column]/[value].[format]`
+* Documentation: `/[database]/docs/[table].[format]`
+
+#### With Authentication
+
+* Fetch all: `/[token]/[database]/[table].[format]`
+* Fetch all with limit: `/[token]/[database]/[limit]/[table].[format]`
+* Fetch: `/[token]/[database]/[table]/[ID].[format]`
+* Fetch search by column: `/[token]/[database]/[table]/[column]/[value].[format]`
+* Documentation: `/[token]/[database]/docs/[table].[format]`
 
 
 
@@ -356,9 +207,9 @@ Retrieve data from dataset
 
   ```js
   join[table] = array(
-	'on' => <column_id>,           // Column of the table joined
-		'value' => <value>,            // Column of main table or value
-		'method' => (left|inner|right) // Optional
+  	'on' => <column_id>,           // Column of the table joined
+    	'value' => <value>,            // Column of main table or value
+    	'method' => (left|inner|right) // Optional
   )
   ```
 
@@ -404,7 +255,88 @@ GET /dataset/users/is_active/1.json?order_by=username&direction=desc HTTP/1.1
 Host: localhost
 ```
 
+### Advanced search
 
+**Note:** These examples are valid only for **GET** and **PUT** requests
+
+Search single value
+
+```php
+where[column]              = 1    // column = 1
+where[column][=]           = 1    // column = 1
+where[column][!]           = 1    // column != 1
+where[column][>]           = 1    // column > 1
+where[column][<]           = 1    // column < 1
+where[column][%]           = "%1" // column LIKE "%1"
+```
+
+Search multiple values
+
+```php
+where[column]              = array(1,5,7)     // IN (...) (IN can be equal to an OR)
+where[column][=]           = array(1,5,7)     // IN (...) 
+where[column][!]           = array(1,5,7)     // NOT IN (...)
+where[column][>]           = array(1,2)       // column > 1 AND column > 2
+where[column][<]           = array(1,2)       // column < 1 AND column < 2
+where[column][%]           = array("%1","%2") // column LIKE "%1" AND column LIKE "%2"
+```
+
+Specify column's table
+
+```php
+where['table.column'][=] = array(1,5,7)
+```
+
+Compare between two different table columns
+
+```php
+where['table_a.column_a'] = 'table_b.column_b'
+```
+
+Compare between different columns of main table
+
+```php
+where['column_a'] = 'table_a.column_b'
+// OR
+where['table_a.column_a'] = 'table_a.column_b'
+    
+// WRONG
+where['column_a'] = 'column_b'
+```
+
+### Additional parameters
+
+- `order_by`: column_name
+
+  Can be and array or a string
+
+  ```php
+  order_by = 'username, name, surname'
+  // OR
+  order_by = array('username', 'name', 'surname')
+  ```
+
+  for more specific order direction
+
+  ```php
+  order_by['users.username'] = 'DESC'
+  ```
+
+- `direction`:  `ASC` or `DESC` (default `ASC`)
+
+- `limit`: max elements to retrieve
+
+ex: `/[database]/[tabel]/[colomn]/[value].[format]?order_by=[column]&direction=[direction]`
+
+### Documentation
+
+*PS:* Work only with pgsql and mysql database type at the moment
+
+For get auto-documentation of a database table:
+
+- Documentation URL format: `/[database]/docs/[table].[format]`
+
+- Documentation URL format with Authentication: `/[token]/[database]/docs/[table].[format]`
 
 ## POST Request
 
@@ -504,11 +436,191 @@ DELETE /dataset/users/1.json HTTP/1.1
 Host: localhost
 ```
 
+## Hooks
+
+You can use this code for have a database instance and the current user authenticated row:
+
+```php
+$user = Auth::getUser(); // User row
+$db = API::getDatabase('dataset'); // You can specify dataset. Return PDO Object
+```
+
+### Most important hooks
+
+* `sql_restriction`
+
+  **Description:** Return a string to append in where condition
+
+  **Parameters:** \$table, \$permission
+
+  **Options of *$permission*:**
+
+  ```php
+  case 'READ':
+  case 'EDIT':
+  case 'DELETE':
+  ```
+  **Return**
+
+  ```php
+  // All denied
+  $sql = "'1' = '0'";
+  // All allowed
+  $sql = "'1' = '1'";
+  ```
+  **Examples:**
+
+  ```php
+  // Only Created
+  $sql = 'created_by = '.$user['id'];
+  // Only Team
+  $sql = 'created_by IN ('.implode(',',$teams_ids).')';
+  ```
+
+* `can_read`
+
+  **Description:** Return if can GET/SELECT
+
+  **Parameters:** \$restriction, \$permission, \$table
+
+  **Return:** Boolean
+
+* `can_write`
+
+  **Description:** Return if can POST/INSERT
+
+  **Parameters:** \$permission, \$table
+
+  **Return:** Boolean
+
+* `can_edit`
+
+  **Description:** Return if can PUT/UPDATE
+
+  **Parameters:** \$permission, \$table
+
+  **Return:** Boolean
+
+* `can_delete`
+
+* **Description:** Return if can DELETE
+
+  **Parameters:** \$permission, \$table
+
+  **Return:** Boolean
+
+### All hooks
+
+```php
+/**
+ * Custom API Call
+ * @return mixed or die (with mixed return just skip to next action until 404 error)
+ */
+$hooks->add_action('custom_api_call','action_custom_api_call', 1);
+
+
+/**
+ * Add restriction on where conditions for each query
+ * @param $restriction
+ * @param $table
+ * @param $permission
+ * @return mixed
+ */
+$hooks->add_filter('sql_restriction','filter_sql_restriction');
+
+/**
+ * Return if can select
+ * @param $permission
+ * @param $table
+ * @return mixed
+ */
+$hooks->add_filter('can_read','filter_can_read');
+
+/**
+ * Return if can insert
+ * @param $permission
+ * @param $table
+ * @return mixed
+ */
+$hooks->add_filter('can_write','filter_can_write');
+
+/**
+ * Return if can update
+ * @param $permission
+ * @param $table
+ * @return mixed
+ */
+$hooks->add_filter('can_edit','filter_can_edit');
+
+/**
+ * Return if can delete
+ * @param $permission
+ * @param $table
+ * @return mixed
+ */
+$hooks->add_filter('can_delete','filter_can_delete');
+
+/**
+ * On read
+ * @param $data
+ * @param $table
+ * @return mixed
+ */
+$hooks->add_filter('on_read','filter_on_read');
+
+/**
+ * On write
+ * @param $data
+ * @param $table
+ * @return mixed
+ */
+$hooks->add_filter('on_write','filter_on_write');
+
+/**
+ * On edit
+ * @param $data
+ * @param $table
+ * @return mixed
+ */
+$hooks->add_filter('on_edit','filter_on_edit');
+
+/**
+ * Validate token
+ * @param $is_valid
+ * @param $token
+ * @return bool
+ */
+$hooks->add_filter('validate_token','filter_validate_token');
+
+
+/**
+ * Filter user auth login
+ * @param $user_id
+ * @return string
+ */
+$hooks->add_filter('auth_user_id','filter_auth_user_id');
+
+
+/**
+ * Bypass authentication
+ * @param $bypass
+ * @return bool
+ */
+$hooks->add_filter('bypass_authentication','filter_bypass_authentication');
+
+/**
+ * Check if is a login request
+ * @param $is_valid_request
+ * @param $query
+ * @return string|false
+ */
+$hooks->add_filter('check_login_request','filter_check_login_request');
+```
 
 
 ## API Client
 
-### PHP API Client
+### PHP API Client 
 
 **Filename:** `apiclient.class.php`
 
@@ -517,7 +629,10 @@ Host: localhost
 | Method        | Params                                         | Return | Description                                    |
 | ------------- | ---------------------------------------------- | ------ | ---------------------------------------------- |
 | getInstance   | -                                              | Void   | Returns static reference to the class instance |
-| fetch         | \$table, \$format = 'json', \$params = array() | Object | Fetch data                                     |
+| get           | \$table, \$format = 'json', \$params = array() | Object | Fetch data                                     |
+| insert        | \$format = 'json', \$params = array()          | Object | Insert data                                    |
+| update        | \$format = 'json', \$params = array()          | Object | Update data                                    |
+| delete        | \$table, \$format = 'json', \$params = array() | Object | Delete data                                    |
 | searchElement | \$key, \$value, \$array                        | Object | Search object in array                         |
 | filterBy      | \$key, \$value, \$array, \$limit = null        | Array  | Filter results array by single key             |
 | filter        | \$value, \$array, $limit = null                | Array  | Filter results array by multiple values        |
@@ -527,39 +642,39 @@ Host: localhost
 ```Php
 $api_client = APIClient::getInstance();
 
-$api_client->DEBUG = true;
-$api_client->URL = 'http://localhost';
-$api_client->ACCESS_TOKEN = '4gw7j8erfgerf6werf8fwerf8erfwfer';
-$api_client->DATASET = 'dataset';
+APIClient::$DEBUG = true;
+APIClient::$URL = 'http://localhost';
+APIClient::$ACCESS_TOKEN = '4gw7j8erfgerf6werf8fwerf8erfwfer';
+APIClient::$DATASET = 'dataset';
 
 $params = array(
-	'where' => array(
-		'type' => array('C', 'O', 'L'),
-		'accounts_addresses.address' => array(
-			'!' => '', // NOT NULL
-		),
-	),
-	'join' => array(
-		'accounts_addresses' => array(
-			'on' => 'parent_id',
-			'value' => 'id',
-			'method' => 'LEFT'
-		),
-		'accounts_agents' => array(
-			'on' => 'parent_id',
-			'value' => 'id'
-		),
-	),
-	'order_by' => array(
-		'address' => array(
-			'table' => 'accounts_addresses',
-			'direction' => 'DESC'
-		),
-		'type' => array(
-			'table' => 'accounts_addresses',
-			'direction' => 'ASC'
-		)
-	),
+    'where' => array(
+        'type' => array('C', 'O', 'L'),
+        'accounts_addresses.address' => array(
+            '!' => '', // NOT NULL
+        ),
+    ),
+    'join' => array(
+        'accounts_addresses' => array(
+            'on' => 'parent_id',
+            'value' => 'id',
+            'method' => 'LEFT'
+        ),
+        'accounts_agents' => array(
+            'on' => 'parent_id',
+            'value' => 'id'
+        ),
+    ),
+    'order_by' => array(
+        'address' => array(
+            'table' => 'accounts_addresses',
+            'direction' => 'DESC'
+        ),
+        'type' => array(
+            'table' => 'accounts_addresses',
+            'direction' => 'ASC'
+        )
+    ),
 );
 $records = $api_client->fetch('accounts', 'json', $params);
 ```
@@ -569,3 +684,5 @@ $records = $api_client->fetch('accounts', 'json', $params);
 ## Credits
 
 https://github.com/project-open-data/db-to-api
+
+<https://github.com/voku/php-hooks>

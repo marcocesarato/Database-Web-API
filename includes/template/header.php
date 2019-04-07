@@ -10,7 +10,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title><?php echo __API_NAME__ ?></title>
+    <title><?php echo __API_NAME__; ?></title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -29,7 +29,7 @@
 <![endif]-->
 <div class="jumbotron">
     <div class="container text-center">
-        <h1><?php echo __API_NAME__ ?></h1>
+        <h1><?php echo __API_NAME__; ?></h1>
     </div>
 </div>
 <div class="container-fluid">

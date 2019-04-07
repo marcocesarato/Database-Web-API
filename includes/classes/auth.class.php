@@ -15,49 +15,32 @@ class Auth
 
 	public static $instance;
 	public static $settings = null;
+    public static $api_table = 'api_authentications';
+
+	public $user = array();
 	public $user_id = null;
 	public $is_admin = false;
 	public $authenticated = false;
+	public $can_values = array('All', 'Owner', 'Teams');
 	private $api;
 	private $db;
-	private $user = array();
+	private $table_free = array();
+	private $table_readonly = array();
+	private $query = array();
+
 	/**
 	 * Singleton constructor
 	 */
 	public function __construct() {
 		self::$instance = &$this;
-		try {
-			//open the database
-			$this->sqlite_db = new PDO('sqlite:sessions.sqlite');
-		} catch (PDOException $e) {
-			Request::error($e->getMessage(), 500);
-		}
-
-		//create the database
-		$this->createTokensDatabase();
-
+		$this->logger = Logger::getInstance();
+		$this->hooks = Hooks::getInstance();
         if(defined('__AUTH__')) {
             self::$settings = unserialize(__AUTH__);
+            if(!empty(self::$settings['api_table'])) {
+                self::$api_table = preg_replace('/\s+/', '', self::$settings['api_table']);
+            }
         }
-
-	}
-
-	/**
-	 * Create database for tokens
-	 */
-	private function createTokensDatabase() {
-		try {
-			$this->sqlite_db->exec("
-            CREATE TABLE IF NOT EXISTS tokens (
-                token CHAR(32) PRIMARY KEY,
-                user_id VARCHAR(255) NOT NULL,
-                user_agent VARCHAR(255) DEFAULT NULL,
-                date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                last_access TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )");
-		} catch (PDOException $e) {
-			Request::error($e->getMessage(), 500);
-		}
 	}
 
 	/**
@@ -73,29 +56,48 @@ class Auth
 	 * @return bool
 	 */
 	public function validate($query) {
+
 		$this->api = API::getInstance();
-		if (isset($query['token']) && $this->validateToken($query['token'])) {
+
+        if(!empty($this->query['db'])) {
+            $this->api->setDatabase();
+            $db_settings = $this->api->getDatabase();
+            $this->table_free = $db_settings->table_free;
+            $this->table_readonly = $db_settings->table_readonly;
+        }
+
+        if(self::$settings['sqlite']){
+            $this->db = new PDO('sqlite:'.self::$settings['sqlite_filename'].'.sqlite');
+        } else {
+            $this->db = &$this->api->connect(self::$settings['api_database']);
+            $this->api->setDatabase(self::$settings['api_database']);
+        }
+
+		$this->query = $query;
+
+        if(empty(self::$settings))
+            return true;
+
+		if(!$this->api->checkTable(self::$api_table)) {
+			$this->createAPITable(); //create the table
+		} else {
+			$this->checkAPITable();
+		}
+
+		if (isset($this->query['check_counter']) && $this->validateToken($this->query['token']) && $this->is_admin) {
+			$this->checkCounter();
+		} elseif (isset($this->query['token']) && $this->validateToken($this->query['token'])) {
 			return true;
-		} elseif (isset($query['check_token']) && $this->validateToken($query['check_token'])) {
-			$results = array(
-				"user" => (object)array(
-					"id" => $this->user_id,
-					"is_admin" => $this->is_admin
-				),
-				"response" => (object) array('status' => 200, 'message' => 'OK')
-			);
-
-			$renderer = 'render_' . $query['format'];
-			die($this->api->$renderer($results, $query));
-
-		} elseif (isset($query['user_id']) && isset($query['password'])) {
-
-			if(empty(self::$settings))
-			    return true;
+		} elseif (isset($this->query['check_token']) && $this->validateToken($this->query['check_token'])) {
+			$this->checkToken();
+		// Login custom
+		} elseif (($login_action = $this->hooks->apply_filters('check_login_request', false, $this->query)) && $this->hooks->has_action($login_action)) {
+			$this->hooks->do_action($login_action);
+		} elseif (isset($this->query['user_id']) && isset($this->query['password'])) {
 
             $bind_values = array();
 
-			$users_table = self::$settings['users']['table'];
+            $users_table = self::$settings['users']['table'];
             $users_columns = self::$settings['users']['columns'];
 
             $user = strtolower($query['user_id']);
@@ -116,23 +118,23 @@ class Auth
                 $where_sql = (!empty($where_sql) ? " ($where_sql) AND " : "") . implode(" OR ", $where);
             }
 
-			$this->db = &$this->api->connect(self::$settings['database']);
+            $this->api = API::getInstance();
+            $this->db = &$this->api->connect(self::$settings['users']['database']);
 
-			$sth = $this->db->prepare("SELECT * FROM $users_table WHERE $where_sql");
-			foreach($bind_values as $col => $value){
+            $sth = $this->db->prepare("SELECT * FROM $users_table WHERE $where_sql");
+            foreach($bind_values as $col => $value){
                 $sth->bindParam(":$col", $value);
             }
 
-			$sth->execute();
-			$user_row = $sth->fetch();
+            $sth->execute();
+            $user_row = $sth->fetch();
 
-			if ($user_row) {
-				$password = strtolower($query['password']);
+            if ($user_row) {
+                $password = strtolower($query['password']);
                 if ($user_row[$users_columns['password']] == $password) {
-                    $token = $this->generateToken($user_row['id']);
+                    $token = $this->generateToken($user_row[$users_columns['id']], $user_row[$users_columns['username']]);
                     $this->user_id = $user_row[$users_columns['id']];
                     $this->is_admin = !empty($users_columns['admin']) ? $user_row[key(reset($users_columns['admin']))] : false;
-                    $this->authenticated = true;
                     // Render
                     $results = array((object) array(
                         "token" => $token,
@@ -141,18 +143,96 @@ class Auth
                     die($this->api->$renderer($results, $query));
                 }
             }
-			Request::error("Invalid authentication!", 401);
+            Request::error("Invalid authentication!", 401);
+
 		}
-
-        if(empty(self::$settings))
-            return true;
-
 		Request::error("Forbidden!", 403);
 		return false;
 	}
 
 	/**
-	 * Validate token
+	 * Create database table
+	 */
+	private function createAPITable() {
+		try {
+			$this->db->exec("
+            CREATE TABLE ".self::$api_table." (
+                token CHAR(32) PRIMARY KEY,
+                user_id VARCHAR(255) NOT NULL,
+                user_name VARCHAR(255) NOT NULL,
+                user_agent VARCHAR(255) DEFAULT NULL,
+                counter INT DEFAULT 0 NOT NULL,
+                date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_access TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )");
+		} catch (PDOException $e) {
+			Request::error($e->getMessage(), 500);
+		}
+	}
+
+	/**
+	 * Check database table
+	 */
+	private function checkAPITable() {
+		try {
+			// Add the new columns if not exists
+			if(!$this->api->checkColumn('user_name',self::$api_table)) {
+				$this->db->exec("ALTER TABLE ".self::$api_table." ADD COLUMN user_name VARCHAR(255)");
+			}
+			if(!$this->api->checkColumn('counter',self::$api_table)) {
+				$this->db->exec("ALTER TABLE ".self::$api_table." ADD COLUMN counter INT DEFAULT 0");
+			}
+			$date = date("Y-m-d H:i:s", strtotime('-1 month'));
+			$this->db->exec("DELETE FROM ".self::$api_table." WHERE last_access != date_created AND last_access < '". $date . "'");
+		} catch (PDOException $e) {
+			Request::error($e->getMessage(), 500);
+		}
+	}
+
+	/**
+	 * Check counter
+	 */
+	private function checkCounter() {
+		try {
+			$sth = $this->db->prepare("SELECT user_id, user_name, SUM(counter) as counter FROM ".self::$api_table." GROUP BY user_id, user_name");
+			$sth->execute();
+			$results = $sth->fetchAll(PDO::FETCH_OBJ);
+			$this->api->render($results);
+		} catch (PDOException $e) {
+			Request::error($e->getMessage(), 500);
+		}
+	}
+
+	/**
+	 * Check token
+	 */
+	private function checkToken() {
+		try {
+			$results = array(
+				"user"     => (object) array(
+					"id"       => $this->user_id,
+					"is_admin" => $this->is_admin
+				),
+				"response" => (object) array('status' => 200, 'message' => 'OK')
+			);
+
+			$this->logger->debug($results);
+			$this->api->render($results);
+		} catch (PDOException $e) {
+			Request::error($e->getMessage(), 500);
+		}
+	}
+
+	/**
+	 * Increment counter
+	 * @return bool
+	 */
+	private function incrementCounter(){
+		return !($this->query['docs'] || isset($this->query['check_token']) || isset($this->query['check_counter']) || isset($this->query['user_id']) && isset($this->query['password']));
+	}
+
+	/**
+	 * Validate Token
 	 * @param $token
 	 * @return bool
 	 */
@@ -165,159 +245,64 @@ class Auth
         $users_columns = self::$settings['users']['columns'];
 
 		try {
-			$sth = $this->sqlite_db->prepare("SELECT * FROM tokens WHERE token = :token");
+			$sth = $this->db->prepare("SELECT * FROM ".self::$api_table." WHERE token = :token");
 			$sth->bindParam(':token', $token);
 			$sth->execute();
 			$token_row = $sth->fetch();
 
-			if ($token_row) {
+			$exists = $this->hooks->apply_filters('validate_token', !empty($token_row), $token);
 
-				$this->api = API::get_instance();
-				$this->db = &$this->api->connect(self::$settings['database']);
-				$sth = $this->db->prepare("SELECT * FROM $users_table WHERE ".$users_columns['id']." = :user_id");
-				$sth->bindParam(':user_id', $token_row['user_id']);
+			$bypass_authentication = false;
+			$bypass_authentication = $this->hooks->apply_filters('bypass_authentication', $bypass_authentication);
 
-				$sth->execute();
-		        $user_row = $sth->fetch();
-
-				if ($user_row) {
-					$this->user = $user_row;
-				    $this->user_id = $user_row[$users_columns['id']];
-					$this->is_admin = (($user_row['is_admin'] == reset($users_columns['admin'])) ? true : false);
-					return true;
-				}
-
+			// Bypass
+			if(!$exists && $bypass_authentication && !isset($this->query['force_validation'])) {
+				$exists = true;
+				$token_row = array();
+				$token_row['user_id'] = '1';
+				$token_row['counter'] = 0;
 			}
-		    return false;
+
+            if ($exists) {
+
+                $this->api = API::getInstance();
+                $this->db = &$this->api->connect(self::$settings['api_database']);
+                $sth = $this->db->prepare("SELECT * FROM $users_table WHERE ".$users_columns['id']." = :user_id");
+                $sth->bindParam(':user_id', $token_row['user_id']);
+
+                $sth->execute();
+                $user_row = $sth->fetch();
+
+                if ($user_row) {
+                    $this->user = $user_row;
+                    $this->user_id = $user_row[$users_columns['id']];
+                    if(!empty($users_columns['admin'])) {
+                        $this->is_admin = (($user_row[key($users_columns['admin'])] == reset($users_columns['admin'])) ? true : false);
+                    }
+                    return true;
+                }
+
+            }
+			return false;
 		} catch (PDOException $e) {
 			Request::error($e->getMessage(), 500);
+            return false;
 		}
 	}
 
-	/**
-	 * Add at the end of SELECT, UPDATE and DELETE queries some restriction based on permissions (you can do a subquery with the user/role id)
-	 * @param $table
-	 * @param $permission
-	 * @return string
-	 */
-	public function sql_restriction($table, $permission) {
-
-		// All allowed
-		if ($this->is_admin == true)
-			return "'1' = '1'";
-
-		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['sql_restriction']){
-			$callback = call_user_func(self::$settings['callbacks']['sql_restriction'], $table, $permission);
-			if(!empty($callback)) return $callback;
-		}
-
-		return "'1' = '1'";
-	}
 
 	/**
-	 * Return if the user can read on this table
-	 * @param $table
-	 * @return bool
-	 */
-	public function can_read($table) {
-
-		$db_settings = $this->api->get_db();
-		$this->table_free = $db_settings->table_free;
-
-        if(empty(self::$settings) || $this->is_admin == true || in_array($table, $this->table_free)) {
-			return true;
-		}
-
-		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['can_read']){
-			$callback = call_user_func(self::$settings['callbacks']['can_read'], $table);
-			if(!empty($callback)) return $callback;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Return if the user can insert on this table
-	 * @param $table
-	 * @return bool
-	 */
-	public function can_write($table) {
-
-		$db_settings = $this->api->get_db();
-		$this->table_readonly = $db_settings->table_readonly;
-
-		if(empty(self::$settings) || in_array($table, $this->table_readonly))
-			return false;
-
-		if ($this->is_admin == true)
-			return true;
-
-		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['can_write']){
-			$callback = call_user_func(self::$settings['callbacks']['can_write'], $table);
-			if(!empty($callback)) return $callback;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Return if the user can update on this table
-	 * @param $table
-	 * @return bool
-	 */
-	public function can_edit($table) {
-		
-		$db_settings = $this->api->get_db();
-		$this->table_readonly = $db_settings->table_readonly;
-
-		if(empty(self::$settings) || in_array($table, $this->table_readonly))
-			return false;
-
-		if ($this->is_admin == true)
-			return true;
-
-		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['can_edit']){
-			$callback = call_user_func(self::$settings['callbacks']['can_edit'], $table);
-			if(!empty($callback)) return $callback;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Return if the user can delete on this table
-	 * @param $table
-	 * @return bool
-	 */
-	public function can_delete($table) {
-		
-		$db_settings = $this->api->get_db();
-		$this->table_readonly = $db_settings->table_readonly;
-
-		if(empty(self::$settings) || in_array($table, $this->table_readonly))
-			return false;
-
-		if ($this->is_admin == true)
-			return true;
-
-		if(!empty(self::$settings['callbacks']) && self::$settings['callbacks']['can_delete']){
-			$callback = call_user_func(self::$settings['callbacks']['can_delete'], $table);
-			if(!empty($callback)) return $callback;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Token generator
+	 * Generate Token
 	 * @param $user_id
+	 * @param $user_name
 	 * @return null|string
 	 */
-	private function generateToken($user_id) {
+	public function generateToken($user_id, $user_name) {
 		try {
 			$token = md5(uniqid(rand(), true));
-			$sth = $this->sqlite_db->prepare("INSERT INTO tokens (token,user_id,user_agent) VALUES (:token,:user_id,:user_agent)");
+			$sth = $this->db->prepare("INSERT INTO ".self::$api_table." (token,user_id,user_name,user_agent) VALUES (:token,:user_id,:user_name,:user_agent)");
 			$sth->bindParam(':token', $token);
+			$sth->bindParam(':user_name', $user_name);
 			$sth->bindParam(':user_id', $user_id);
 			$sth->bindParam(':user_agent', $_SERVER['HTTP_USER_AGENT']);
 			if ($sth->execute())
@@ -326,6 +311,131 @@ class Auth
 		} catch (PDOException $e) {
 			Request::error($e->getMessage(), 500);
 		}
+		return null;
+	}
+
+	/**
+	 * Generate restricted condition for sql queries
+	 * @param $table
+	 * @param $permission
+	 * @return string
+	 */
+	public function sql_restriction($table, $permission) {
+
+        $sql = "";
+
+        // All allowed
+        if ($this->is_admin == true)
+            $sql = "'1' = '1'";
+
+        $sql = $this->hooks->apply_filters('sql_restriction', $sql, $table, $permission);
+
+		return $sql;
+	}
+
+	// Tables with no permission required (readonly)
+
+
+	/**
+	 *
+	 * Can Read
+	 * @param $table
+	 * @return bool
+	 */
+	public function can_read($table)
+    {
+
+        $result = true;
+
+        if (empty(self::$settings)){
+            $result = true;
+        } else {
+            if (in_array($table, $this->table_free)) {
+                $result = true;
+            }
+        }
+
+		$result = $this->hooks->apply_filters('can_read', $result, $table);
+
+		return $result;
+	}
+
+	/**
+	 * Can Write
+	 * @param $table
+	 * @return bool
+	 */
+	public function can_write($table) {
+
+		$result = false;
+
+		if (in_array($table, $this->table_readonly)) {
+			$result = false;
+		} else {
+            if (empty(self::$settings)){
+                $result = false;
+            } else {
+                if (in_array($table, $this->table_free)) {
+                    $result = true;
+                }
+            }
+		}
+
+		$result = $this->hooks->apply_filters('can_write', $result, $table);
+
+		return $result;
+	}
+
+	/**
+	 * Can edit
+	 * @param $table
+	 * @return bool
+	 */
+	public function can_edit($table) {
+
+		$result = false;
+
+        if (in_array($table, $this->table_readonly)) {
+            $result = false;
+        } else {
+            if (empty(self::$settings)){
+                $result = false;
+            } else {
+                if (in_array($table, $this->table_free)) {
+                    $result = true;
+                }
+            }
+        }
+
+		$result = $this->hooks->apply_filters('can_edit', $result, $table);
+
+		return $result;
+	}
+
+	/**
+	 * Can delete
+	 * @param $table
+	 * @return bool
+	 */
+	public function can_delete($table) {
+
+		$result = false;
+
+        if (in_array($table, $this->table_readonly)) {
+            $result = false;
+        } else {
+            if (empty(self::$settings)){
+                $result = false;
+            } else {
+                if (in_array($table, $this->table_free)) {
+                    $result = true;
+                }
+            }
+        }
+
+		$result = $this->hooks->apply_filters('can_delete', $result, $table);
+
+		return $result;
 	}
 
 	/**

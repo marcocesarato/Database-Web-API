@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Database error parser Class
  *
@@ -10,8 +9,7 @@
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
 
-class DatabaseErrorParser
-{
+class DatabaseErrorParser {
 	public function __construct() {
 	}
 
@@ -20,7 +18,10 @@ class DatabaseErrorParser
 		$code = $error->getCode();
 		$message = $error->getMessage();
 
-		$error = "Ops something is gone wrong (ERROR CODE: $code)";
+		$logger = Logger::getInstance();
+		$logger->error("[$db_type] ($code) $message");
+
+		$error = "($code) Ops qualcosa e' andato storto";
 
 		switch ($db_type) {
 			case 'pgsql':
@@ -71,7 +72,7 @@ class DatabaseErrorParser
 	}
 
 	private static function duplicateError($m) {
-		return sprintf("Il campo %s esiste gia'. Si prega di modificare il campo per poter proseguire", $m[1]);
+		return sprintf("Il campo %s e gia presente. Si prega di modificare il campo per poter proseguire", $m[1]);
 	}
 
 	private static function notNullError($m) {
@@ -81,6 +82,6 @@ class DatabaseErrorParser
 	private static function foreignKeyError($m) {
 		$m[2] = str_replace($m[1] . '_', '', $m[2]);
 		$m[2] = str_replace('_fkey', '', $m[2]);
-		return sprintf("Il campo %s non puo' essere vuoto. Si prega di compilare il campo per poter proseguire", $m[2]);
+		return sprintf("Il campo %s correlato non e stato trovato. Si prega di compilare il campo correttamente per poter proseguire", $m[2]);
 	}
 }
