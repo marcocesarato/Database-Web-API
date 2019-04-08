@@ -59,13 +59,6 @@
 
 </IfModule>
 
-<Files ~ "\.sqlite$">
-
-	Order Allow,Deny
-	Deny from All
-
-</Files>
-
 # File protection
 <Files ~ "^(config)\.php">
   Order Allow,Deny
