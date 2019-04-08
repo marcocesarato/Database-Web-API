@@ -1,7 +1,6 @@
 <?php
 /**
  * Compatibility
- *
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  * @copyright  Copyright (c) 2018
@@ -9,18 +8,18 @@
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
 
-if (!function_exists('http_response_code')) {
+if(!function_exists('http_response_code')) {
 
 	/**
 	 * Http response code
 	 * @param null $code
 	 * @return int|mixed|null
 	 */
-	function http_response_code($code = NULL) {
+	function http_response_code($code = null) {
 
-		if ($code !== NULL) {
+		if($code !== null) {
 
-			switch ($code) {
+			switch($code) {
 				case 100:
 					$text = 'Continue';
 					break;
@@ -154,35 +153,32 @@ if (!function_exists('http_response_code')) {
 	}
 }
 
-if (!function_exists('shortcode_atts')) {
+if(!function_exists('shortcode_atts')) {
 
 	/**
 	 * Combine user attributes with known attributes and fill in defaults when needed.
-	 *
 	 * The pairs should be considered to be all of the attributes which are
 	 * supported by the caller and given as a list. The returned attributes will
 	 * only contain the attributes in the $pairs list.
-	 *
 	 * If the $atts list has unsupported attributes, then they will be ignored and
 	 * removed from the final returned list.
-	 *
 	 * @from Wordpress
 	 * @since 2.5
-	 *
 	 * @param array $pairs Entire list of supported attributes and their defaults.
 	 * @param array $atts User defined attributes in shortcode tag.
 	 * @return array Combined and filtered attribute list.
 	 */
 	function shortcode_atts($pairs, $atts) {
-		$atts = (array)$atts;
-		$out = array();
-		foreach ($pairs as $name => $default) {
-			if (array_key_exists($name, $atts)) {
+		$atts = (array) $atts;
+		$out  = array();
+		foreach($pairs as $name => $default) {
+			if(array_key_exists($name, $atts)) {
 				$out[$name] = $atts[$name];
 			} else {
 				$out[$name] = $default;
 			}
 		}
+
 		return $out;
 	}
 

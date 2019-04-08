@@ -1,7 +1,6 @@
 <?php
 /**
  * Hooks - Filters
- *
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
@@ -13,7 +12,7 @@
  * @param $permission
  * @return mixed
  */
-function filter_sql_restriction($restriction , $table, $permission){
+function filter_sql_restriction($restriction, $table, $permission) {
 	return $restriction; // Continue or return $sql
 }
 
@@ -23,9 +22,10 @@ function filter_sql_restriction($restriction , $table, $permission){
  * @param $table
  * @return mixed
  */
-function filter_can_read($permission, $table){
+function filter_can_read($permission, $table) {
 	$user = Auth::getUser(); // User row
-	$db = API::getConnection(); // PDO Object
+	$db   = API::getConnection(); // PDO Object
+
 	return $permission;
 }
 
@@ -35,9 +35,10 @@ function filter_can_read($permission, $table){
  * @param $table
  * @return mixed
  */
-function filter_can_write($permission, $table){
+function filter_can_write($permission, $table) {
 	$user = Auth::getUser(); // User row
-	$db = API::getConnection(); // PDO Object
+	$db   = API::getConnection(); // PDO Object
+
 	return $permission;
 }
 
@@ -47,9 +48,10 @@ function filter_can_write($permission, $table){
  * @param $table
  * @return mixed
  */
-function filter_can_edit($permission, $table){
+function filter_can_edit($permission, $table) {
 	$user = Auth::getUser(); // User row
-	$db = API::getConnection(); // PDO Object
+	$db   = API::getConnection(); // PDO Object
+
 	return $permission;
 }
 
@@ -59,10 +61,11 @@ function filter_can_edit($permission, $table){
  * @param $table
  * @return mixed
  */
-function filter_can_delete($permission, $table){
-	$user = Auth::getUser(); // User row
-	$db = API::getConnection(); // PDO Object
+function filter_can_delete($permission, $table) {
+	$user       = Auth::getUser(); // User row
+	$db         = API::getConnection(); // PDO Object
 	$permission = false;
+
 	return $permission;
 }
 
@@ -72,9 +75,10 @@ function filter_can_delete($permission, $table){
  * @param $table
  * @return mixed
  */
-function filter_on_read($data, $table){
+function filter_on_read($data, $table) {
 	$user = Auth::getUser(); // User row
-	$db = API::getConnection(); // PDO Object
+	$db   = API::getConnection(); // PDO Object
+
 	return $data;
 }
 
@@ -84,9 +88,10 @@ function filter_on_read($data, $table){
  * @param $table
  * @return mixed
  */
-function filter_on_write($data, $table){
+function filter_on_write($data, $table) {
 	$user = Auth::getUser(); // User row
-	$db = API::getConnection(); // PDO Object
+	$db   = API::getConnection(); // PDO Object
+
 	return $data;
 }
 
@@ -96,9 +101,10 @@ function filter_on_write($data, $table){
  * @param $table
  * @return mixed
  */
-function filter_on_edit($data, $table){
+function filter_on_edit($data, $table) {
 	$user = Auth::getUser(); // User row
-	$db = API::getConnection(); // PDO Object
+	$db   = API::getConnection(); // PDO Object
+
 	return $data;
 }
 
@@ -108,7 +114,7 @@ function filter_on_edit($data, $table){
  * @param $token
  * @return bool
  */
-function filter_validate_token($is_valid, $token){
+function filter_validate_token($is_valid, $token) {
 	//return ($token == "51cc155a75a5cf79a4b28b9bf93cc680");
 	return $is_valid;
 }
@@ -118,7 +124,7 @@ function filter_validate_token($is_valid, $token){
  * @param $user_id
  * @return string
  */
-function filter_auth_user_id($user_id){
+function filter_auth_user_id($user_id) {
 	//return '78365125-d663-fd41-1bcd-5c8b7fde1a33';
 	return $user_id;
 }
@@ -128,10 +134,11 @@ function filter_auth_user_id($user_id){
  * @param $bypass
  * @return bool
  */
-function filter_bypass_authentication($bypass){
+function filter_bypass_authentication($bypass) {
 	$ip = Request::getIPAddress();
+
 	//return in_array($ip, array('heartquarter' => '0.0.0.0'));
-    return $bypass;
+	return $bypass;
 }
 
 /**
@@ -140,11 +147,13 @@ function filter_bypass_authentication($bypass){
  * @param $query
  * @return string|false
  */
-function filter_check_login_request($is_valid_request, $query){
+function filter_check_login_request($is_valid_request, $query) {
 	$hooks = Hooks::getInstance();
+
 	/*if(isset($query['user_id']) && $query['user_id'] != 'admin' && isset($query['password']) && !empty($query['client_id']) && $query['referer'] == "login_custom") {
 		$hooks->add_action('login_custom','action_login_custom');
 		return "login_custom";
 	}*/
+
 	return $is_valid_request;
 }

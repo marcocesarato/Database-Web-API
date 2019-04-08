@@ -1,7 +1,6 @@
 <?php
 /**
  * Index
- *
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  * @copyright  Copyright (c) 2018
@@ -12,5 +11,5 @@
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
 
-include dirname(__FILE__).'/includes/loader.php';
+include dirname(__FILE__) . '/includes/loader.php';
 API::run();

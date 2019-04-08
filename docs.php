@@ -1,8 +1,7 @@
 <?php
 
 $docs = array(
-    'dataset' => array(
-        /*
+	'dataset' => array(/*
         "example" => array(
             "id" => array(
                 "description" => "Row identification",
@@ -14,5 +13,5 @@ $docs = array(
             ),
         ),
         */
-    )
+	)
 );

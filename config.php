@@ -1,7 +1,6 @@
 <?php
 /**
  * Config
- *
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  * @copyright  Copyright (c) 2018
@@ -36,17 +35,19 @@ $users_table = 'users'; // Table where users are stored
 )));*/
 
 define("__DATASETS__", serialize(array(
-    'dataset' => array(
-        'name' => 'database_name',
-        'username' => 'root', // root is default
-        'password' => 'root', // root is default
-        'server' => 'localhost',  // localhost default
-        'port' => 3306, // 3306 is default
-        'type' => 'mysql', // mysql is default
-        'table_docs' => $docs['dataset'],
-        'table_list' => array(), // Tables's whitelist (Allow only the tables in this list, if empty allow all)
-        'table_blacklist' => array(/*blacklist users table*/ $users_table), // Tables's blacklist
-        'column_list' => array(), // Columns's whitelist (Allow only the columns in this list, if empty allow all)
-        'column_blacklist' => array(), // Columns's blacklist
-    ),
+	'dataset' => array(
+		'name'             => 'database_name',
+		'username'         => 'root', // root is default
+		'password'         => 'root', // root is default
+		'server'           => 'localhost',  // localhost default
+		'port'             => 3306, // 3306 is default
+		'type'             => 'mysql', // mysql is default
+		'table_docs'       => $docs['dataset'],
+		'table_list'       => array(), // Tables's whitelist (Allow only the tables in this list, if empty allow all)
+		'table_blacklist'  => array(/*blacklist users table*/
+			$users_table
+		), // Tables's blacklist
+		'column_list'      => array(), // Columns's whitelist (Allow only the columns in this list, if empty allow all)
+		'column_blacklist' => array(), // Columns's blacklist
+	),
 )));

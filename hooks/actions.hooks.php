@@ -1,7 +1,6 @@
 <?php
 /**
  * Hooks - Actions
- *
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
@@ -10,8 +9,8 @@
  * Custom API Call
  * @param $query
  */
-function action_custom_api_call(){
-	$api = API::getInstance();
+function action_custom_api_call() {
+	$api                  = API::getInstance();
 	$api->query['part_1'] = $api->query['db'];
 	$api->query['part_2'] = $api->query['table'];
 	$api->query['part_3'] = $api->query['id'];

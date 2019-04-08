@@ -1,12 +1,11 @@
 <?php
 /**
  * Hooks - Register
- *
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
-require_once(__ROOT__.'/hooks/loader.hooks.php');
+require_once(__ROOT__ . '/hooks/loader.hooks.php');
 
 $hooks = Hooks::getInstance();
 
@@ -14,7 +13,7 @@ $hooks = Hooks::getInstance();
  * Custom API Call
  * @return mixed or die (with mixed return just skip to next action until 404 error)
  */
-$hooks->add_action('custom_api_call','action_custom_api_call', 1);
+$hooks->add_action('custom_api_call', 'action_custom_api_call', 1);
 
 
 /**
@@ -24,7 +23,7 @@ $hooks->add_action('custom_api_call','action_custom_api_call', 1);
  * @param $permission
  * @return mixed
  */
-$hooks->add_filter('sql_restriction','filter_sql_restriction');
+$hooks->add_filter('sql_restriction', 'filter_sql_restriction');
 
 /**
  * Return if can select
@@ -32,7 +31,7 @@ $hooks->add_filter('sql_restriction','filter_sql_restriction');
  * @param $table
  * @return mixed
  */
-$hooks->add_filter('can_read','filter_can_read');
+$hooks->add_filter('can_read', 'filter_can_read');
 
 /**
  * Return if can insert
@@ -40,7 +39,7 @@ $hooks->add_filter('can_read','filter_can_read');
  * @param $table
  * @return mixed
  */
-$hooks->add_filter('can_write','filter_can_write');
+$hooks->add_filter('can_write', 'filter_can_write');
 
 /**
  * Return if can update
@@ -48,7 +47,7 @@ $hooks->add_filter('can_write','filter_can_write');
  * @param $table
  * @return mixed
  */
-$hooks->add_filter('can_edit','filter_can_edit');
+$hooks->add_filter('can_edit', 'filter_can_edit');
 
 /**
  * Return if can delete
@@ -56,7 +55,7 @@ $hooks->add_filter('can_edit','filter_can_edit');
  * @param $table
  * @return mixed
  */
-$hooks->add_filter('can_delete','filter_can_delete');
+$hooks->add_filter('can_delete', 'filter_can_delete');
 
 /**
  * On read
@@ -64,7 +63,7 @@ $hooks->add_filter('can_delete','filter_can_delete');
  * @param $table
  * @return mixed
  */
-$hooks->add_filter('on_read','filter_on_read');
+$hooks->add_filter('on_read', 'filter_on_read');
 
 /**
  * On write
@@ -72,7 +71,7 @@ $hooks->add_filter('on_read','filter_on_read');
  * @param $table
  * @return mixed
  */
-$hooks->add_filter('on_write','filter_on_write');
+$hooks->add_filter('on_write', 'filter_on_write');
 
 /**
  * On edit
@@ -80,7 +79,7 @@ $hooks->add_filter('on_write','filter_on_write');
  * @param $table
  * @return mixed
  */
-$hooks->add_filter('on_edit','filter_on_edit');
+$hooks->add_filter('on_edit', 'filter_on_edit');
 
 /**
  * Validate token
@@ -88,7 +87,7 @@ $hooks->add_filter('on_edit','filter_on_edit');
  * @param $token
  * @return bool
  */
-$hooks->add_filter('validate_token','filter_validate_token');
+$hooks->add_filter('validate_token', 'filter_validate_token');
 
 
 /**
@@ -96,7 +95,7 @@ $hooks->add_filter('validate_token','filter_validate_token');
  * @param $user_id
  * @return string
  */
-$hooks->add_filter('auth_user_id','filter_auth_user_id');
+$hooks->add_filter('auth_user_id', 'filter_auth_user_id');
 
 
 /**
@@ -104,7 +103,7 @@ $hooks->add_filter('auth_user_id','filter_auth_user_id');
  * @param $bypass
  * @return bool
  */
-$hooks->add_filter('bypass_authentication','filter_bypass_authentication');
+$hooks->add_filter('bypass_authentication', 'filter_bypass_authentication');
 
 /**
  * Check if is a login request
@@ -112,4 +111,4 @@ $hooks->add_filter('bypass_authentication','filter_bypass_authentication');
  * @param $query
  * @return string|false
  */
-$hooks->add_filter('check_login_request','filter_check_login_request');
+$hooks->add_filter('check_login_request', 'filter_check_login_request');

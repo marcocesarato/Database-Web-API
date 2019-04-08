@@ -1,7 +1,6 @@
 <?php
 /**
  * Logger Class
- *
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  * @copyright  Copyright (c) 2018
@@ -16,7 +15,7 @@ class Logger {
 	protected $log_dir;
 	protected $log_path;
 	protected $file;
-	protected $options = array (
+	protected $options = array(
 		'dateFormat' => 'd-M-Y H:i:s'
 	);
 
@@ -39,20 +38,21 @@ class Logger {
 	 * @param string $log_file - path and filename of log
 	 * @param array $params
 	 */
-	public function setLog($log_dir, $log_file = 'logs.log', $params = array()){
-		$this->log_dir = $log_dir;
+	public function setLog($log_dir, $log_file = 'logs.log', $params = array()) {
+		$this->log_dir  = $log_dir;
 		$this->log_file = $log_file;
 		$this->log_path = preg_replace('/\\\\/', '\\', $log_dir . "/" . $log_file);
-		$this->params = array_merge($this->options, $params);
+		$this->params   = array_merge($this->options, $params);
 
 		//Create log file if it doesn't exist.
-		if (!file_exists($this->log_path)) {
-			if (!file_exists(dirname($this->log_path)))
+		if(!file_exists($this->log_path)) {
+			if(!file_exists(dirname($this->log_path))) {
 				mkdir(dirname($this->log_path), 0775, true);
+			}
 			@fopen($this->log_path, 'w'); //or exit("Can't create $log_file!");
 		}
 		//Check permissions of file.
-		if (!is_writable($this->log_path)) {
+		if(!is_writable($this->log_path)) {
 			//throw exception if not writable
 			//throw new Exception("ERROR: Unable to write to file!", 1);
 		}
@@ -65,6 +65,53 @@ class Logger {
 	 */
 	public function info($message) {
 		$this->writeLog($message, 'INFO');
+	}
+
+	/**
+	 * Write to log file
+	 * @param mixed $message
+	 * @param string $severity
+	 * @return void
+	 */
+	public function writeLog($message, $severity) {
+
+		// open log file
+		if(!is_resource($this->file)) {
+			$this->openLog();
+		}
+
+		// Encode to JSON if is not a string
+		if(!is_string($message)) {
+			$message = json_encode($message);
+		}
+
+		// Remove new lines
+		$message = trim(preg_replace('/\s+/', ' ', $message));
+
+		// Request method
+		$method = strtoupper($_SERVER['REQUEST_METHOD']);
+		// Grab the url path ( for troubleshooting )
+		$path = $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
+		// Grab time - based on timezone in php.ini
+		$time = date($this->params['dateFormat']);
+
+		$ip = Request::getIPAddress();
+
+		// Write time, url, & message to end of file
+		@fwrite($this->file, "[$time] [$severity] [method $method] [url $path] [client $ip]: $message" . PHP_EOL);
+	}
+
+	/**
+	 * Open log file
+	 * @return void
+	 */
+	private function openLog() {
+		$openFile = $this->log_dir . "/" . $this->log_file;
+		if(!file_exists(dirname($openFile))) {
+			mkdir(dirname($openFile), 0775, true);
+		}
+		// 'a' option = place pointer at end of file
+		$this->file = @fopen($openFile, 'a'); // or exit("Can't open $openFile!");
 	}
 
 	/**
@@ -95,57 +142,13 @@ class Logger {
 	}
 
 	/**
-	 * Write to log file
-	 * @param mixed $message
-	 * @param string $severity
-	 * @return void
-	 */
-	public function writeLog($message, $severity) {
-
-		// open log file
-		if (!is_resource($this->file)) {
-			$this->openLog();
-		}
-
-		// Encode to JSON if is not a string
-		if(!is_string($message))
-			$message = json_encode($message);
-
-		// Remove new lines
-		$message = trim(preg_replace('/\s+/', ' ', $message));
-
-		// Request method
-		$method = strtoupper($_SERVER['REQUEST_METHOD']);
-		// Grab the url path ( for troubleshooting )
-		$path = $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
-		// Grab time - based on timezone in php.ini
-		$time = date($this->params['dateFormat']);
-
-		$ip = Request::getIPAddress();
-
-		// Write time, url, & message to end of file
-		@fwrite($this->file, "[$time] [$severity] [method $method] [url $path] [client $ip]: $message" . PHP_EOL);
-	}
-
-	/**
-	 * Open log file
-	 * @return void
-	 */
-	private function openLog() {
-		$openFile = $this->log_dir . "/" . $this->log_file;
-		if (!file_exists(dirname($openFile)))
-			mkdir(dirname($openFile), 0775, true);
-		// 'a' option = place pointer at end of file
-		$this->file = @fopen($openFile, 'a'); // or exit("Can't open $openFile!");
-	}
-
-	/**
 	 * Class destructor
 	 */
 	public function __destruct() {
-		if ($this->file) {
+		if($this->file) {
 			@fclose($this->file);
 		}
 	}
 }
+
 $LOGGER = new Logger();
