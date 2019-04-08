@@ -73,14 +73,27 @@ function base_url($url) {
 	} else {
 		$protocol = 'http://';
 	}
-	$base = "";
 	if(realpath(__ROOT__) != realpath($_SERVER['DOCUMENT_ROOT'])) {
 		$base = basename(__ROOT__) . "/";
 	}
 
-	return $protocol . preg_replace('#/+#', '/', $hostname . "/" . $base . "/" . $url);
+	return $protocol . preg_replace('#/+#', '/', $hostname . "/" . basename(__ROOT__) . "/" . $url);
 }
 
+/**
+ * Build site base url
+ * @param $url
+ * @return string
+ */
+function build_base_url($url) {
+	if(!empty($_GET['db'])){
+		$url = '/' . $_GET['db'] . '/' . $url;
+	}
+	if(!empty($_GET['token'])){
+		$url = '/' . $_GET['token'] . '/' . $url;
+	}
+	return base_url($url);
+}
 
 /**
  * Trim recursive
@@ -223,14 +236,17 @@ function jsonp_callback_filter($callback) {
 
 /**
  * Debug dump
+ * @param bool $die
  */
 function dump() {
 	ob_clean();
+	$args = func_get_args();
 	if(!ini_get("xdebug.overload_var_dump")) {
 		echo "<pre>";
-		$args = func_get_args();
-		echo var_dump($args);
+		var_dump($args);
 		echo "</pre>";
+	} else {
+		var_dump($args);
 	}
 	die();
 }

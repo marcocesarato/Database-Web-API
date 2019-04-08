@@ -245,9 +245,11 @@ class Auth {
 				if($user_row) {
 					$this->user    = $user_row;
 					$this->user_id = $user_row[$users_columns['id']];
+					$this->authenticated = true;
 					if(!empty($users_columns['admin'])) {
 						$this->is_admin = (($user_row[key($users_columns['admin'])] == reset($users_columns['admin'])) ? true : false);
 					}
+					$this->incrementCounter();
 
 					return true;
 				}

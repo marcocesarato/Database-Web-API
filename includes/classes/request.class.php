@@ -455,7 +455,7 @@ class Request {
 	 * Returns the request referer
 	 */
 	public static function referer() {
-		return $_SERVER['HTTP_REFERER'];
+		return isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : "";
 	}
 
 	/**
