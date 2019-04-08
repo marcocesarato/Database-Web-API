@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.76 beta
+**Version:** 0.5.77 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -170,6 +170,38 @@ Host: localhost
 ```
 
 
+## Check Authentication
+
+Check authentication check is needed for verify if a token is valid.
+
+- Check authentication: `/auth/check/[token].[format]`
+
+**Request example:**
+
+```http
+GET /auth/check/bfee499dfa1387648ec8ce9d621db120.json HTTP/1.1
+Host: localhost
+```
+
+**Response example:**
+
+```json
+{
+
+    "user": {
+        "id": "1",
+        "role_id": "",
+        "is_admin": true
+    },
+    "response": {
+        "status": 200,
+        "message": "OK"
+    }
+
+}
+```
+
+
 
 ### Generic URL format for all kind of request:
 
@@ -207,9 +239,9 @@ Retrieve data from dataset
 
   ```js
   join[table] = array(
-  	'on' => <column_id>,		   // Column of the table joined
-		'value' => <value>,			// Column of main table or value
-		'method' => (left|inner|right) // Optional
+    'on' => <column_id>,		   // Column of the table joined
+    'value' => <value>,			// Column of main table or value
+    'method' => (left|inner|right) // Optional
   )
   ```
 
@@ -340,6 +372,8 @@ For get auto-documentation of a database table:
 
 For have a separated file where document your database you can use `/docs.php`
 
+
+
 ## POST Request
 
 Insert data
@@ -352,12 +386,9 @@ Insert data
 **Multiple insert:**
 
 - Select dataset on URL: `/[database].[format]`
-- Insert parameter: `insert[<table>][] = <value>`
+- Insert parameter: `insert[<table>][<column>] = <value>`
 
-**Multiple insert on the same table:**
-
-- Select dataset on URL: `/[database].[format]`
-- Insert parameter: `insert[<table>][<$i>][<column>] = <value>` 
+**Note**: At the moment you can add only one row for table
 
 **Examples of POST requests:**
 
@@ -374,19 +405,14 @@ insert[username]=Marco&insert[email]=cesarato.developer@gmail.com&insert[passwor
 ```http
 POST /dataset.json HTTP/1.1
 Host: localhost
-insert[users][id]=1000&insert[users][username]=Marco&insert[users][email]=cesarato.developer@gmail.com&insert[users][password]=3vwjehvdfjhefejjvw&insert[users][is_active]=1&
-insert[admin][user_id]=1000
+insert[users][username]=Marco&insert[users][email]=cesarato.developer@gmail.com&insert[users][password]=3vwjehvdfjhefejjvw&insert[users][is_active]=1
 ```
-
-**Multiple insert on the same table:**
 
 ```http
 POST /dataset.json HTTP/1.1
 Host: localhost
 insert[users][0][username]=Marco&insert[users][0][email]=cesarato.developer@gmail.com&insert[users][0][password]=3vwjehvdfjhefejjvw&insert[users][0][is_active]=1&insert[users][1][username]=Brad&insert[users][1][email]=brad@gmail.com&insert[users][1][password]=erwerwerffweeqewrf&insert[users][1][is_active]=1
 ```
-
-
 
 ## PUT Request
 
