@@ -8,10 +8,21 @@
 <IfModule mod_rewrite.c>
 
 	RewriteEngine On
+    Options +FollowSymlinks
+    Options +SymLinksIfOwnerMatch
+    Options -MultiViews
+
 	RewriteBase /
 
 	RewriteCond $0#%{REQUEST_URI} ([^#]*)#(.*)\1$
 	RewriteRule ^.*$ - [E=CWD:%2]
+
+	# Deny some methods
+    RewriteCond %{REQUEST_METHOD} ^(TRACE|OPTIONS)
+    RewriteRule .* – [L,F]
+
+    RewriteRule .*\.(git|svn|docs).* %{ENV:CWD}index.php [L,QSA] # Deny access repo folder
+    RewriteRule ^(hooks|logs|documentation|client|clients)/((.*)\.php)?$ %{ENV:CWD}index.php [L,QSA] # Forbidden
 
 	#check auth
     RewriteCond %{REQUEST_FILENAME} !-f
@@ -67,15 +78,19 @@
 
 # File protection
 <Files ~ "^(config)\.php">
-  Order Allow,Deny
-  Deny from all
+    Order Allow,Deny
+    Deny from all
 </Files>
 <Files ~ "^.*\.([Hh][Tt][Aa])">
-  Order Allow,Deny
-  Deny from all
-  Satisfy all
+    Order Allow,Deny
+    Deny from all
+    Satisfy all
 </Files>
 <Files ~ "\.sqlite$">
 	Order Allow,Deny
 	Deny from All
 </Files>
+<FilesMatch "\.(log|md)$">
+    Order Allow,Deny
+    Deny from All
+</FilesMatch>
