@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.79 beta
+**Version:** 0.5.80 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -17,6 +17,10 @@ Creating an API to access information within existing database tables is laborio
 Database Web API acts as a filter, sitting between a database and the browser, allowing users to interact with that database as if it was a native API. The column names function as the key names. This obviates the need for custom code for each database layer.
 
 When Alternative PHP Cache (APC) is installed, parsed data is stored within APC, which accelerates its functionality substantially. While APC is not required, it is recommended highly.
+
+## Wiki
+
+Go to this link for have: https://github.com/marcocesarato/Database-Web-API/wiki
 
 ## Databases supported
 * 4D
@@ -518,6 +522,13 @@ Host: localhost
 ```
 
 ## Hooks
+
+For write hooks you can use `hooks/custom` folder or edit manually the examples on `hooks/actions.hooks.php` or `hooks/filters.hooks.php`
+
+Remember to name file like this pattern: `[FILENAME].hooks.php` or it will not be included automatically (else you can include it manually)
+
+
+### Tips
 
 You can use this code for have a database instance and the current user authenticated row:
 
