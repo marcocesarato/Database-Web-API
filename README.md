@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.80 beta
+**Version:** 0.5.81 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -20,7 +20,7 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 
 ## Wiki
 
-Go to this link for have: https://github.com/marcocesarato/Database-Web-API/wiki
+Go to this link: https://github.com/marcocesarato/Database-Web-API/wiki
 
 ## Databases supported
 * 4D
