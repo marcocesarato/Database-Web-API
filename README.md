@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.81 beta
+**Version:** 0.5.82 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -20,7 +20,9 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 
 ## Wiki
 
-Go to this link: https://github.com/marcocesarato/Database-Web-API/wiki
+Go to this link for go to the wiki of the platform and have a better informations about the usage of this platform and have more examples:
+ 
+ https://github.com/marcocesarato/Database-Web-API/wiki
 
 ## Databases supported
 * 4D
@@ -418,13 +420,16 @@ where['column_a'] = 'column_b'
 ex: `/[database]/[tabel]/[colomn]/[value].[format]?order_by=[column]&direction=[direction]`
 
 ### Documentation
-
+s
 *PS:* Work only with pgsql and mysql database type at the moment
 
 For get auto-documentation of a database table:
 
-- Documentation URL format: `/[database]/docs/[table].[format]`
+- Documentation index URL format : `/[database]/docs/index.[format]`
+- Documentation index URL format with Authentication: `/[token]/[database]/docs/index.[format]`
 
+
+- Documentation URL format: `/[database]/docs/[table].[format]`
 - Documentation URL format with Authentication: `/[token]/[database]/docs/[table].[format]`
 
 For have a separated file where document your database you can use `/docs.php`
@@ -601,118 +606,9 @@ $db = API::getDatabase('dataset'); // You can specify dataset. Return PDO Object
 
   **Return:** Boolean
 
-### All hooks
+## Clients
 
-```php
-/**
- * Custom API Call
- * @return mixed or die (with mixed return just skip to next action until 404 error)
- */
-$hooks->add_action('custom_api_call','action_custom_api_call', 1);
-
-
-/**
- * Add restriction on where conditions for each query
- * @param $restriction
- * @param $table
- * @param $permission
- * @return mixed
- */
-$hooks->add_filter('sql_restriction','filter_sql_restriction');
-
-/**
- * Return if can select
- * @param $permission
- * @param $table
- * @return mixed
- */
-$hooks->add_filter('can_read','filter_can_read');
-
-/**
- * Return if can insert
- * @param $permission
- * @param $table
- * @return mixed
- */
-$hooks->add_filter('can_write','filter_can_write');
-
-/**
- * Return if can update
- * @param $permission
- * @param $table
- * @return mixed
- */
-$hooks->add_filter('can_edit','filter_can_edit');
-
-/**
- * Return if can delete
- * @param $permission
- * @param $table
- * @return mixed
- */
-$hooks->add_filter('can_delete','filter_can_delete');
-
-/**
- * On read
- * @param $data
- * @param $table
- * @return mixed
- */
-$hooks->add_filter('on_read','filter_on_read');
-
-/**
- * On write
- * @param $data
- * @param $table
- * @return mixed
- */
-$hooks->add_filter('on_write','filter_on_write');
-
-/**
- * On edit
- * @param $data
- * @param $table
- * @return mixed
- */
-$hooks->add_filter('on_edit','filter_on_edit');
-
-/**
- * Validate token
- * @param $is_valid
- * @param $token
- * @return bool
- */
-$hooks->add_filter('validate_token','filter_validate_token');
-
-
-/**
- * Filter user auth login
- * @param $user_id
- * @return string
- */
-$hooks->add_filter('auth_user_id','filter_auth_user_id');
-
-
-/**
- * Bypass authentication
- * @param $bypass
- * @return bool
- */
-$hooks->add_filter('bypass_authentication','filter_bypass_authentication');
-
-/**
- * Check if is a login request
- * @param $is_valid_request
- * @param $query
- * @return string|false
- */
-$hooks->add_filter('check_login_request','filter_check_login_request');
-```
-
-
-## API Client
-
-### PHP API Client 
+### PHP Client 
 
 **Filename:** `apiclient.class.php`
 
@@ -728,48 +624,6 @@ $hooks->add_filter('check_login_request','filter_check_login_request');
 | searchElement | \$key, \$value, \$array						| Object | Search object in array						 |
 | filterBy	  | \$key, \$value, \$array, \$limit = null		| Array  | Filter results array by single key			 |
 | filter		| \$value, \$array, $limit = null				| Array  | Filter results array by multiple values		|
-
-#### Usage
-
-```Php
-$api_client = APIClient::getInstance();
-
-APIClient::$DEBUG = true;
-APIClient::$URL = 'http://localhost';
-APIClient::$ACCESS_TOKEN = '4gw7j8erfgerf6werf8fwerf8erfwfer';
-APIClient::$DATASET = 'dataset';
-
-$params = array(
-	'where' => array(
-		'type' => array('C', 'O', 'L'),
-		'accounts_addresses.address' => array(
-			'!' => '', // NOT NULL
-		),
-	),
-	'join' => array(
-		'accounts_addresses' => array(
-			'on' => 'parent_id',
-			'value' => 'id',
-			'method' => 'LEFT'
-		),
-		'accounts_agents' => array(
-			'on' => 'parent_id',
-			'value' => 'id'
-		),
-	),
-	'order_by' => array(
-		'address' => array(
-			'table' => 'accounts_addresses',
-			'direction' => 'DESC'
-		),
-		'type' => array(
-			'table' => 'accounts_addresses',
-			'direction' => 'ASC'
-		)
-	),
-);
-$records = $api_client->fetch('accounts', 'json', $params);
-```
 
 
 
