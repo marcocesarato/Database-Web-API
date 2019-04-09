@@ -21,8 +21,8 @@
     RewriteCond %{REQUEST_METHOD} ^(TRACE|OPTIONS)
     RewriteRule .* – [L,F]
 
-    RewriteRule .*\.(git|svn|docs).* %{ENV:CWD}index.php [L,QSA] # Deny access repo folder
-    RewriteRule ^(hooks|logs|documentation|client|clients)/((.*)\.php)?$ %{ENV:CWD}index.php [L,QSA] # Forbidden
+    RewriteRule .*\.(htaccess|git|svn|docs|hg).* %{ENV:CWD}index.php [L,QSA] # Deny access repo folder
+    RewriteRule ^(hooks|logs|screenshot|docs|documentation|client|clients)/((.*)\.php)?$ %{ENV:CWD}index.php [L,QSA] # Forbidden
 
 	#check auth
     RewriteCond %{REQUEST_FILENAME} !-f

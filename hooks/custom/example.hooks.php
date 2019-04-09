@@ -21,12 +21,13 @@ function action_custom_api_call_example() {
 	$part_2 = $api->query['part_2'];
 	$part_3 = $api->query['part_3'];
 
-	if($part_1 == 'example') {
+	// example.com/TOKEN/example/something.json
+	/*if($part_1 == 'example') {
 		$example       = new StdClass();
 		$example->id   = '1';
 		$example->desc = "Example custom call";
 		$api->render(array($example, $example, $example));
-	}
+	}*/
 
 }
 

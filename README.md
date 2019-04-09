@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.78 beta
+**Version:** 0.5.79 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -37,18 +37,133 @@ When Alternative PHP Cache (APC) is installed, parsed data is stored within APC,
 * APC (optional)
 
 ## Installation
-* Set the configuration on config.php (Follow the below example to register a new dataset in config.php
-* If you want config an auth system you must compile on the config the constant \_\_AUTH\_\_ as on the example below
-* If you want enable the auth system rename `.htaccess_auth` to `.htaccess`
-* Document the API
+* Set the configuration on `config.php`. Follow the below example to register a new dataset. Tip: It's best to provide read-only database credentials here if you want read only.
+* _(Optional)_ If you want enable an authentication system you must compile on the `config.php` the constant `__AUTH__` as on the example below, you need also to rename `.htaccess` to `.htaccess_base` and after rename `.htaccess_auth` to `.htaccess`
+* _(Optional)_ Document the API. For this you can use auto-documentation using file `docs.php`
+* _(Optional)_ Use Hooks for manage permissions (as `can_read`, `can_write`, `can_edit`, `can_delete`)
 
 ## Configuration
 Edit `config.php` to include a single instance of the following for each dataset (including as many instances as you have datasets):
 
-**EXAMPLE with explanation**
+### Define API Name
 ```php
 define("__API_NAME__", "Database Web API"); // API Name
+```
 
+### Define datasets
+
+**Dataset configurations:**
+
+| Settings         | Description                                                                        | Default   |
+|------------------|------------------------------------------------------------------------------------|-----------|
+| name             | Database Name                                                                      |           |
+| username         | Database Username                                                                  | root      |
+| password         | Database Password                                                                  | root      |
+| server           | Database Server Address                                                            | localhost |
+| port             | Database Port                                                                      | 3306      |
+| type             | Database Type (ex. `mysql`, `psql` ecc..)                                          | mysql     |
+| table_list       | Database Tables Whitelist (Allow only the tables in this list, if empty allow all) | null      |
+| table_blacklist  | Database Tables Blacklist                                                          | null      |
+| table_docs       | Database Documentation (ex. /dataset/docs/table.html)                             | array()   |
+| column_list      | Database Columns's whitelist (Allow only the columns in this list, if empty allow all)      | null      |
+| column_blacklist | Database Columns's blacklist                                                                | null      |
+
+#### Example complete with explanation
+```php
+define("__DATASETS__", serialize(array(
+	'dataset' => array(
+		'name' => 'database_name', // Database name
+		'username' => 'user', // root is default
+		'password' => 'passwd', // root is default
+		'server' => 'localhost',  // localhost default
+		'port' => 5432, // 3306 is default
+		'type' => 'pgsql', // mysql is default
+		'table_list' => array( // Tables's whitelist (Allow only the tables in this list, if empty allow all)
+			'users'
+		),
+		'table_blacklist' => array( // Tables's blacklist
+			'passwords'
+		),
+		'table_docs' => array(
+			/** @example
+			'table' => array(
+				"column" => array(
+				"description" => "Column description",
+					"example" => "1",
+				),
+			),
+			*/
+		), // For Autodocoumentation, url ex. /dataset/docs/table.html
+		'column_list' => array( // Columns's whitelist (Allow only the columns in this list, if empty allow all)
+			'users' => array(
+				'username',
+				'name',
+				'surname'
+			)
+		),
+		'column_blacklist' => array( // Columns's blacklist
+			'users' => array(
+				'password',
+			)
+		),
+	),
+)));
+```
+
+**Note:** All fields of `__DATASETS__` (except the name of database) are optional and will default to the above.
+
+#### Example 
+
+Here is a dataset example for a MySQL database named “inspections,” accessed with a MySQL user named “website” and a password of “s3cr3tpa55w0rd,” with MySQL running on the same server as the website, with the standard port of 3306. All tables may be accessed by Database to API except for “cache” and “passwords,” and among the accessible tables, the “password_hint” column may not be accessed via Database to API. All of this is registered to create an API named “facility-inspections”.
+
+```php
+array( 
+	'name' => 'inspections',
+	'username' => 'website',
+	'password' => 's3cr3tpa55w0rd',
+	'server' => 'localhost',
+	'port' => 3306,
+	'type' => 'mysql',
+	'table_docs' => array(),
+	'table_list' => array(),
+	'table_blacklist' => array('cache', 'passwords'),
+	'column_blacklist' => array('password_hint'),
+	'column_list' => array(),
+);
+```
+
+Retrieving the contents of the table history within this dataset as JSON would be accomplished with a request for /facility-inspections/history.json. Note that it is the name of the dataset (facility-inspections) and not the name of the database (inspections) that is specified in the URL.
+
+For a SQLite database, simply provide the path to the database in name.
+
+For an Oracle database, you can either specify a service defined in tsnames.ora (e.g. dept_spending) or you can define an Oracle Instant Client connection string (e.g., //localhost:1521/dept_spending).
+
+
+
+### _(Optional)_ Authentication system
+
+#### Auth configuration
+
+| Setting         | Description                                                       | Type  |
+|-----------------|-------------------------------------------------------------------|-------|
+| sqlite          | When enabled store token on SQLite file                          | Bool  |
+| sqlite_database | SQLite filename (only if sqlite = true)                           | Text  |
+| api_database    | Set database name where create api_table (Only if sqlite = false) (`__DATASET__`) | Text  |
+| api_table       | Set database table name where store tokens                        | Text  |
+| users           | Users table to validate                                           | Array |
+
+
+##### Users configuration
+
+| Setting  | Description                                                                                                                                                                                    | Type  |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------|
+| database | Database where users are stored (`__DATASET__`)                                                                                                                                                                | Bool  |
+| table    | Users table name                                                                                                                                                                               | Text  |
+| columns  | 'id' => 'user_id' // Id column name<br>'username' => 'user_name' // Username column name<br>'password' => 'password' // Password column name<br>'admin' => array('is_admin' => 1) // Admin condition (can be null) | Array |
+| search   | Search condition                                                                                                                                                                               | Text  |
+| check    | Validation users condition (ex. is_active = 1) (can be null)                                                                                                                                                 | Text |
+
+```php
 define("__AUTH__",  serialize(array( // Set null for disable authentication
 	'sqlite' => false, // Enabled save token on SQLite file
 	'sqlite_database' => 'api_token', // SQLite filename (only with sqlite = true)
@@ -67,67 +182,7 @@ define("__AUTH__",  serialize(array( // Set null for disable authentication
 		'check' => array('active' => 1) // Some validation checks. In this case if the column 'active' with value '1'. Set NULL for disable
 	),
 )));
-
-define("__DATASETS__", serialize(array(
-	'dataset' => array(
-		'name' => 'database_name', // Database name
-		'username' => 'user', // root is default
-		'password' => 'passwd', // root is default
-		'server' => 'localhost',  // localhost default
-		'port' => 5432, // 3306 is default
-		'type' => 'pgsql', // mysql is default
-		'table_docs' => array(
-			/*
-			'table' => array(
-				"column" => array(
-					"description" => "Column description",
-					 "example" => "1",
-				),
-			),
-			*/
-		), // For Autodocoumentation, url ex. /dataset/docs/table.html
-		'table_list' => array( // Tables's whitelist (Allow only the tables in this list, if empty allow all)
-			'users'
-		),
-		'table_blacklist' => array( // Tables's blacklist
-			'passwords'
-		),
-		'column_list' => array( // Columns's whitelist (Allow only the columns in this list, if empty allow all)
-			'users' => array(
-				'username',
-				'name',
-				'surname'
-			)
-		),
-		'column_blacklist' => array( // Columns's blacklist
-			'users' => array(
-				'password',
-			)
-		),
-	),
-)));
 ```
-**Note:** All fields of \_\_DATASETS\_\_ (except the name of database) are optional and will default to the above.
-
-**Default dataset values:**
-```php
-array(
-	'name' => null,
-	'username' => 'root',
-	'password' => 'root',
-	'server' => 'localhost',
-	'port' => 3306,
-	'type' => 'mysql',
-	'table_docs' => $docs['dataset'],
-	'table_blacklist' => array(),
-	'table_list' => array(),
-	'column_blacklist' => array(),
-	'column_list' => array(),
-	'ttl' => 3600,
-);
-```
-
-
 
 ## API Structure
 
@@ -138,6 +193,25 @@ array(
 - XML
 
 - HTML
+
+
+### Generic URL format for all kind of request:
+
+#### Standard
+
+* Fetch all: `/[database]/[table].[format]`
+* Fetch all with limit: `/[database]/[limit]/[table].[format]`
+* Fetch: `/[database]/[table]/[ID].[format]`
+* Fetch search by coolumn: `/[database]/[table]/[column]/[value].[format]`
+* Documentation: `/[database]/docs/[table].[format]`
+
+#### With Authentication
+
+* Fetch all: `/[token]/[database]/[table].[format]`
+* Fetch all with limit: `/[token]/[database]/[limit]/[table].[format]`
+* Fetch: `/[token]/[database]/[table]/[ID].[format]`
+* Fetch search by column: `/[token]/[database]/[table]/[column]/[value].[format]`
+* Documentation: `/[token]/[database]/docs/[table].[format]`
 
   
 
@@ -188,39 +262,18 @@ Host: localhost
 ```json
 {
 
-    "user": {
-        "id": "1",
-        "role_id": "",
-        "is_admin": true
-    },
-    "response": {
-        "status": 200,
-        "message": "OK"
-    }
+	"user": {
+		"id": "1",
+		"role_id": "",
+		"is_admin": true
+	},
+	"response": {
+		"status": 200,
+		"message": "OK"
+	}
 
 }
 ```
-
-
-
-### Generic URL format for all kind of request:
-
-#### Standard
-
-* Fetch all: `/[database]/[table].[format]`
-* Fetch all with limit: `/[database]/[limit]/[table].[format]`
-* Fetch: `/[database]/[table]/[ID].[format]`
-* Fetch search by coolumn: `/[database]/[table]/[column]/[value].[format]`
-* Documentation: `/[database]/docs/[table].[format]`
-
-#### With Authentication
-
-* Fetch all: `/[token]/[database]/[table].[format]`
-* Fetch all with limit: `/[token]/[database]/[limit]/[table].[format]`
-* Fetch: `/[token]/[database]/[table]/[ID].[format]`
-* Fetch search by column: `/[token]/[database]/[table]/[column]/[value].[format]`
-* Documentation: `/[token]/[database]/docs/[table].[format]`
-
 
 
 ## GET Request
@@ -239,9 +292,9 @@ Retrieve data from dataset
 
   ```js
   join[table] = array(
-    'on' => <column_id>,		   // Column of the table joined
-    'value' => <value>,			// Column of main table or value
-    'method' => (left|inner|right) // Optional
+	'on' => <column_id>,		   // Column of the table joined
+	'value' => <value>,			// Column of main table or value
+	'method' => (left|inner|right) // Optional
   )
   ```
 
