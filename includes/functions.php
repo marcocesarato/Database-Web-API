@@ -73,11 +73,12 @@ function base_url($url) {
 	} else {
 		$protocol = 'http://';
 	}
+	$base = '';
 	if(realpath(__ROOT__) != realpath($_SERVER['DOCUMENT_ROOT'])) {
-		$base = basename(__ROOT__) . "/";
+		$base = str_replace(realpath($_SERVER['DOCUMENT_ROOT']), '', realpath(__ROOT__));
 	}
 
-	return $protocol . preg_replace('#/+#', '/', $hostname . "/" . basename(__ROOT__) . "/" . $url);
+	return $protocol . preg_replace('#/+#', '/', $hostname . "/" . $base . "/" . $url);
 }
 
 /**
