@@ -87,7 +87,7 @@ $hooks->add_filter('on_edit', 'filter_on_edit');
  * @param $token
  * @return bool
  */
-$hooks->add_filter('validate_token', 'filter_validate_token');
+$hooks->add_filter('auth_validate_token', 'filter_auth_validate_token');
 
 
 /**
@@ -103,7 +103,14 @@ $hooks->add_filter('auth_user_id', 'filter_auth_user_id');
  * @param $bypass
  * @return bool
  */
-$hooks->add_filter('bypass_authentication', 'filter_bypass_authentication');
+$hooks->add_filter('auth_bypass', 'filter_auth_bypass');
+
+/**
+ * Login data result
+ * @param $data
+ * @return string|false
+ */
+$hooks->add_filter('auth_login', 'filter_auth_login');
 
 /**
  * Check if is a login request
@@ -111,4 +118,11 @@ $hooks->add_filter('bypass_authentication', 'filter_bypass_authentication');
  * @param $query
  * @return string|false
  */
-$hooks->add_filter('check_login_request', 'filter_check_login_request');
+$hooks->add_filter('auth_login_request', 'filter_auth_login_request');
+
+/**
+ * Token check data result
+ * @param $data
+ * @return string|false
+ */
+$hooks->add_filter('auth_token_check', 'filter_auth_token_check');

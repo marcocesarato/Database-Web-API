@@ -98,7 +98,7 @@ class Auth {
 		} elseif(isset($this->query['check_token']) && $this->validateToken($this->query['check_token'])) {
 			$this->checkToken();
 			// Login custom
-		} elseif(($login_action = $this->hooks->apply_filters('check_login_request', false, $this->query)) && $this->hooks->has_action($login_action)) {
+		} elseif(($login_action = $this->hooks->apply_filters('auth_login_request', false, $this->query)) && $this->hooks->has_action($login_action)) {
 			$this->hooks->do_action($login_action);
 		} elseif(isset($this->query['user_id']) && isset($this->query['password'])) {
 
@@ -148,6 +148,7 @@ class Auth {
 							"token" => $token,
 						)
 					);
+					$results = $this->hooks->apply_filters('auth_login', $results);
 					$renderer = 'render_' . $query['format'];
 					die($this->api->$renderer($results, $query));
 				}
@@ -219,13 +220,13 @@ class Auth {
 			$sth->execute();
 			$token_row = $sth->fetch();
 
-			$exists = $this->hooks->apply_filters('validate_token', !empty($token_row), $token);
+			$exists = $this->hooks->apply_filters('auth_validate_token', !empty($token_row), $token);
 
-			$bypass_authentication = false;
-			$bypass_authentication = $this->hooks->apply_filters('bypass_authentication', $bypass_authentication);
+			$auth_bypass = false;
+			$auth_bypass = $this->hooks->apply_filters('auth_bypass', $auth_bypass);
 
 			// Bypass
-			if(!$exists && $bypass_authentication && !isset($this->query['force_validation'])) {
+			if(!$exists && $auth_bypass && !isset($this->query['force_validation'])) {
 				$exists               = true;
 				$token_row            = array();
 				$token_row['user_id'] = '1';
@@ -292,6 +293,7 @@ class Auth {
 			);
 
 			$this->logger->debug($results);
+			$results = $this->hooks->apply_filters('auth_token_check', $results);
 			$this->api->render($results);
 		} catch(PDOException $e) {
 			Request::error($e->getMessage(), 500);

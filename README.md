@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.82 beta
+**Version:** 0.5.83 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -542,13 +542,26 @@ $user = Auth::getUser(); // User row
 $db = API::getDatabase('dataset'); // You can specify dataset. Return PDO Object
 ```
 
+### Hooks list
+
+https://github.com/marcocesarato/Database-Web-API/wiki/3.2\)-Hooks:-List
+
 ### Most important hooks
 
-* `sql_restriction`
+| Hook                  | Type   | Description                                                     | Params                                                     | Return |
+|-----------------------|--------|-----------------------------------------------------------------|------------------------------------------------------------|--------|
+| sql_restriction       | Filter | Add restriction on where conditions for each query              | (string) $restriction (string) $table (string) $permission | String |
+| can_read              | Filter | Return if can get/select                                        | (bool) $permission = true                                  | Bool   |
+| can_write             | Filter | Return if can post/insert                                       | (bool) $permission = true                                  | Bool   |
+| can_edit              | Filter | Return if can put/update                                        | (bool) $permission = true                                  | Bool   |
+| can_delete            | Filter | Return if can delete                                            | (bool) $permission = true                                  | Bool   |
+| on_read               | Filter | Result content returned on get/read                             | (array) $data (string) $table                              | Array  |
+| on_write              | Filter | Result content returned on post/write                           | (array) $data (string) $table                              | Array  |
+| on_edit               | Filter | Result content returned on put/edit                             | (array) $data (string) $table                              | Array  |
+| on_delete             | Filter | Get result content returned on delete                           | (array) $data (string) $table                              | Array  |
 
-  **Description:** Return a string to append in where condition
-
-  **Parameters:** \$table, \$permission
+### Hooks detail
+* Filter: `sql_restriction`
 
   **Options of *$permission*:**
 
@@ -573,38 +586,6 @@ $db = API::getDatabase('dataset'); // You can specify dataset. Return PDO Object
   // Only Team
   $sql = 'created_by IN ('.implode(',',$teams_ids).')';
   ```
-
-* `can_read`
-
-  **Description:** Return if can GET/SELECT
-
-  **Parameters:** \$restriction, \$permission, \$table
-
-  **Return:** Boolean
-
-* `can_write`
-
-  **Description:** Return if can POST/INSERT
-
-  **Parameters:** \$permission, \$table
-
-  **Return:** Boolean
-
-* `can_edit`
-
-  **Description:** Return if can PUT/UPDATE
-
-  **Parameters:** \$permission, \$table
-
-  **Return:** Boolean
-
-* `can_delete`
-
-* **Description:** Return if can DELETE
-
-  **Parameters:** \$permission, \$table
-
-  **Return:** Boolean
 
 ## Clients
 
