@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.83 beta
+**Version:** 0.5.84 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -353,7 +353,7 @@ Host: localhost
 Search single value
 
 ```php
-where[column]			  = 1	// column = 1
+where[column]			   = 1	// column = 1
 where[column][=]		   = 1	// column = 1
 where[column][!]		   = 1	// column != 1
 where[column][>]		   = 1	// column > 1
@@ -364,7 +364,7 @@ where[column][%]		   = "%1" // column LIKE "%1"
 Search multiple values
 
 ```php
-where[column]			  = array(1,5,7)	 // IN (...) (IN can be equal to an OR)
+where[column]			   = array(1,5,7)	 // IN (...) (IN can be equal to an OR)
 where[column][=]		   = array(1,5,7)	 // IN (...) 
 where[column][!]		   = array(1,5,7)	 // NOT IN (...)
 where[column][>]		   = array(1,2)	   // column > 1 AND column > 2
@@ -420,7 +420,7 @@ where['column_a'] = 'column_b'
 ex: `/[database]/[tabel]/[colomn]/[value].[format]?order_by=[column]&direction=[direction]`
 
 ### Documentation
-s
+
 *PS:* Work only with pgsql and mysql database type at the moment
 
 For get auto-documentation of a database table:
@@ -544,7 +544,7 @@ $db = API::getDatabase('dataset'); // You can specify dataset. Return PDO Object
 
 ### Hooks list
 
-https://github.com/marcocesarato/Database-Web-API/wiki/3.2\)-Hooks:-List
+https://github.com/marcocesarato/Database-Web-API/wiki/3.2)-Hooks:-List
 
 ### Most important hooks
 
