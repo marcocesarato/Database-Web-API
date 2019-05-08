@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.86 beta
+**Version:** 0.5.87 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -62,6 +62,7 @@ define("__API_NAME__", "Database Web API"); // API Name
 
 | Settings         | Description                                                                        | Default   |
 |------------------|------------------------------------------------------------------------------------|-----------|
+| api              | If accessible through API                                                          | true      |
 | name             | Database Name                                                                      |           |
 | username         | Database Username                                                                  | root      |
 | password         | Database Password                                                                  | root      |
@@ -78,7 +79,7 @@ define("__API_NAME__", "Database Web API"); // API Name
 ```php
 define("__DATASETS__", serialize(array(
 	'dataset' => array(
-	    'api' => true, // If accessible from API request url (ex. is false if you have a different database for auth users)
+		'api' => true, // If accessible from API request url (ex. is false if you have a different database for auth users)
 		'name' => 'database_name', // Database name
 		'username' => 'user', // root is default
 		'password' => 'passwd', // root is default
