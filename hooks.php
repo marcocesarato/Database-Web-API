@@ -82,6 +82,14 @@ $hooks->add_filter('on_write', 'filter_on_write');
 $hooks->add_filter('on_edit', 'filter_on_edit');
 
 /**
+ * Validate Authentication
+ * @param $is_valid
+ * @param $user_row
+ * @return mixed
+ */
+$hooks->add_filter('auth_validate_user', 'filter_auth_validate_user');
+
+/**
  * Validate token
  * @param $is_valid
  * @param $token
@@ -126,3 +134,13 @@ $hooks->add_filter('auth_login_request', 'filter_auth_login_request');
  * @return string|false
  */
 $hooks->add_filter('auth_token_check', 'filter_auth_token_check');
+
+
+/**
+ * Render
+ * @param $data
+ * @param $query
+ * @param $method
+ * @return array
+ */
+$hooks->add_filter('render', 'filter_render');

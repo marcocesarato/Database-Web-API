@@ -97,8 +97,8 @@ class Auth {
 			return true;
 		} elseif(isset($this->query['check_token']) && $this->validateToken($this->query['check_token'])) {
 			$this->checkToken();
-			// Login custom
 		} elseif(($login_action = $this->hooks->apply_filters('auth_login_request', false, $this->query)) && $this->hooks->has_action($login_action)) {
+			// Login custom
 			$this->hooks->do_action($login_action);
 		} elseif(isset($this->query['user_id']) && isset($this->query['password'])) {
 
@@ -136,7 +136,9 @@ class Auth {
 			$sth->execute();
 			$user_row = $sth->fetch();
 
-			if($user_row) {
+			$is_valid = $this->hooks->apply_filters('auth_validate_user', true, $user_row);
+
+			if (!empty($user_row) && $is_valid) {
 				$password = strtolower($query['password']);
 				if($user_row[$users_columns['password']] == $password) {
 					$token          = $this->generateToken($user_row[$users_columns['id']], $user_row[$users_columns['username']]);

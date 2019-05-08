@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.84 beta
+**Version:** 0.5.85 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -559,6 +559,7 @@ https://github.com/marcocesarato/Database-Web-API/wiki/3.2)-Hooks:-List
 | on_write              | Filter | Result content returned on post/write                           | (array) $data (string) $table                              | Array  |
 | on_edit               | Filter | Result content returned on put/edit                             | (array) $data (string) $table                              | Array  |
 | on_delete             | Filter | Get result content returned on delete                           | (array) $data (string) $table                              | Array  |
+| render                | Filter | Manipulate data response rendered                               | (array) $data (string) $query (string) $method             | Array  |
 
 ### Hooks detail
 * Filter: `sql_restriction`

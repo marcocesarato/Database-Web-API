@@ -320,6 +320,7 @@ class API {
 					return $this->query_post($query, $db);
 				}
 				break;
+			case 'PATCH':
 			case 'PUT':
 				if($this->auth->can_edit($query['table'])) {
 					return $this->query_put($query, $db);
@@ -703,7 +704,7 @@ class API {
 			}
 		}
 
-		return self::response_success();
+		return self::response_created();
 	}
 
 	/**
@@ -928,6 +929,7 @@ class API {
 	 */
 	public function render($data) {
 		$default_format = Request::method() == 'GET' ? "html" : "json";
+		$data = $this->hooks->apply_filters('render', $data, $this->query, Request::method());
 		$renderer       = 'render_' . (isset($this->query['format']) ? $this->query['format'] : $default_format);
 		$this->$renderer($data);
 		die();
@@ -1376,6 +1378,16 @@ class API {
 		http_response_code(200);
 
 		return array("response" => (object) array('status' => 200, 'message' => 'OK'));
+	}
+
+	/**
+	 * Return created with success response
+	 * @return array
+	 */
+	private static function response_created() {
+		http_response_code(201);
+
+		return array("response" => (object) array('status' => 201, 'message' => 'OK'));
 	}
 
 	/**

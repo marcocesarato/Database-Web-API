@@ -115,9 +115,19 @@ function filter_on_edit($data, $table) {
  * @return bool
  */
 function filter_auth_validate_token($is_valid, $token) {
-	//return ($token == "51cc155a75a5cf79a4b28b9bf93cc680");
 	return $is_valid;
 }
+
+/**
+ * Validate Authentication
+ * @param $is_valid
+ * @param $user_row
+ * @return mixed
+ */
+function filter_auth_validate_user($is_valid, $user_row){
+	return $is_valid;
+}
+
 
 /**
  * Filter user auth login
@@ -125,7 +135,6 @@ function filter_auth_validate_token($is_valid, $token) {
  * @return string
  */
 function filter_auth_user_id($user_id) {
-	//return '78365125-d663-fd41-1bcd-5c8b7fde1a33';
 	return $user_id;
 }
 
@@ -177,5 +186,33 @@ function filter_auth_login($data) {
 function filter_auth_token_check($data) {
 	$user = Auth::getUser(); // User row
 	$db   = API::getConnection(); // PDO Object
+	return $data;
+}
+
+/**
+ * Render
+ * @param $data
+ * @param $query
+ * @param $method
+ * @return array
+ */
+function filter_render($data, $query, $method) {
+	switch($method){
+		case 'GET':
+			//
+			break;
+		case 'POST':
+			//
+			break;
+		case 'PATCH':
+			//
+			break;
+		case 'PUT':
+			//
+			break;
+		case 'DELETE':
+			//
+			break;
+	}
 	return $data;
 }
