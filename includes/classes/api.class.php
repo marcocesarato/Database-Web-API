@@ -161,7 +161,7 @@ class API {
 				$this->query['format'] = null;
 			}
 
-			if(!$db->api){
+			if(!$db->api) {
 				Request::error('Invalid Database', 404);
 			}
 
@@ -753,7 +753,7 @@ class API {
 	 * @param $query
 	 * @return mixed
 	 */
-	private function query_parse_update($query){
+	private function query_parse_update($query) {
 		$first_col = $this->getFirstColumn($query['table']);
 		// Check id
 		if(isset($query['table']) && !empty($query['table']) && isset($query['id']) && !empty($query['id'])) {
@@ -789,11 +789,12 @@ class API {
 				}
 			}
 		}
+
 		return $query;
 	}
 
 	/**
-	 * Build and execute the UPDATE or INSERT query from the PATCH request
+	 * Build and execute the UPDATE or INSERT query from the PUT request
 	 * @param array $query the database query ASSUMES SANITIZED
 	 * @param null $db
 	 * @return array
@@ -813,15 +814,15 @@ class API {
 						}
 					}
 
-					$check           = array();
-					$check['table']  = $table;
-					$check['where']  = $update['where'];
+					$check          = array();
+					$check['table'] = $table;
+					$check['where'] = $update['where'];
 
 					$result = $this->query_get($check);
 					if(empty($result)) {
-						$insert           = array();
-						$insert['table']  = $table;
-						$insert['insert'] = $update['values'];
+						$insert                   = array();
+						$insert['insert']         = array();
+						$insert['insert'][$table] = $update['values'];
 						if($this->auth->can_write($query['table'])) {
 							$this->query_post($insert);
 						} else {
@@ -842,7 +843,7 @@ class API {
 	}
 
 	/**
-	 * Build and execute the UPDATE query from the PUT request
+	 * Build and execute the UPDATE query from the PATCH request
 	 * @param array $query the database query ASSUMES SANITIZED
 	 * @param null $db
 	 * @return array an array of results
@@ -851,7 +852,7 @@ class API {
 
 		try {
 
-			$dbh = &$this->connect($db);
+			$dbh   = &$this->connect($db);
 			$query = $this->query_parse_update($query);
 
 			foreach($query['update'] as $table => $values) {
@@ -997,7 +998,7 @@ class API {
 	 */
 	public function render($data) {
 		$default_format = Request::method() == 'GET' ? "html" : "json";
-		$data = $this->hooks->apply_filters('render', $data, $this->query, Request::method());
+		$data           = $this->hooks->apply_filters('render', $data, $this->query, Request::method());
 		$renderer       = 'render_' . (isset($this->query['format']) ? $this->query['format'] : $default_format);
 		$this->$renderer($data);
 		die();
