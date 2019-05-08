@@ -136,9 +136,9 @@ class Auth {
 			$sth->execute();
 			$user_row = $sth->fetch();
 
-			$is_valid = $this->hooks->apply_filters('auth_validate_user', true, $user_row);
+			$is_valid = $this->hooks->apply_filters('auth_validate_token', !empty($user_row), $user_row);
 
-			if (!empty($user_row) && $is_valid) {
+			if ($is_valid) {
 				$password = strtolower($query['password']);
 				if($user_row[$users_columns['password']] == $password) {
 					$token          = $this->generateToken($user_row[$users_columns['id']], $user_row[$users_columns['username']]);

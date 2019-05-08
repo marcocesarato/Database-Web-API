@@ -34,6 +34,8 @@ $users_table = 'users'; // Table where users are stored
     ),
 )));*/
 
+
+// Datasets (list of database to connect)
 define("__DATASETS__", serialize(array(
 	'dataset' => array(
 		'name'             => 'database_name',
