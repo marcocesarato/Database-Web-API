@@ -565,8 +565,40 @@ class API {
 				foreach($order_by as $column => $column_direction) {
 					$order_table = $query['table'];
 					$direction   = '';
+					$type        = '';
 					if(!is_int($column)) {
 						$column = trim($column);
+
+						// Type casting
+						$_split_type = explode('::', $column, 2);
+						if(count($_split_type) > 1) {
+							$column = $_split_type[0];
+							$_type  = strtoupper($_split_type[1]);
+							if(in_array($_type, array(
+								'VARCHAR',
+								'TEXT',
+								'CHAR',
+								'INT',
+								'INTEGER',
+								'FLOAT',
+								'DOUBLE',
+								'BIGINT',
+								'TINYINT',
+								'BOOL',
+								'BOOLEAN',
+								'DECIMAL',
+								'SMALLINT',
+								'REAL',
+								'DATE',
+								'DATETIME',
+								'TIMESTAMP',
+								'TIME',
+								'YEAR'
+							))) {
+								$type = $_type;
+							}
+						}
+
 						$_split = array_map('trim', explode('.', $column, 2));
 						if(count($_split) > 1 && $this->checkColumn(@$_split[1], @$_split[0])) {
 							$order_table = trim($_split[0]);
@@ -599,7 +631,12 @@ class API {
 							}
 						}
 					}
-					$order_query[] = trim("{$order_table}.{$column} {$direction}");
+
+					if(!empty($type)) {
+						$type = "::" . $type;
+					}
+
+					$order_query[] = trim("{$order_table}.{$column}{$type} {$direction}");
 				}
 				if(empty($query['direction'])) {
 					$query['direction'] = "";

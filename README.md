@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.88 beta
+**Version:** 0.5.89 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -413,6 +413,13 @@ where['column_a'] = 'column_b'
 
   ```php
   order_by['users.username'] = 'DESC'
+  ```
+  
+  for more cast a specific type
+  
+  ```php
+  order_by['users.username::varchar'] = 'DESC'
+  order_by['users.id::int'] = 'DESC'
   ```
 
 - `direction`:  `ASC` or `DESC` (default `ASC`)
