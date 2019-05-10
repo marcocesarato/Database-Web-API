@@ -74,8 +74,8 @@ function base_url($url) {
 		$protocol = 'http://';
 	}
 	$base = '';
-	if(realpath(__ROOT__) != realpath($_SERVER['DOCUMENT_ROOT'])) {
-		$base = str_replace(realpath($_SERVER['DOCUMENT_ROOT']), '', realpath(__ROOT__));
+	if(realpath(__API_ROOT__) != realpath($_SERVER['DOCUMENT_ROOT'])) {
+		$base = str_replace(realpath($_SERVER['DOCUMENT_ROOT']), '', realpath(__API_ROOT__));
 	}
 
 	return $protocol . preg_replace('#/+#', '/', $hostname . "/" . $base . "/" . $url);

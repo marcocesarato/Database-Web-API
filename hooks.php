@@ -5,7 +5,7 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
-require_once(__ROOT__ . '/hooks/loader.hooks.php');
+require_once(__API_ROOT__ . '/hooks/loader.hooks.php');
 
 $hooks = Hooks::getInstance();
 
@@ -15,6 +15,12 @@ $hooks = Hooks::getInstance();
  */
 $hooks->add_action('custom_api_call', 'action_custom_api_call', 1);
 
+/**
+ * On error
+ * @param $message
+ * @param $code
+ */
+$hooks->add_action('on_error', 'action_on_error');
 
 /**
  * Add restriction on where conditions for each query
@@ -105,7 +111,6 @@ $hooks->add_filter('auth_validate_token', 'filter_auth_validate_token');
  */
 $hooks->add_filter('auth_user_id', 'filter_auth_user_id');
 
-
 /**
  * Bypass authentication
  * @param $bypass
@@ -134,7 +139,6 @@ $hooks->add_filter('auth_login_request', 'filter_auth_login_request');
  * @return string|false
  */
 $hooks->add_filter('auth_token_check', 'filter_auth_token_check');
-
 
 /**
  * Render

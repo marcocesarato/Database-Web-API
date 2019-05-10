@@ -42,8 +42,16 @@ class Request {
 	 * Halt the program with an "Internal server error" and the specified message.
 	 * @param string|object $error the error or a (PDO) exception object
 	 * @param int $code (optional) the error code with which to respond
+	 * @param bool $custom_call
 	 */
-	public static function error($error, $code = 500) {
+	public static function error($error, $code = 500, $custom_call = false) {
+
+		$hooks = Hooks::getInstance();
+		if($custom_call){
+			$hooks->do_action('custom_api_call');
+		}
+		$hooks->do_action('on_error', $error, $code);
+
 		$api    = API::getInstance();
 		$logger = Logger::getInstance();
 		if(is_object($error) && method_exists($error, 'getMessage') && method_exists($error, 'getCode')) {

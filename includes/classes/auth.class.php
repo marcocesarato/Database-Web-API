@@ -33,8 +33,8 @@ class Auth {
 		self::$instance = &$this;
 		$this->logger   = Logger::getInstance();
 		$this->hooks    = Hooks::getInstance();
-		if(defined('__AUTH__')) {
-			self::$settings = unserialize(__AUTH__);
+		if(defined('__API_AUTH__')) {
+			self::$settings = unserialize(__API_AUTH__);
 			if(!empty(self::$settings['api_table'])) {
 				self::$api_table = preg_replace('/\s+/', '', self::$settings['api_table']);
 			}

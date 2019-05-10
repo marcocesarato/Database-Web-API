@@ -5,14 +5,14 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
-require_once(__ROOT__ . '/hooks/utils.hooks.php');
-require_once(__ROOT__ . '/hooks/filters.hooks.php');
-require_once(__ROOT__ . '/hooks/actions.hooks.php');
+require_once(__API_ROOT__ . '/hooks/utils.hooks.php');
+require_once(__API_ROOT__ . '/hooks/filters.hooks.php');
+require_once(__API_ROOT__ . '/hooks/actions.hooks.php');
 
 $hooks = Hooks::getInstance();
 
 // Include tables filters
-foreach(glob(__ROOT__ . "/hooks/{tables,custom}/*.hooks.php", GLOB_BRACE) as $file) {
+foreach(glob(__API_ROOT__ . "/hooks/{tables,custom}/*.hooks.php", GLOB_BRACE) as $file) {
 	include_once($file);
 }
 

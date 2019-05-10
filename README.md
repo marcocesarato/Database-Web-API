@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.89 beta
+**Version:** 0.5.90 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -44,7 +44,7 @@ Go to this link for go to the wiki of the platform and have a better information
 
 ## Installation
 * Set the configuration on `config.php`. Follow the below example to register a new dataset. Tip: It's best to provide read-only database credentials here if you want read only.
-* _(Optional)_ If you want enable an authentication system you must compile on the `config.php` the constant `__AUTH__` as on the example below, you need also to rename `.htaccess` to `.htaccess_base` and after rename `.htaccess_auth` to `.htaccess`
+* _(Optional)_ If you want enable an authentication system you must compile on the `config.php` the constant `__API_AUTH__` as on the example below, you need also to rename `.htaccess` to `.htaccess_base` and after rename `.htaccess_auth` to `.htaccess`
 * _(Optional)_ Document the API. For this you can use auto-documentation using file `docs.php`
 * _(Optional)_ Use Hooks for manage permissions (as `can_read`, `can_write`, `can_edit`, `can_delete`)
 
@@ -62,7 +62,8 @@ define("__API_NAME__", "Database Web API"); // API Name
 
 | Settings         | Description                                                                        | Default   |
 |------------------|------------------------------------------------------------------------------------|-----------|
-| api              | If accessible through API                                                          | true      |
+| default          | Default dataset                                                              | false     |
+| api              | Accessible through API                                                          | true      |
 | name             | Database Name                                                                      |           |
 | username         | Database Username                                                                  | root      |
 | password         | Database Password                                                                  | root      |
@@ -77,9 +78,10 @@ define("__API_NAME__", "Database Web API"); // API Name
 
 #### Example complete with explanation
 ```php
-define("__DATASETS__", serialize(array(
+define("__API_DATASETS__", serialize(array(
 	'dataset' => array(
-		'api' => true, // If accessible from API request url (ex. is false if you have a different database for auth users)
+		'default' => true, // Default dataset
+		'api' => true, // Accessible from API request url (ex. is false if you have a different database for auth users)
 		'name' => 'database_name', // Database name
 		'username' => 'user', // root is default
 		'password' => 'passwd', // root is default
@@ -118,7 +120,7 @@ define("__DATASETS__", serialize(array(
 )));
 ```
 
-**Note:** All fields of `__DATASETS__` (except the name of database) are optional and will default to the above.
+**Note:** All fields of `__API_DATASETS__` (except the name of database) are optional and will default to the above.
 
 #### Example 
 
@@ -126,6 +128,7 @@ Here is a dataset example for a MySQL database named “inspections,” accessed
 
 ```php
 array( 
+	'default' => true,
 	'name' => 'inspections',
 	'username' => 'website',
 	'password' => 's3cr3tpa55w0rd',
@@ -172,7 +175,7 @@ For an Oracle database, you can either specify a service defined in tsnames.ora 
 | check    | Validation users condition (ex. is_active = 1) (can be null)                                                                                                                                                 | Text |
 
 ```php
-define("__AUTH__",  serialize(array( // Set null for disable authentication
+define("__API_AUTH__",  serialize(array( // Set null for disable authentication
 	'sqlite' => false, // Enabled save token on SQLite file
 	'sqlite_database' => 'api_token', // SQLite filename (only with sqlite = true)
 	'api_database' => 'dataset', // Authentication database
@@ -415,7 +418,7 @@ where['column_a'] = 'column_b'
   order_by['users.username'] = 'DESC'
   ```
   
-  for more cast a specific type
+  for cast a specific type
   
   ```php
   order_by['users.username::varchar'] = 'DESC'
@@ -485,7 +488,7 @@ Host: localhost
 insert[users][0][username]=Marco&insert[users][0][email]=cesarato.developer@gmail.com&insert[users][0][password]=3vwjehvdfjhefejjvw&insert[users][0][is_active]=1&insert[users][1][username]=Brad&insert[users][1][email]=brad@gmail.com&insert[users][1][password]=erwerwerffweeqewrf&insert[users][1][is_active]=1
 ```
 
-## PUT Request
+## PATCH/PUT Request
 
 Update data
 

@@ -78,6 +78,7 @@ class API {
 	public function registerDatabase($name = null, $args = array()) {
 
 		$defaults = array(
+			'default'          => false,
 			'api'              => true,
 			'name'             => null,
 			'username'         => 'root',
@@ -140,17 +141,14 @@ class API {
 			'password'         => null,
 		);
 
-		//die(print_r($parts));
 		$this->query = shortcode_atts($defaults, $parts);
-		//die(print_r($this->query));
 
 		if($this->auth->validate($this->query)) {
 			if($this->query['db'] == null) {
-				$this->hooks->do_action('custom_api_call');
-				Request::error('Must select a database', 400);
+				Request::error('Must select a dataset', 400, true);
 			}
 
-			$db = $this->getDatabase($this->query['db']);
+			$db = $this->getSelectdDatabase($this->query['db']);
 			$this->setDatabase();
 
 			if(!in_array(strtoupper($this->query['direction']), array('ASC', 'DESC'))) {
@@ -162,25 +160,59 @@ class API {
 			}
 
 			if(!$db->api) {
-				Request::error('Invalid Database', 404);
+				Request::error('Invalid Dataset', 404, true);
 			}
 
-			if(!$this->auth->is_admin) {
-
-				if(in_array($this->query['table'], $db->table_blacklist)) {
-					$this->hooks->do_action('custom_api_call');
-					Request::error('Invalid table', 404);
+			if(!empty($this->query['table'])) {
+				if(!$this->auth->is_admin) {
+					if(in_array($this->query['table'], $db->table_blacklist)) {
+						Request::error('Invalid table', 404, true);
+					}
+					if(count($db->table_list) > 0 && !in_array($this->query['table'], $db->table_list)) {
+						Request::error('Invalid table', 404, true);
+					}
 				}
-
-				if(count($db->table_list) > 0 && !in_array($this->query['table'], $db->table_list)) {
-					$this->hooks->do_action('custom_api_call');
-					Request::error('Invalid table', 404);
+				if(!$this->checkTable($this->query['table'], $db)) {
+					Request::error('Invalid table', 404, true);
 				}
-
 			}
 		}
 
 		return $this->query;
+	}
+
+	/**
+	 * Retrieves the selected database and its properties
+	 * @param string $db the DB slug (optional)
+	 * @return array the database property array
+	 */
+	private function getSelectdDatabase($db = null) {
+
+		$get_db = $db;
+
+		if($db == null && !is_null($this->db)) {
+			return $this->db;
+		}
+
+		if(is_object($db)) {
+			foreach($this->dbs as $key => $values) {
+				if($values->name == $db->name) {
+					$get_db = $key;
+					break;
+				}
+			}
+		}
+
+		if(empty($db)) {
+			$get_db = $this->query['db'];
+		}
+
+		if(!array_key_exists($get_db, $this->dbs)) {
+			Request::error('Invalid Dataset', 404, true);
+		}
+
+		return $this->dbs[$get_db];
+
 	}
 
 	/**
@@ -210,10 +242,12 @@ class API {
 		}
 
 		if(!array_key_exists($get_db, $this->dbs)) {
-			if(empty($db) && !array_key_exists($this->query['db'], $this->dbs)) {
-				$this->hooks->do_action('custom_api_call');
+			foreach($this->dbs as $key => $values) {
+				if($values->default) {
+					$get_db = $key;
+					break;
+				}
 			}
-			Request::error('Invalid Database', 404);
 		}
 
 		return $this->dbs[$get_db];
@@ -785,12 +819,66 @@ class API {
 		}
 	}
 
+
+	/**
+	 * Build and execute the UPDATE or INSERT query from the PUT request
+	 * @param array $query the database query ASSUMES SANITIZED
+	 * @param null $db
+	 * @return array
+	 */
+	private function query_put($query, $db = null) {
+
+		$query = $this->query_update_parse($query);
+
+		if(!isset($query['update']) && !is_array($query['update']) && count($query['update']) <= 0) {
+			Request::error('Invalid values', 400);
+		} else {
+			foreach($query['update'] as $table => $u) {
+				foreach($u as $update) {
+					if(isset($update['where']) && is_array($update['where'])) {
+						foreach($update['where'] as $column => $value) {
+							if(!$this->checkColumn($column, $table)) {
+								Request::error('Invalid Where column ' . $column, 404);
+							}
+						}
+
+						$check          = array();
+						$check['table'] = $table;
+						$check['where'] = $update['where'];
+
+						$result = $this->query_get($check);
+
+						if(empty($result)) {
+							$insert                   = array();
+							$insert['insert']         = array();
+							$insert['insert'][$table] = array_merge($update['where'], $update['values']);
+							if($this->auth->can_write($query['table'])) {
+								$this->query_post($insert);
+							} else {
+								self::no_permissions();
+							}
+						} else {
+							$new_update                   = $query;
+							$new_update['update']         = array();
+							$new_update['update'][$table] = $update;
+							$this->query_patch($new_update);
+						}
+					}
+				}
+			}
+		}
+
+		// TODO: verify all put success or failed
+		return self::response_success();
+	}
+
 	/**
 	 * Parse and verify query params
 	 * @param $query
 	 * @return mixed
 	 */
-	private function query_parse_update($query) {
+	private function query_update_parse($query) {
+		$query = $this->query_update_conversion($query);
 		$first_col = $this->getFirstColumn($query['table']);
 		// Check id
 		if(isset($query['table']) && !empty($query['table']) && isset($query['id']) && !empty($query['id'])) {
@@ -807,20 +895,24 @@ class API {
 						Request::error('Invalid WHERE column ' . $column_table . '.' . $column, 404);
 					}
 				}
-				$query['update'][$query['table']]['where']             = $query['where'];
-				$query['update'][$query['table']]['where'][$first_col] = $query['id'];
+				foreach($query['update'][$query['table']] as $key => $values){
+					$query['update'][$query['table']][$key]['where'] = $query['where'];
+				}
 			}
-			$query['update'][$query['table']]['values']            = $query['update'];
-			$query['update'][$query['table']]['where'][$first_col] = $query['id'];
-			// Check values
-		} elseif(!isset($query['update']) && !is_array($query['update']) && count($query['update']) <= 0) {
+			foreach($query['update'][$query['table']] as $key => $values){
+				$query['update'][$query['table']][$key]['values']            = $query['update'];
+				$query['update'][$query['table']][$key]['where'][$first_col] = $query['id'];
+			}
+		} elseif(!isset($query['update']) && !is_array($query['update']) && count($query['update']) <= 0) { // Check values
 			Request::error('Invalid values', 400);
 		} else {
-			foreach($query['update'] as $table => $update) {
-				if(isset($update['where']) && is_array($update['where'])) {
-					foreach($update['where'] as $column => $value) {
-						if(!$this->checkColumn($column, $table)) {
-							Request::error('Invalid Where column ' . $column, 404);
+			foreach($query['update'] as $table => $u) {
+				foreach($u as $update) {
+					if(isset($update['where']) && is_array($update['where'])) {
+						foreach($update['where'] as $column => $value) {
+							if(!$this->checkColumn($column, $table)) {
+								Request::error('Invalid Where column ' . $column, 404);
+							}
 						}
 					}
 				}
@@ -831,52 +923,21 @@ class API {
 	}
 
 	/**
-	 * Build and execute the UPDATE or INSERT query from the PUT request
-	 * @param array $query the database query ASSUMES SANITIZED
-	 * @param null $db
-	 * @return array
+	 * Convert query values to update to multi array if needed
+	 * @param $query
+	 * @return mixed
 	 */
-	private function query_put($query, $db = null) {
-
-		$query = $this->query_parse_update($query);
-
-		if(!isset($query['update']) && !is_array($query['update']) && count($query['update']) <= 0) {
-			Request::error('Invalid values', 400);
-		} else {
-			foreach($query['update'] as $table => $update) {
-				if(isset($update['where']) && is_array($update['where'])) {
-					foreach($update['where'] as $column => $value) {
-						if(!$this->checkColumn($column, $table)) {
-							Request::error('Invalid Where column ' . $column, 404);
-						}
-					}
-
-					$check          = array();
-					$check['table'] = $table;
-					$check['where'] = $update['where'];
-
-					$result = $this->query_get($check);
-					if(empty($result)) {
-						$insert                   = array();
-						$insert['insert']         = array();
-						$insert['insert'][$table] = $update['values'];
-						if($this->auth->can_write($query['table'])) {
-							$this->query_post($insert);
-						} else {
-							self::no_permissions();
-						}
-					} else {
-						$new_update                   = $query;
-						$new_update['update']         = array();
-						$new_update['update'][$table] = $update;
-						$this->query_patch($new_update);
-					}
-				}
+	private function query_update_conversion($query) {
+		$update = array();
+		foreach($query['update'] as $table => $values){
+			if(!empty($values['values'])){
+				$update[$table][] = $values;
+			} else {
+				$update[$table] = $values;
 			}
 		}
-
-		// TODO: verify all put success or failed
-		return self::response_success();
+		$query['update'] = $update;
+		return $query;
 	}
 
 	/**
@@ -890,61 +951,51 @@ class API {
 		try {
 
 			$dbh   = &$this->connect($db);
-			$query = $this->query_parse_update($query);
+			$query = $this->query_update_parse($query);
 
-			foreach($query['update'] as $table => $values) {
-				$where         = $values['where'];
-				$values        = $values['values'];
-				$values_index  = array();
-				$column_values = array();
+			foreach($query['update'] as $table => $update) {
+				foreach($update as $values) {
+					$where         = $values['where'];
+					$values        = $values['values'];
+					$values_index  = array();
+					$column_values = array();
 
-				$values = $this->hooks->apply_filters('on_edit', $values, $table);
+					$values = $this->hooks->apply_filters('on_edit', $values, $table);
 
-				if(!$this->checkTable($table)) {
-					Request::error('Invalid Table', 404);
-				}
-				// check columns name
-				foreach($values as $key => $value) {
-					if(!$this->checkColumn($key, $table)) {
-						continue;
-						Request::error('Invalid column. The column ' . $table . '.' . $key . ' not exists!', 404);
+					if(!$this->checkTable($table)) {
+						Request::error('Invalid Table', 404);
 					}
-					$column_values[$key] = $value;
-					$values_index[]      = $key . ' = :' . $key;
-				}
-
-				$sql = 'UPDATE ' . $table;
-				$sql .= ' SET ' . implode(', ', $values_index);
-
-				// build WHERE query
-				$restriction = $this->auth->sql_restriction($query['table'], 'EDIT');
-				if(is_array($where)) {
-					$where_parse  = $this->parse_where($table, $where, $sql);
-					$sql          = $where_parse["sql"] . ' AND ' . $restriction;
-					$where_values = $where_parse["values"];
-				} else if(!empty($restriction)) {
-					Request::error('Invalid condition', 404);
-				}
-
-				$sth          = $dbh->prepare($sql);
-				$sql_compiled = $sql;
-
-				// bind PUT values
-				foreach($column_values as $key => $value) {
-					if(is_array($value)) {
-						$value = serialize($value);
+					// check columns name
+					foreach($values as $key => $value) {
+						if(!$this->checkColumn($key, $table)) {
+							continue;
+							Request::error('Invalid column. The column ' . $table . '.' . $key . ' not exists!', 404);
+						}
+						$column_values[$key] = $value;
+						$values_index[]      = $key . ' = :' . $key;
 					}
-					$key          = ':' . $key;
-					$sql_compiled = self::debug_compile_sql($sql_compiled, $key, $value);
-					if(empty($value)) {
-						$value = null;
-					}
-					$sth->bindValue($key, $value);
-				}
 
-				// bind WHERE values
-				if(isset($where_values) && count($where_values) > 0) {
-					foreach($where_values as $key => $value) {
+					$sql = 'UPDATE ' . $table;
+					$sql .= ' SET ' . implode(', ', $values_index);
+
+					// build WHERE query
+					$restriction = $this->auth->sql_restriction($query['table'], 'EDIT');
+					if(is_array($where)) {
+						$where_parse  = $this->parse_where($table, $where, $sql);
+						$sql          = $where_parse["sql"] . ' AND ' . $restriction;
+						$where_values = $where_parse["values"];
+					} else if(!empty($restriction)) {
+						Request::error('Invalid condition', 404);
+					}
+
+					$sth          = $dbh->prepare($sql);
+					$sql_compiled = $sql;
+
+					// bind PUT values
+					foreach($column_values as $key => $value) {
+						if(is_array($value)) {
+							$value = serialize($value);
+						}
 						$key          = ':' . $key;
 						$sql_compiled = self::debug_compile_sql($sql_compiled, $key, $value);
 						if(empty($value)) {
@@ -952,12 +1003,24 @@ class API {
 						}
 						$sth->bindValue($key, $value);
 					}
+
+					// bind WHERE values
+					if(isset($where_values) && count($where_values) > 0) {
+						foreach($where_values as $key => $value) {
+							$key          = ':' . $key;
+							$sql_compiled = self::debug_compile_sql($sql_compiled, $key, $value);
+							if(empty($value)) {
+								$value = null;
+							}
+							$sth->bindValue($key, $value);
+						}
+					}
+
+					$this->logger->debug($sql_compiled);
+					//die($sql_compiled);
+
+					$sth->execute();
 				}
-
-				$this->logger->debug($sql_compiled);
-				//die($sql_compiled);
-
-				$sth->execute();
 			}
 		} catch(PDOException $e) {
 			Request::error($e);
@@ -1062,7 +1125,6 @@ class API {
 		} else {
 			$output = json_encode($data);
 		}
-		//die(var_dump(json_last_error()));
 
 		// Prepare a JSONP callback.
 		$callback = jsonp_callback_filter($this->query['callback']);
@@ -1083,7 +1145,7 @@ class API {
 	 * @param $data
 	 */
 	public function render_html($data) {
-		require_once(__ROOT__ . '/includes/template/header.php');
+		require_once(__API_ROOT__ . '/includes/template/header.php');
 		//err out if no results
 		if(empty($data)) {
 			Request::error('No results found', 404);
@@ -1123,7 +1185,7 @@ class API {
 			echo "</tr>";
 		}
 		echo "</table>";
-		require_once(__ROOT__ . '/includes/template/footer.php');
+		require_once(__API_ROOT__ . '/includes/template/footer.php');
 		die();
 	}
 

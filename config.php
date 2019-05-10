@@ -8,14 +8,14 @@
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
 
-require_once(__ROOT__ . '/docs.php');
+require_once(__API_ROOT__ . '/docs.php');
 
 define("__API_NAME__", "Database Web API"); // API Name
 
 $users_table = 'users'; // Table where users are stored
 
 // REMOVE COMMENT FOR ENABLE TOKEN AUTHENTICATION
-/*define("__AUTH__",  serialize(array( // Set null for disable authentication
+/*define("__API_AUTH__",  serialize(array( // Set null for disable authentication
     'sqlite' => false, // Enabled save token on SQLite file
     'sqlite_database' => 'api_token', // SQLite filename (only with sqlite = true)
     'api_database' => 'dataset', // Authentication database
@@ -36,7 +36,7 @@ $users_table = 'users'; // Table where users are stored
 
 
 // Datasets (list of database to connect)
-define("__DATASETS__", serialize(array(
+define("__API_DATASETS__", serialize(array(
 	'dataset' => array(
 		'name'             => 'database_name',
 		'username'         => 'root', // root is default
