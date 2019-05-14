@@ -5,7 +5,7 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
-require_once(__API_ROOT__ . '/hooks/loader.hooks.php');
+use marcocesarato\DatabaseAPI\Hooks;
 
 $hooks = Hooks::getInstance();
 

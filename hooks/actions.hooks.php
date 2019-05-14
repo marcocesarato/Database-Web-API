@@ -5,6 +5,8 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
+use marcocesarato\DatabaseAPI\API;
+
 /**
  * Custom API Call
  * @param $query

@@ -1,5 +1,7 @@
 <?php
 
+namespace marcocesarato\DatabaseAPI;
+
 /**
  * PHP Hooks Class (Modified)
  * The PHP Hooks Class is a fork of the WordPress filters hook system rolled in

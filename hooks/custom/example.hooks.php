@@ -5,6 +5,10 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
+use marcocesarato\DatabaseAPI\API;
+use marcocesarato\DatabaseAPI\Auth;
+use marcocesarato\DatabaseAPI\Hooks;
+
 $hooks = Hooks::getInstance();
 
 /**

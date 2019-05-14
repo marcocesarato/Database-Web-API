@@ -5,6 +5,9 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
+use marcocesarato\DatabaseAPI\API;
+use marcocesarato\DatabaseAPI\Auth;
+
 /**
  * Add restriction on where conditions for each query
  * @param $restriction

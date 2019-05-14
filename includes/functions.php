@@ -3,7 +3,7 @@
  * Functions
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
- * @copyright  Copyright (c) 2018
+ * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
@@ -110,65 +110,6 @@ function trim_all($input) {
 }
 
 /**
- * Send push notification to onesignal service
- * @param $msg
- * @param array $ids
- * @return mixed
- */
-function notify($title, $msg, $tags = array(), $ids = array(), $opts = array()) {
-	$content = array(
-		"en" => $msg
-	);
-
-	$fields = array(
-		'app_id'            => API_NOTIFICATION_ID,
-		'included_segments' => array('All'),
-		'small_icon'        => "ic_stat_onesignal_default",
-		'headings'          => $title,
-		'contents'          => $content
-	);
-
-	if(!empty($tags) && count($tags) > 0) {
-		$result = array();
-		$count  = count($tags);
-		$i      = 0;
-		foreach($tags as $key => $value) {
-			$i ++;
-			$result[] = array("field" => "tag", "key" => $key, "relation" => "=", "value" => $value);
-			if($i !== $count) {
-				$result[] = array("operator" => "OR");
-			}
-		}
-		$fields['filters'] = $result;
-	}
-
-	if(!empty($ids)) {
-		$fields['include_player_ids'] = array();
-	}
-
-	$fields = array_merge($fields, $opts);
-
-	$fields = json_encode($fields);
-	$ch     = curl_init();
-	curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-		'Content-Type: application/json; charset=utf-8',
-		'Authorization: Basic ' . API_NOTIFICATION_REST
-	));
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_HEADER, false);
-	curl_setopt($ch, CURLOPT_POST, true);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-	curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-
-	$response = curl_exec($ch);
-	curl_close($ch);
-
-	return $response;
-}
-
-/**
  * Recusively travserses through an array to propegate SimpleXML objects
  * @param array $array the array to parse
  * @param object $xml the Simple XML object (must be at least a single empty node)
@@ -250,4 +191,22 @@ function dump() {
 		var_dump($args);
 	}
 	die();
+}
+
+/**
+ * Disable php errors
+ */
+function disable_php_errors(){
+	ini_set('display_errors', 0);
+	ini_set('display_startup_errors', 0);
+	error_reporting(0);
+}
+
+/**
+ * Enable php errors
+ */
+function enable_php_errors(){
+	ini_set('display_errors', 1);
+	ini_set('display_startup_errors', 1);
+	error_reporting(E_ALL); // E_ALL
 }

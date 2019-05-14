@@ -1,0 +1,19 @@
+{
+    "name": "marcocesarato/DatabaseAPI",
+    "description": "Dynamically generate RESTful APIs from the contents of a database table. Provides JSON, XML, and HTML. Supports most popular databases",
+    "type": "console",
+    "license": "GPL-3.0-or-later",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Marco Cesarato",
+            "email": "cesarato.developer@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "ext-simplexml": "*",
+        "ext-dom": "*",
+        "ext-json": "*"
+    },
+}

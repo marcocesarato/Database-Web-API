@@ -3,10 +3,14 @@
  * Compatibility
  * @package    Database Web API
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
- * @copyright  Copyright (c) 2018
+ * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
+
+if(!class_exists('PDO')) {
+	require_once(__API_ROOT__ . '/includes/classes/PDO/PDO.php');
+}
 
 if(!function_exists('http_response_code')) {
 

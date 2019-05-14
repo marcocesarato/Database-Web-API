@@ -5,6 +5,10 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
+use marcocesarato\DatabaseAPI\API;
+use marcocesarato\DatabaseAPI\Auth;
+use marcocesarato\DatabaseAPI\Hooks;
+
 require_once(__API_ROOT__ . '/hooks/utils.hooks.php');
 require_once(__API_ROOT__ . '/hooks/filters.hooks.php');
 require_once(__API_ROOT__ . '/hooks/actions.hooks.php');

@@ -1,18 +1,15 @@
 <?php
+
+namespace marcocesarato\DatabaseAPI;
+
 /**
  * Database Web API Client
  * @package    Database API Platform
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
- * @copyright  Copyright (c) 2018
+ * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
-
-// Depends from data weight
-ini_set('memory_limit', '1G');
-ini_set('max_execution_time', 3600);
-set_time_limit(3600);
-set_time_limit(3600);
 
 class APIClient {
 	// Public
@@ -30,6 +27,10 @@ class APIClient {
 	 * Singleton constructor
 	 */
 	protected function __construct() {
+		// Depends from data weight
+		ini_set('memory_limit', '1G');
+		ini_set('max_execution_time', 3600);
+		set_time_limit(3600);
 	}
 
 	/**
