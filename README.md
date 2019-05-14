@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.90 beta
+**Version:** 0.5.91 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -515,12 +515,20 @@ Host: localhost
 update['username']=Marco&update['email']=cesarato.developer@gmail.com&update['password']=3vwjehvdfjhefejjvw&update['is_active']=1
 ```
 
-**Multiple Update:**
+**Multi-table Update:**
 
 ```http
 PUT /dataset.json HTTP/1.1
 Host: localhost
 update[users][values][username]=Marco&update[users][values][email]=cesarato.developer@gmail.com&update[users][where][id]=1&update[cities][values][name]=Padova&update[cities][where][id]=1
+```
+
+**Multiple Update:**
+
+```http
+PUT /dataset.json HTTP/1.1
+Host: localhost
+update[users][][values][username]=Marco&update[users][][values][email]=cesarato.developer@gmail.com&update[users][][where][id]=1&update[cities][][values][name]=Padova&update[cities][][where][id]=1&update[cities][][values][name]=Milano&update[cities][][where][id]=2
 ```
 
 

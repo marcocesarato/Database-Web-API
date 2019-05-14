@@ -8,7 +8,7 @@
 $hooks = Hooks::getInstance();
 
 /**
- * On write doc testate
+ * On write example table
  * @param $data
  * @return mixed
  */
