@@ -66,7 +66,11 @@
 </IfModule>
 
 # File protection
-<Files ~ "^(config)\.php">
+<Files ~ "^(config|config\.(.*))\.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+<Files ~ "^(composer)\.json">
     Order Allow,Deny
     Deny from all
 </Files>
@@ -79,7 +83,7 @@
 	Order Allow,Deny
 	Deny from All
 </Files>
-<FilesMatch "\.(log|md)$">
+<FilesMatch "\.(log|md|backup|bak|bk|old|o|zip|tar|gz|rar)$">
     Order Allow,Deny
     Deny from All
 </FilesMatch>

@@ -8,6 +8,10 @@
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
 
+namespace marcocesarato\DatabaseAPI;
+
+use DOMDocument;
+use stdClass;
 
 /**
  * If an array contain others arrays

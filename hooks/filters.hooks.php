@@ -7,6 +7,8 @@
 
 use marcocesarato\DatabaseAPI\API;
 use marcocesarato\DatabaseAPI\Auth;
+use marcocesarato\DatabaseAPI\Hooks;
+use marcocesarato\DatabaseAPI\Request;
 
 /**
  * Add restriction on where conditions for each query

@@ -1,11 +1,3 @@
-logs/*.logs
-.idea/*
-.idea
-.idea/codeStyles/codeStyleConfig.xml
-.idea/codeStyles/Project.xml
-.idea/Database-Web-API.iml
-.idea/deployment.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/NeterpriseImportAPI.iml
-.idea/vcs.xml
+**.logs
+**.log
+.idea/**

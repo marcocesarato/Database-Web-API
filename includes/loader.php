@@ -8,8 +8,7 @@
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
 
-use marcocesarato\DatabaseAPI\API;
-use marcocesarato\DatabaseAPI\Logger;
+namespace marcocesarato\DatabaseAPI;
 
 define("__API_ROOT__", realpath(dirname(__FILE__) . '/..'));
 
