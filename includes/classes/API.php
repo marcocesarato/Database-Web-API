@@ -14,7 +14,6 @@ use SimpleXMLElement;
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
-
 class API {
 
 	static $instance;
@@ -79,7 +78,7 @@ class API {
 	/**
 	 * Register a new database dataset
 	 * @param string $name the database dataset name
-	 * @param array $args the database dataset properties
+	 * @param array  $args the database dataset properties
 	 */
 	public function registerDatabase($name = null, $args = array()) {
 
@@ -343,7 +342,7 @@ class API {
 	/**
 	 * Detect method of the request and execute the main database query
 	 * @param array $query the database query ASSUMES SANITIZED
-	 * @param null $db
+	 * @param null  $db
 	 * @return array|bool
 	 */
 	public function query($query = null, $db = null) {
@@ -393,7 +392,7 @@ class API {
 
 	/**
 	 * Build and execute the SELECT query from the GET request
-	 * @param $query
+	 * @param      $query
 	 * @param null $db
 	 * @return array|bool|mixed|stdClass
 	 */
@@ -420,7 +419,7 @@ class API {
 						$url            = build_base_url('/docs/' . $table . '.' . $this->query['format']);
 						$final_result[] = (object) array(
 							'Entity' => $table,
-							'Link'   => '<a href="' . $url . '">Go to documentation</a>'
+							'Link'   => '<a href="' . $url . '">Go to documentation</a>',
 						);
 					}
 				}
@@ -469,7 +468,7 @@ class API {
 								'Optional'    => strtoupper($column['is_nullable']),
 								'Default'     => empty($default) ? '-' : $default,
 								'Description' => '',
-								'Example'     => ''
+								'Example'     => '',
 							);
 							if(!empty($docs_column) && is_array($docs_column)) {
 								if(!empty($docs_column['description'])) {
@@ -499,7 +498,7 @@ class API {
 	/**
 	 * Build and execute the SELECT query from the GET request
 	 * @param array $query the database query ASSUMES SANITIZED
-	 * @param null $db
+	 * @param null  $db
 	 * @return array an array of results
 	 */
 	private function query_get($query, $db = null) {
@@ -560,7 +559,7 @@ class API {
 							$join_method = $join['method'];
 						}
 					}
-					if(!$this->checkTable($query['table'])) {
+					if(!$this->checkTable($table)) {
 						continue;
 						Request::error('Invalid Join table ' . $table, 404);
 					}
@@ -633,7 +632,7 @@ class API {
 								'DATETIME',
 								'TIMESTAMP',
 								'TIME',
-								'YEAR'
+								'YEAR',
 							))) {
 								$type = $_type;
 							}
@@ -736,7 +735,7 @@ class API {
 	/**
 	 * Build and execute the INSERT query from the POST request
 	 * @param array $query the database query ASSUMES SANITIZED
-	 * @param null $db
+	 * @param null  $db
 	 * @return array an array of results
 	 */
 	private function query_post($query, $db = null) {
@@ -795,8 +794,8 @@ class API {
 
 	/**
 	 * Execute an insert
-	 * @param $table
-	 * @param $columns
+	 * @param      $table
+	 * @param      $columns
 	 * @param null $db
 	 */
 	private function execute_insert($table, $columns, $dbh) {
@@ -829,7 +828,7 @@ class API {
 	/**
 	 * Build and execute the UPDATE or INSERT query from the PUT request
 	 * @param array $query the database query ASSUMES SANITIZED
-	 * @param null $db
+	 * @param null  $db
 	 * @return array
 	 */
 	private function query_put($query, $db = null) {
@@ -884,7 +883,7 @@ class API {
 	 * @return mixed
 	 */
 	private function query_update_parse($query) {
-		$query = $this->query_update_conversion($query);
+		$query     = $this->query_update_conversion($query);
 		$first_col = $this->getFirstColumn($query['table']);
 		// Check id
 		if(isset($query['table']) && !empty($query['table']) && isset($query['id']) && !empty($query['id'])) {
@@ -901,11 +900,11 @@ class API {
 						Request::error('Invalid WHERE column ' . $column_table . '.' . $column, 404);
 					}
 				}
-				foreach($query['update'][$query['table']] as $key => $values){
+				foreach($query['update'][$query['table']] as $key => $values) {
 					$query['update'][$query['table']][$key]['where'] = $query['where'];
 				}
 			}
-			foreach($query['update'][$query['table']] as $key => $values){
+			foreach($query['update'][$query['table']] as $key => $values) {
 				$query['update'][$query['table']][$key]['values']            = $query['update'];
 				$query['update'][$query['table']][$key]['where'][$first_col] = $query['id'];
 			}
@@ -935,21 +934,22 @@ class API {
 	 */
 	private function query_update_conversion($query) {
 		$update = array();
-		foreach($query['update'] as $table => $values){
-			if(!empty($values['values'])){
+		foreach($query['update'] as $table => $values) {
+			if(!empty($values['values'])) {
 				$update[$table][] = $values;
 			} else {
 				$update[$table] = $values;
 			}
 		}
 		$query['update'] = $update;
+
 		return $query;
 	}
 
 	/**
 	 * Build and execute the UPDATE query from the PATCH request
 	 * @param array $query the database query ASSUMES SANITIZED
-	 * @param null $db
+	 * @param null  $db
 	 * @return array an array of results
 	 */
 	private function query_patch($query, $db = null) {
@@ -1038,7 +1038,7 @@ class API {
 	/**
 	 * Build and execute the DELETE query from the DELETE request
 	 * @param array $query the database query ASSUMES SANITIZED
-	 * @param null $db
+	 * @param null  $db
 	 * @return array an array of results
 	 */
 	private function query_delete($query, $db = null) {
@@ -1215,7 +1215,7 @@ class API {
 	/**
 	 * Verify a table exists, used to sanitize queries
 	 * @param string $query_table the table being queried
-	 * @param string $db the database to check
+	 * @param string $db          the database to check
 	 * @return bool true if table exists, otherwise false
 	 */
 	public function checkTable($query_table, $db = null) {
@@ -1279,8 +1279,8 @@ class API {
 	/**
 	 * Verify a column exists
 	 * @param string $column the column to check
-	 * @param string $table the table to check
-	 * @param string $db (optional) the db to check
+	 * @param string $table  the table to check
+	 * @param string $db     (optional) the db to check
 	 * @return bool
 	 * @retrun bool true if exists, otherwise false
 	 */
@@ -1313,7 +1313,7 @@ class API {
 	/**
 	 * Get columns
 	 * @param string $table the table to check
-	 * @param string $db the database to check
+	 * @param string $db    the database to check
 	 * @return array an array of the column names
 	 */
 	public function getColumns($table, $db = null) {
@@ -1350,7 +1350,7 @@ class API {
 	/**
 	 * Returns the first column in a table
 	 * @param string $table the table
-	 * @param string $db the datbase slug
+	 * @param string $db    the datbase slug
 	 * @return string the column name
 	 */
 	public function getFirstColumn($table, $db = null) {
@@ -1491,8 +1491,8 @@ class API {
 	/**
 	 * Change column value index name for bind value on PDO
 	 * @param string $prefix
-	 * @param $column
-	 * @param $array
+	 * @param        $column
+	 * @param        $array
 	 * @return string
 	 */
 	private static function value_index($prefix = "_", $column, $array) {
@@ -1606,8 +1606,8 @@ class API {
 
 	/**
 	 * Remove any blacklisted columns from the data set.
-	 * @param $table
-	 * @param $results
+	 * @param      $table
+	 * @param      $results
 	 * @param null $db
 	 * @return mixed
 	 */
@@ -1670,8 +1670,8 @@ class API {
 
 	/**
 	 * Store data in Alternative PHP Cache (APC).
-	 * @param $key
-	 * @param $value
+	 * @param      $key
+	 * @param      $value
 	 * @param null $ttl
 	 * @return array|bool
 	 */

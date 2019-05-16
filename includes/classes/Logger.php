@@ -10,7 +10,6 @@ namespace marcocesarato\DatabaseAPI;
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
-
 class Logger {
 
 	public static $instance;
@@ -19,7 +18,7 @@ class Logger {
 	protected $log_path;
 	protected $file;
 	protected $options = array(
-		'dateFormat' => 'd-M-Y H:i:s'
+		'dateFormat' => 'd-M-Y H:i:s',
 	);
 
 	/**
@@ -39,7 +38,7 @@ class Logger {
 	/**
 	 * Setup
 	 * @param string $log_file - path and filename of log
-	 * @param array $params
+	 * @param array  $params
 	 */
 	public function setLog($log_dir, $log_file = 'logs.log', $params = array()) {
 		$this->log_dir  = $log_dir;
@@ -72,7 +71,7 @@ class Logger {
 
 	/**
 	 * Write to log file
-	 * @param mixed $message
+	 * @param mixed  $message
 	 * @param string $severity
 	 * @return void
 	 */

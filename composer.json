@@ -14,5 +14,5 @@
         "ext-simplexml": "*",
         "ext-dom": "*",
         "ext-json": "*"
-    },
+    }
 }

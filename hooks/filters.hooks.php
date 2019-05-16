@@ -129,7 +129,7 @@ function filter_auth_validate_token($is_valid, $token) {
  * @param $user_row
  * @return mixed
  */
-function filter_auth_validate_user($is_valid, $user_row){
+function filter_auth_validate_user($is_valid, $user_row) {
 	return $is_valid;
 }
 
@@ -180,6 +180,7 @@ function filter_auth_login_request($is_valid_request, $query) {
 function filter_auth_login($data) {
 	$user = Auth::getUser(); // User row
 	$db   = API::getConnection(); // PDO Object
+
 	return $data;
 }
 
@@ -191,6 +192,7 @@ function filter_auth_login($data) {
 function filter_auth_token_check($data) {
 	$user = Auth::getUser(); // User row
 	$db   = API::getConnection(); // PDO Object
+
 	return $data;
 }
 
@@ -202,7 +204,7 @@ function filter_auth_token_check($data) {
  * @return array
  */
 function filter_render($data, $query, $method) {
-	switch($method){
+	switch($method) {
 		case 'GET':
 			//
 			break;
@@ -219,5 +221,6 @@ function filter_render($data, $query, $method) {
 			//
 			break;
 	}
+
 	return $data;
 }

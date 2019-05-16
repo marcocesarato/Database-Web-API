@@ -10,7 +10,6 @@ namespace marcocesarato\DatabaseAPI;
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
-
 class APIClient {
 	// Public
 	public static $DEBUG = false;
@@ -46,7 +45,7 @@ class APIClient {
 
 	/**
 	 * get data
-	 * @param $table
+	 * @param       $table
 	 * @param array $where
 	 * @return bool|mixed
 	 */
@@ -100,10 +99,10 @@ class APIClient {
 	 * Build url query params
 	 * as http_build_query build a query url the difference is
 	 * that this function is array recursive and compatible with PHP4
-	 * @author Marco Cesarato <cesarato.developer@gmail.com>
-	 * @param $query
+	 * @param        $query
 	 * @param string $parent
 	 * @return string
+	 * @author Marco Cesarato <cesarato.developer@gmail.com>
 	 */
 	private static function _buildQuery($query, $parent = null) {
 		$query_array = array();
@@ -298,7 +297,7 @@ class APIClient {
 
 	/**
 	 * Delete data
-	 * @param $table
+	 * @param       $table
 	 * @param array $params
 	 * @return bool|mixed
 	 */

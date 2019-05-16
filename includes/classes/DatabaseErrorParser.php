@@ -10,7 +10,6 @@ namespace marcocesarato\DatabaseAPI;
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
-
 class DatabaseErrorParser {
 	public function __construct() {
 	}

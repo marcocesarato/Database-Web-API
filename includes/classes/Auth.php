@@ -10,7 +10,6 @@ namespace marcocesarato\DatabaseAPI;
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
-
 class Auth {
 
 	public static $instance;
@@ -140,7 +139,7 @@ class Auth {
 
 			$is_valid = $this->hooks->apply_filters('auth_validate_token', !empty($user_row), $user_row);
 
-			if ($is_valid) {
+			if($is_valid) {
 				$password = strtolower($query['password']);
 				if($user_row[$users_columns['password']] == $password) {
 					$token          = $this->generateToken($user_row[$users_columns['id']], $user_row[$users_columns['username']]);
@@ -150,9 +149,9 @@ class Auth {
 					$results  = array(
 						(object) array(
 							"token" => $token,
-						)
+						),
 					);
-					$results = $this->hooks->apply_filters('auth_login', $results);
+					$results  = $this->hooks->apply_filters('auth_login', $results);
 					$renderer = 'render_' . $query['format'];
 					die($this->api->$renderer($results, $query));
 				}
@@ -248,8 +247,8 @@ class Auth {
 				$user_row = $sth->fetch();
 
 				if($user_row) {
-					$this->user    = $user_row;
-					$this->user_id = $user_row[$users_columns['id']];
+					$this->user          = $user_row;
+					$this->user_id       = $user_row[$users_columns['id']];
 					$this->authenticated = true;
 					if(!empty($users_columns['admin'])) {
 						$this->is_admin = (($user_row[key($users_columns['admin'])] == reset($users_columns['admin'])) ? true : false);
@@ -291,9 +290,9 @@ class Auth {
 			$results = array(
 				"user"     => (object) array(
 					"id"       => $this->user_id,
-					"is_admin" => $this->is_admin
+					"is_admin" => $this->is_admin,
 				),
-				"response" => (object) array('status' => 200, 'message' => 'OK')
+				"response" => (object) array('status' => 200, 'message' => 'OK'),
 			);
 
 			$this->logger->debug($results);

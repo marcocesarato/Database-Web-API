@@ -22,7 +22,7 @@ class Request {
 		self::$instance = &$this;
 		self::blockBots();
 		self::blockTor();
-		$this->input = self::get_params();
+		$this->input = self::getParams();
 	}
 
 	/**
@@ -43,13 +43,13 @@ class Request {
 	/**
 	 * Halt the program with an "Internal server error" and the specified message.
 	 * @param string|object $error the error or a (PDO) exception object
-	 * @param int $code (optional) the error code with which to respond
-	 * @param bool $custom_call
+	 * @param int           $code  (optional) the error code with which to respond
+	 * @param bool          $custom_call
 	 */
 	public static function error($error, $code = 500, $custom_call = false) {
 
 		$hooks = Hooks::getInstance();
-		if($custom_call){
+		if($custom_call) {
 			$hooks->do_action('custom_api_call');
 		}
 		$hooks->do_action('on_error', $error, $code);
@@ -74,10 +74,10 @@ class Request {
 
 	/**
 	 * Sanitize from HTML injection
-	 * @package    AIO Security Class
-	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 * @param      $data mixed data to sanitize
 	 * @return     $data sanitized data
+	 * @package    AIO Security Class
+	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
 	public static function sanitize_htmlentities($data) {
 		if(is_array($data)) {
@@ -125,7 +125,7 @@ class Request {
 				'HTTP_FORWARDED_FOR',
 				'HTTP_FORWARDED',
 				'HTTP_VIA',
-				'REMOTE_ADDR'
+				'REMOTE_ADDR',
 			) as $key
 		) {
 			if(array_key_exists($key, $_SERVER) === true) {
@@ -249,7 +249,7 @@ class Request {
 				implode('.', array_reverse(explode('.', $ip))),
 				$_SERVER["SERVER_PORT"],
 				implode('.', array_reverse(explode('.', $ip_server))),
-				'ip-port.exitlist.torproject.org'
+				'ip-port.exitlist.torproject.org',
 			);
 			$torExitNode = implode('.', $query);
 			$dns         = dns_get_record($torExitNode, DNS_A);
@@ -287,7 +287,7 @@ class Request {
 				'HTTP_X_REAL_IP',
 				'HTTP_X_VARNISH',
 				'HTTP_VIA',
-				'REMOTE_ADDR'
+				'REMOTE_ADDR',
 			) as $key
 		) {
 			if(array_key_exists($key, $_SERVER) === true) {
@@ -318,7 +318,7 @@ class Request {
 	 * @params $sanitize (optional) sanitize input data, default is true
 	 * @return $params parameters
 	 */
-	public static function get_params($sanitize = true) {
+	public static function getParams($sanitize = true) {
 
 		// Parse GET params
 		$source = $_SERVER['QUERY_STRING'];
@@ -331,8 +331,6 @@ class Request {
 			parse_str($source_input, $params_input);
 			$params = array_merge($params, $params_input);
 		}
-
-		//die(print_r($params));
 
 		if($sanitize == true) {
 			$params = self::sanitize_params($params);
@@ -350,10 +348,10 @@ class Request {
 
 	/**
 	 * Sanitize the parameters
-	 * @package    AIO Security Class
-	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 * @param      $params mixed data to sanitize
 	 * @return     $params sanitized data
+	 * @package    AIO Security Class
+	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
 	private static function sanitize_params($params) {
 		foreach($params as $key => $value) {
@@ -370,10 +368,10 @@ class Request {
 
 	/**
 	 * Sanitize from XSS injection
-	 * @package    AIO Security Class
-	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 * @param      $data mixed data to sanitize
 	 * @return     $data sanitized data
+	 * @package    AIO Security Class
+	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
 	public static function sanitize_rxss($data) {
 		if(is_array($data)) {
@@ -389,10 +387,10 @@ class Request {
 
 	/**
 	 * Sanitize from XSS injection
-	 * @package    AIO Security Class
-	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 * @param      $data mixed data to sanitize
 	 * @return     $data sanitized data
+	 * @package    AIO Security Class
+	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
 	private static function sanitize_xss($data) {
 		$data = str_replace(array("&amp;", "&lt;", "&gt;"), array("&amp;amp;", "&amp;lt;", "&amp;gt;"), $data);
@@ -410,7 +408,8 @@ class Request {
 		do {
 			$old_data = $data;
 			$data     = preg_replace("#</*(?:applet|b(?:ase|gsound|link)|embed|frame(?:set)?|i(?:frame|layer)|l(?:ayer|ink)|meta|object|s(?:cript|tyle)|title|xml)[^>]*+>#i", "", $data);
-		} while($old_data !== $data);
+		}
+		while($old_data !== $data);
 		$data = str_replace(chr(0), '', $data);
 		$data = preg_replace('%&\s*\{[^}]*(\}\s*;?|$)%', '', $data);
 		$data = str_replace('&', '&amp;', $data);
@@ -423,10 +422,10 @@ class Request {
 
 	/**
 	 * Sanitize from HTML injection
-	 * @package    AIO Security Class
-	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 * @param      $data mixed data to sanitize
 	 * @return     $data sanitized data
+	 * @package    AIO Security Class
+	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
 	public static function sanitize_striptags($data) {
 		if(is_array($data)) {
@@ -442,10 +441,10 @@ class Request {
 
 	/**
 	 * Sanitize from SQL injection
-	 * @package    AIO Security Class
-	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 * @param      $data mixed data to sanitize
 	 * @return     $data sanitized data
+	 * @package    AIO Security Class
+	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
 	public static function sanitize_stripslashes($data) {
 		if(is_array($data)) {

@@ -47,7 +47,7 @@ define("__API_DATASETS__", serialize(array(
 		'table_docs'       => $docs['dataset'],
 		'table_list'       => array(), // Tables's whitelist (Allow only the tables in this list, if empty allow all)
 		'table_blacklist'  => array(/*blacklist users table*/
-			$users_table
+			$users_table,
 		), // Tables's blacklist
 		'column_list'      => array(), // Columns's whitelist (Allow only the columns in this list, if empty allow all)
 		'column_blacklist' => array(), // Columns's blacklist

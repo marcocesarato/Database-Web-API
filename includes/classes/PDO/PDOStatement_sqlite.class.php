@@ -10,12 +10,12 @@
  * @Compatibility    >= PHP 4
  * @Dependencies    PDO.class.php
  *            PDO_sqlite.class.php
- * @Author        Andrea Giammarchi
+ * @Author          Andrea Giammarchi
  * @Site        http://www.devpro.it/
- * @Mail        andrea [ at ] 3site [ dot ] it
- * @Date        2005/10/13
+ * @Mail            andrea [ at ] 3site [ dot ] it
+ * @Date            2005/10/13
  * @LastModified    2006/01/29 09:30 [fixed execute bug]
- * @Version        0.1b - tested
+ * @Version         0.1b - tested
  */
 class PDOStatement_sqlite {
 
@@ -113,7 +113,7 @@ class PDOStatement_sqlite {
 	 * Public method:
 	 *    Excecutes a query and returns true on success or false.
 	 *        this->exec( $array:Array ):Boolean
-	 * @Param    Array        If present, it should contain all replacements for prepared query
+	 * @Param     Array        If present, it should contain all replacements for prepared query
 	 * @Return    Boolean        true if query has been done without errors, false otherwise
 	 */
 	function execute($array = Array()) {
@@ -175,10 +175,10 @@ class PDOStatement_sqlite {
 	 * Public method:
 	 *    Returns, if present, next row of executed query or false.
 	 *        this->fetch( $mode:Integer, $cursor:Integer, $offset:Integer ):Mixed
-	 * @Param    Integer        PDO_FETCH_* constant to know how to read next row, default PDO_FETCH_BOTH
+	 * @Param     Integer        PDO_FETCH_* constant to know how to read next row, default PDO_FETCH_BOTH
 	 *                NOTE: if $mode is omitted is used default setted mode, PDO_FETCH_BOTH
-	 * @Param    Integer        this variable is not used but respects PDO original accepted parameters
-	 * @Param    Integer        this variable is not used but respects PDO original accepted parameters
+	 * @Param     Integer        this variable is not used but respects PDO original accepted parameters
+	 * @Param     Integer        this variable is not used but respects PDO original accepted parameters
 	 * @Return    Mixed        Next row of executed query or false if there is nomore.
 	 */
 	function fetch($mode = PDO_FETCH_BOTH, $cursor = null, $offset = null) {
@@ -214,7 +214,7 @@ class PDOStatement_sqlite {
 	 * Public method:
 	 *    Returns an array with all rows of executed query.
 	 *        this->fetchAll( $mode:Integer ):Array
-	 * @Param    Integer        PDO_FETCH_* constant to know how to read all rows, default PDO_FETCH_BOTH
+	 * @Param     Integer        PDO_FETCH_* constant to know how to read all rows, default PDO_FETCH_BOTH
 	 *                NOTE: this doesn't work as fetch method, then it will use always PDO_FETCH_BOTH
 	 *                                    if this param is omitted
 	 * @Return    Array        An array with all fetched rows
@@ -289,7 +289,7 @@ class PDOStatement_sqlite {
 	 * Public method:
 	 *    Quotes correctly a string for this database
 	 *        this->getAttribute( $attribute:Integer ):Mixed
-	 * @Param    Integer        a constant [    PDO_ATTR_SERVER_INFO,
+	 * @Param     Integer        a constant [    PDO_ATTR_SERVER_INFO,
 	 *                        PDO_ATTR_SERVER_VERSION,
 	 *                                              PDO_ATTR_CLIENT_VERSION,
 	 *                                              PDO_ATTR_PERSISTENT    ]
@@ -320,8 +320,8 @@ class PDOStatement_sqlite {
 	 * Public method:
 	 *    Sets database attributes, in this version only connection mode.
 	 *        this->setAttribute( $attribute:Integer, $mixed:Mixed ):Boolean
-	 * @Param    Integer        PDO_* constant, in this case only PDO_ATTR_PERSISTENT
-	 * @Param    Mixed        value for PDO_* constant, in this case a Boolean value
+	 * @Param     Integer        PDO_* constant, in this case only PDO_ATTR_PERSISTENT
+	 * @Param     Mixed        value for PDO_* constant, in this case a Boolean value
 	 *                true for permanent connection, false for default not permament connection
 	 * @Return    Boolean        true on change, false otherwise
 	 */
@@ -345,7 +345,7 @@ class PDOStatement_sqlite {
 	 * Public method:
 	 *    Sets default fetch mode to use with this->fetch() method.
 	 *        this->setFetchMode( $mode:Integer ):Boolean
-	 * @Param    Integer        PDO_FETCH_* constant to use while reading an execute query with fetch() method.
+	 * @Param     Integer        PDO_FETCH_* constant to use while reading an execute query with fetch() method.
 	 *                NOTE: PDO_FETCH_LAZY and PDO_FETCH_BOUND are not supported
 	 * @Return    Boolean        true on change, false otherwise
 	 */

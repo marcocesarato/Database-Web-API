@@ -166,11 +166,11 @@ if(!function_exists('shortcode_atts')) {
 	 * only contain the attributes in the $pairs list.
 	 * If the $atts list has unsupported attributes, then they will be ignored and
 	 * removed from the final returned list.
-	 * @from Wordpress
-	 * @since 2.5
+	 * @from  Wordpress
 	 * @param array $pairs Entire list of supported attributes and their defaults.
-	 * @param array $atts User defined attributes in shortcode tag.
+	 * @param array $atts  User defined attributes in shortcode tag.
 	 * @return array Combined and filtered attribute list.
+	 * @since 2.5
 	 */
 	function shortcode_atts($pairs, $atts) {
 		$atts = (array) $atts;

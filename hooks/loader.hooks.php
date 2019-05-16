@@ -5,8 +5,6 @@
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
 
-use marcocesarato\DatabaseAPI\API;
-use marcocesarato\DatabaseAPI\Auth;
 use marcocesarato\DatabaseAPI\Hooks;
 
 require_once(__API_ROOT__ . '/hooks/utils.hooks.php');
@@ -16,84 +14,52 @@ require_once(__API_ROOT__ . '/hooks/actions.hooks.php');
 $hooks = Hooks::getInstance();
 
 // Include tables filters
-foreach(glob(__API_ROOT__ . "/hooks/{tables,custom}/*.hooks.php", GLOB_BRACE) as $file) {
+foreach(glob(__API_ROOT__ . "/hooks/{tables,custom,helpers}/*.hooks.php", GLOB_BRACE) as $file) {
 	include_once($file);
 }
 
 /**
- * On write helper hooks
+ * On read loader hooks
  * @param $data
  * @param $table
  * @return mixed
  */
-function helper_on_write($data, $table) {
-	$user = Auth::getUser(); // User row
-	$api  = API::getInstance();
-
-	/*
-	if($api->checkColumn('date_entered', $table)) {
-		$data['date_entered'] = date('Y-m-d');
-	}
-	if($api->checkColumn('created_by', $table)) {
-		$data['created_by'] = $user['id'];
-	}
-	*/
+function loader_on_read_tables($data, $table) {
+	$hooks = Hooks::getInstance();
+	$data  = $hooks->apply_filters('on_read_' . $table, $data, $table);
 
 	return $data;
 }
 
-$hooks->add_filter('on_write', 'helper_on_write', 100);
-
+$hooks->add_filter('on_read', 'loader_on_read_tables', 25);
 
 /**
- * On write helper hooks
+ * On write loader hooks
  * @param $data
  * @param $table
  * @return mixed
  */
-function helper_on_write_tables($data, $table) {
+function loader_on_write_tables($data, $table) {
 	$hooks = Hooks::getInstance();
 	$data  = $hooks->apply_filters('on_write_' . $table, $data, $table);
 
 	return $data;
 }
 
-$hooks->add_filter('on_write', 'helper_on_write_tables', 25);
+$hooks->add_filter('on_write', 'loader_on_write_tables', 25);
+
 
 /**
- * On edit helper hooks
+ * On edit loader hooks
  * @param $data
  * @param $table
  * @return mixed
  */
-function helper_on_edit($data, $table) {
-	$user = Auth::getUser(); // User row
-	$api  = API::getInstance();
-	/*if($api->checkColumn('modified_user_id', $table)) {
-		$data['modified_user_id'] = $user['id'];
-	}
-	if($api->checkColumn('date_modified', $table)) {
-		$data['date_modified'] = date('Y-m-d');
-	}*/
-	unset($data['deleted']);
-
-	return $data;
-}
-
-$hooks->add_filter('on_edit', 'helper_on_edit', 100);
-
-
-/**
- * On edit helper hooks
- * @param $data
- * @param $table
- * @return mixed
- */
-function helper_on_edit_tables($data, $table) {
+function loader_on_edit_tables($data, $table) {
 	$hooks = Hooks::getInstance();
 	$data  = $hooks->apply_filters('on_edit_' . $table, $data, $table);
 
 	return $data;
 }
 
-$hooks->add_filter('on_edit', 'helper_on_edit_tables', 25);
+$hooks->add_filter('on_edit', 'loader_on_edit_tables', 25);

@@ -23,7 +23,7 @@ function action_custom_api_call($query) {
  * @param $message
  * @param $code
  */
-function action_on_error($message, $code){
+function action_on_error($message, $code) {
 
 }
 

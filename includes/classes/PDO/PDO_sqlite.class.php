@@ -13,12 +13,12 @@ require_once('PDOStatement_sqlite.class.php');
  * @Compatibility    >= PHP 4
  * @Dependencies    PDO.class.php
  *            PDOStatement_sqlite.class.php
- * @Author        Andrea Giammarchi
+ * @Author          Andrea Giammarchi
  * @Site        http://www.devpro.it/
- * @Mail        andrea [ at ] 3site [ dot ] it
- * @Date        2005/10/13
+ * @Mail            andrea [ at ] 3site [ dot ] it
+ * @Date            2005/10/13
  * @LastModified    2005/18/14 12:30
- * @Version        0.1 - tested
+ * @Version         0.1 - tested
  */
 class PDO_sqlite {
 
@@ -107,7 +107,7 @@ class PDO_sqlite {
 	 * Public method:
 	 *    Excecutes a query and returns affected rows
 	 *        this->exec( $query:String ):Mixed
-	 * @Param    String        query to execute
+	 * @Param     String        query to execute
 	 * @Return    Mixed        Number of affected rows or false on bad query.
 	 */
 	function exec($query) {
@@ -145,8 +145,8 @@ class PDO_sqlite {
 	 * Public method:
 	 *    Returns a new PDOStatement
 	 *        this->prepare( $query:String, $array:Array ):PDOStatement
-	 * @Param    String        query to prepare
-	 * @Param    Array        this variable is not used but respects PDO original accepted parameters
+	 * @Param     String        query to prepare
+	 * @Param     Array        this variable is not used but respects PDO original accepted parameters
 	 * @Return    PDOStatement    new PDOStatement to manage
 	 */
 	function prepare($query, $array = Array()) {
@@ -160,7 +160,7 @@ class PDO_sqlite {
 	 * Public method:
 	 *    Executes directly a query and returns an array with result or false on bad query
 	 *        this->query( $query:String ):Mixed
-	 * @Param    String        query to execute
+	 * @Param     String        query to execute
 	 * @Return    Mixed        false on error, array with all info on success
 	 */
 	function query($query) {
@@ -182,7 +182,7 @@ class PDO_sqlite {
 	 * Public method:
 	 *    Quotes correctly a string for this database
 	 *        this->quote( $string:String ):String
-	 * @Param    String        string to quote
+	 * @Param     String        string to quote
 	 * @Return    String        a correctly quoted string
 	 */
 	function quote($string) {
@@ -196,7 +196,7 @@ class PDO_sqlite {
 	 * Public method:
 	 *    Quotes correctly a string for this database
 	 *        this->getAttribute( $attribute:Integer ):Mixed
-	 * @Param    Integer        a constant [    PDO_ATTR_SERVER_INFO,
+	 * @Param     Integer        a constant [    PDO_ATTR_SERVER_INFO,
 	 *                        PDO_ATTR_SERVER_VERSION,
 	 *                                              PDO_ATTR_CLIENT_VERSION,
 	 *                                              PDO_ATTR_PERSISTENT    ]
@@ -224,8 +224,8 @@ class PDO_sqlite {
 	 * Public method:
 	 *    Sets database attributes, in this version only connection mode.
 	 *        this->setAttribute( $attribute:Integer, $mixed:Mixed ):Boolean
-	 * @Param    Integer        PDO_* constant, in this case only PDO_ATTR_PERSISTENT
-	 * @Param    Mixed        value for PDO_* constant, in this case a Boolean value
+	 * @Param     Integer        PDO_* constant, in this case only PDO_ATTR_PERSISTENT
+	 * @Param     Mixed        value for PDO_* constant, in this case a Boolean value
 	 *                true for permanent connection, false for default not permament connection
 	 * @Return    Boolean        true on change, false otherwise
 	 */

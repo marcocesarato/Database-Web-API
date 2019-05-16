@@ -33,4 +33,4 @@
                 <h1><?php echo __API_NAME__; ?></h1>
             </div>
         </div>
-        <div class="container-fluid">
+    <div class="container-fluid">

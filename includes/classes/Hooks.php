@@ -86,8 +86,8 @@ class Hooks {
 
 	/**
 	 * Execute functions hooked on a specific filter hook, specifying arguments in an array.
-	 * @param    string $tag The name of the filter hook.
-	 * @param    array $args The arguments supplied to the functions hooked to $tag
+	 * @param string $tag  The name of the filter hook.
+	 * @param array  $args The arguments supplied to the functions hooked to $tag
 	 * @return   mixed        The filtered value after all hooked functions are applied to it.
 	 */
 	public function apply_filters_ref_array($tag, $args) {
@@ -123,7 +123,8 @@ class Hooks {
 					$args[0] = call_user_func_array($the_['function'], $args);
 				}
 			}
-		} while(next($this->filters[$tag]) !== false);
+		}
+		while(next($this->filters[$tag]) !== false);
 		array_pop($this->current_filter);
 
 		return $args[0];
@@ -148,23 +149,24 @@ class Hooks {
 					call_user_func_array($the_['function'], $args);
 				}
 			}
-		} while(next($this->filters['all']) !== false);
+		}
+		while(next($this->filters['all']) !== false);
 	}
 
 	/**
 	 * Hooks a function on to a specific action.
-	 * @param    string $tag
+	 * @param string  $tag
 	 *                                    The name of the action to which the
 	 *                                    $function_to_add is hooked.
-	 * @param    string $function_to_add The name of the function you wish to be called.
-	 * @param    integer $priority
+	 * @param string  $function_to_add    The name of the function you wish to be called.
+	 * @param integer $priority
 	 *                                    [optional] Used to specify the order in which
 	 *                                    the functions associated with a particular
 	 *                                    action are executed (default: 50).
 	 *                                    Lower numbers correspond with earlier execution,
 	 *                                    and functions with the same priority are executed
 	 *                                    in the order in which they were added to the action.
-	 * @param     string $include_path [optional] File to include before executing the callback.
+	 * @param string  $include_path       [optional] File to include before executing the callback.
 	 * @return bool
 	 */
 	public function add_action($tag, $function_to_add, $priority = self::PRIORITY_NEUTRAL, $include_path = null) {
@@ -173,17 +175,17 @@ class Hooks {
 
 	/**
 	 * Adds Hooks to a function or method to a specific filter action.
-	 * @param    string $tag The name of the filter to hook the
+	 * @param string       $tag                The name of the filter to hook the
 	 *                                         {@link $function_to_add} to.
-	 * @param    string|array $function_to_add The name of the function to be called
+	 * @param string|array $function_to_add    The name of the function to be called
 	 *                                         when the filter is applied.
-	 * @param    integer $priority [optional] Used to specify the order in
+	 * @param integer      $priority           [optional] Used to specify the order in
 	 *                                         which the functions associated with a
 	 *                                         particular action are executed (default: 50).
 	 *                                         Lower numbers correspond with earlier execution,
 	 *                                         and functions with the same priority are executed
 	 *                                         in the order in which they were added to the action.
-	 * @param string $include_path [optional] File to include before executing the callback.
+	 * @param string       $include_path       [optional] File to include before executing the callback.
 	 * @return boolean
 	 */
 	public function add_filter($tag, $function_to_add, $priority = self::PRIORITY_NEUTRAL, $include_path = null) {
@@ -199,7 +201,7 @@ class Hooks {
 
 	/**
 	 * Build Unique ID for storage and retrieval.
-	 * @param    string|array $function Used for creating unique id.
+	 * @param string|array $function     Used for creating unique id.
 	 * @return   string|bool
 	 *                                   Unique ID for usage as array key or false if
 	 *                                   $priority === false and $function is an
@@ -233,7 +235,7 @@ class Hooks {
 	/**
 	 * Check if any action has been registered for a hook.
 	 * <strong>INFO:</strong> Use !== false to check if it's true!
-	 * @param    string $tag The name of the action hook.
+	 * @param string      $tag               The name of the action hook.
 	 * @param bool|string $function_to_check [optional]
 	 * @return   mixed
 	 *                                       If $function_to_check is omitted,
@@ -254,8 +256,8 @@ class Hooks {
 	/**
 	 * Check if any filter has been registered for the given hook.
 	 * <strong>INFO:</strong> Use !== false to check if it's true!
-	 * @param    string $tag The name of the filter hook.
-	 * @param    bool $function_to_check [optional] Callback function name to check for
+	 * @param string $tag                    The name of the filter hook.
+	 * @param bool   $function_to_check      [optional] Callback function name to check for
 	 * @return   mixed
 	 *                                       If {@link $function_to_check} is omitted,
 	 *                                       returns boolean for whether the hook has
@@ -287,9 +289,9 @@ class Hooks {
 
 	/**
 	 * Removes a function from a specified action hook.
-	 * @param string $tag The action hook to which the function to be removed is hooked.
-	 * @param mixed $function_to_remove The name of the function which should be removed.
-	 * @param int $priority [optional] The priority of the function (default: 50).
+	 * @param string $tag                The action hook to which the function to be removed is hooked.
+	 * @param mixed  $function_to_remove The name of the function which should be removed.
+	 * @param int    $priority           [optional] The priority of the function (default: 50).
 	 * @return bool Whether the function is removed.
 	 */
 	public function remove_action($tag, $function_to_remove, $priority = self::PRIORITY_NEUTRAL) {
@@ -298,9 +300,9 @@ class Hooks {
 
 	/**
 	 * Removes a function from a specified filter hook.
-	 * @param string $tag The filter hook to which the function to be removed is hooked
-	 * @param mixed $function_to_remove The name of the function which should be removed
-	 * @param int $priority [optional] The priority of the function (default: 50)
+	 * @param string $tag                The filter hook to which the function to be removed is hooked
+	 * @param mixed  $function_to_remove The name of the function which should be removed
+	 * @param int    $priority           [optional] The priority of the function (default: 50)
 	 * @return bool
 	 */
 	public function remove_filter($tag, $function_to_remove, $priority = self::PRIORITY_NEUTRAL) {
@@ -319,8 +321,8 @@ class Hooks {
 
 	/**
 	 * Remove all of the hooks from an action.
-	 * @param string $tag The action to remove hooks from.
-	 * @param bool $priority The priority number to remove them from.
+	 * @param string $tag      The action to remove hooks from.
+	 * @param bool   $priority The priority number to remove them from.
 	 * @return bool
 	 */
 	public function remove_all_actions($tag, $priority = false) {
@@ -329,8 +331,8 @@ class Hooks {
 
 	/**
 	 * Remove all of the hooks from a filter.
-	 * @param string $tag The filter to remove hooks from.
-	 * @param bool $priority The priority number to remove.
+	 * @param string $tag      The filter to remove hooks from.
+	 * @param bool   $priority The priority number to remove.
 	 * @return bool
 	 */
 	public function remove_all_filters($tag, $priority = false) {
@@ -351,8 +353,8 @@ class Hooks {
 
 	/**
 	 * Execute functions hooked on a specific action hook.
-	 * @param    string $tag The name of the action to be executed.
-	 * @param    mixed $arg
+	 * @param string $tag        The name of the action to be executed.
+	 * @param mixed  $arg
 	 *                           [optional] Additional arguments which are passed on
 	 *                           to the functions hooked to the action.
 	 * @return   bool            Will return false if $tag does not exist in $filter array.
@@ -416,7 +418,8 @@ class Hooks {
 					call_user_func_array($the_['function'], $args);
 				}
 			}
-		} while(next($this->filters[$tag]) !== false);
+		}
+		while(next($this->filters[$tag]) !== false);
 		array_pop($this->current_filter);
 
 		return true;
@@ -424,8 +427,8 @@ class Hooks {
 
 	/**
 	 * Execute functions hooked on a specific action hook, specifying arguments in an array.
-	 * @param    string $tag The name of the action to be executed.
-	 * @param    array $args The arguments supplied to the functions hooked to $tag
+	 * @param string $tag  The name of the action to be executed.
+	 * @param array  $args The arguments supplied to the functions hooked to $tag
 	 * @return   bool         Will return false if $tag does not exist in $filter array.
 	 */
 	public function do_action_ref_array($tag, $args) {
@@ -469,7 +472,8 @@ class Hooks {
 					call_user_func_array($the_['function'], $args);
 				}
 			}
-		} while(next($this->filters[$tag]) !== false);
+		}
+		while(next($this->filters[$tag]) !== false);
 		array_pop($this->current_filter);
 
 		return true;
@@ -539,7 +543,7 @@ class Hooks {
 	 * }
 	 * add_shortcode('baztag', 'baztag_func');
 	 * </code>
-	 * @param string $tag Shortcode tag to be searched in post content.
+	 * @param string   $tag  Shortcode tag to be searched in post content.
 	 * @param callable $func Hook to run when shortcode is found.
 	 * @return bool
 	 */
@@ -698,8 +702,8 @@ class Hooks {
 	 * only contain the attributes in the $pairs list.
 	 * If the $atts list has unsupported attributes, then they will be ignored and
 	 * removed from the final returned list.
-	 * @param array $pairs Entire list of supported attributes and their defaults.
-	 * @param array $atts User defined attributes in shortcode tag.
+	 * @param array  $pairs     Entire list of supported attributes and their defaults.
+	 * @param array  $atts      User defined attributes in shortcode tag.
 	 * @param string $shortcode [optional] The name of the shortcode, provided for context to enable filtering.
 	 * @return array Combined and filtered attribute list.
 	 */
@@ -717,9 +721,9 @@ class Hooks {
 		 * Filter a shortcode's default attributes.
 		 * If the third parameter of the shortcode_atts() function is present then this filter is available.
 		 * The third parameter, $shortcode, is the name of the shortcode.
-		 * @param array $out The output array of shortcode attributes.
+		 * @param array $out   The output array of shortcode attributes.
 		 * @param array $pairs The supported attributes and their defaults.
-		 * @param array $atts The user defined shortcode attributes.
+		 * @param array $atts  The user defined shortcode attributes.
 		 */
 		if($shortcode) {
 			$out = $this->apply_filters(
@@ -736,8 +740,8 @@ class Hooks {
 	/**
 	 * Call the functions added to a filter hook.
 	 * <strong>INFO:</strong> Additional variables passed to the functions hooked to $tag.
-	 * @param    string|array $tag The name of the filter hook.
-	 * @param    mixed $value The value on which the filters hooked to $tag are applied on.
+	 * @param string|array $tag   The name of the filter hook.
+	 * @param mixed        $value The value on which the filters hooked to $tag are applied on.
 	 * @return   mixed               The filtered value after all hooked functions are applied to it.
 	 */
 	public function apply_filters($tag, $value) {
@@ -779,7 +783,8 @@ class Hooks {
 					$value   = call_user_func_array($the_['function'], $args);
 				}
 			}
-		} while(next($this->filters[$tag]) !== false);
+		}
+		while(next($this->filters[$tag]) !== false);
 		array_pop($this->current_filter);
 
 		return $value;
@@ -814,9 +819,9 @@ class Hooks {
 
 	/**
 	 * Regular Expression callable for do_shortcode() for calling shortcode hook.
-	 * @see self::get_shortcode_regex for details of the match array contents.
 	 * @param array $m regular expression match array
 	 * @return mixed <strong>false</strong> on failure
+	 * @see self::get_shortcode_regex for details of the match array contents.
 	 */
 	private function _do_shortcode_tag($m) {
 		// allow [[foo]] syntax for escaping a tag

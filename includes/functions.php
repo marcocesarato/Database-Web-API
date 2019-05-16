@@ -91,12 +91,13 @@ function base_url($url) {
  * @return string
  */
 function build_base_url($url) {
-	if(!empty($_GET['db'])){
+	if(!empty($_GET['db'])) {
 		$url = '/' . $_GET['db'] . '/' . $url;
 	}
-	if(!empty($_GET['token'])){
+	if(!empty($_GET['token'])) {
 		$url = '/' . $_GET['token'] . '/' . $url;
 	}
+
 	return base_url($url);
 }
 
@@ -105,18 +106,27 @@ function build_base_url($url) {
  * @param $input
  * @return array|string
  */
-function trim_all($input) {
-	if(!is_array($input)) {
-		return trim($input);
+function trim_all($arr, $charlist = ' ') {
+	if (is_string($arr)) {
+		return trim($arr, $charlist);
+	} elseif (is_array($arr)) {
+		foreach($arr as $key => $value){
+			if (is_array($value)) {
+				$result[$key] = trim_all($value, $charlist);
+			} else {
+				$result[$key] = trim($value, $charlist);
+			}
+		}
+		return $result;
+	} else {
+		return $arr;
 	}
-
-	return array_map('trim_all', $input);
 }
 
 /**
  * Recusively travserses through an array to propegate SimpleXML objects
- * @param array $array the array to parse
- * @param object $xml the Simple XML object (must be at least a single empty node)
+ * @param array  $array the array to parse
+ * @param object $xml   the Simple XML object (must be at least a single empty node)
  * @return object the Simple XML object (with array objects added)
  */
 function object_to_xml($array, $xml) {
@@ -200,7 +210,7 @@ function dump() {
 /**
  * Disable php errors
  */
-function disable_php_errors(){
+function disable_php_errors() {
 	ini_set('display_errors', 0);
 	ini_set('display_startup_errors', 0);
 	error_reporting(0);
@@ -209,7 +219,7 @@ function disable_php_errors(){
 /**
  * Enable php errors
  */
-function enable_php_errors(){
+function enable_php_errors() {
 	ini_set('display_errors', 1);
 	ini_set('display_startup_errors', 1);
 	error_reporting(E_ALL); // E_ALL

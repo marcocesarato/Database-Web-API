@@ -67,26 +67,26 @@ if(!class_exists('PDO')) {
 	 *                      PDO_sqlite.class.php
 	 *                      PDOStatement_mysql.class.php
 	 *                      PDOStatement_sqlite.class.php
-	 * @Author        Andrea Giammarchi
+	 * @Author          Andrea Giammarchi
 	 * @Site        http://www.devpro.it/
-	 * @Mail        andrea [ at ] 3site [ dot ] it
-	 * @Date        2005/10/13
+	 * @Mail            andrea [ at ] 3site [ dot ] it
+	 * @Date            2005/10/13
 	 * @LastModified    2005/12/01 21:40
-	 * @Version        0.1b - tested, supports only PostgreSQL, MySQL or SQLITE databases
+	 * @Version         0.1b - tested, supports only PostgreSQL, MySQL or SQLITE databases
 	 */
 	class PDO {
 
 		/** Modified on 2005/12/01 to support new PDO constants on PHP 5.1.X */
-		const FETCH_ASSOC = PDO_FETCH_ASSOC;
-		const FETCH_NUM = PDO_FETCH_NUM;
-		const FETCH_BOTH = PDO_FETCH_BOTH;
-		const FETCH_OBJ = PDO_FETCH_OBJ;
-		const FETCH_LAZY = PDO_FETCH_LAZY;
-		const FETCH_BOUND = PDO_FETCH_BOUND;
+		const FETCH_ASSOC         = PDO_FETCH_ASSOC;
+		const FETCH_NUM           = PDO_FETCH_NUM;
+		const FETCH_BOTH          = PDO_FETCH_BOTH;
+		const FETCH_OBJ           = PDO_FETCH_OBJ;
+		const FETCH_LAZY          = PDO_FETCH_LAZY;
+		const FETCH_BOUND         = PDO_FETCH_BOUND;
 		const ATTR_SERVER_VERSION = PDO_ATTR_SERVER_VERSION;
 		const ATTR_CLIENT_VERSION = PDO_ATTR_CLIENT_VERSION;
-		const ATTR_SERVER_INFO = PDO_ATTR_SERVER_INFO;
-		const ATTR_PERSISTENT = PDO_ATTR_PERSISTENT;
+		const ATTR_SERVER_INFO    = PDO_ATTR_SERVER_INFO;
+		const ATTR_PERSISTENT     = PDO_ATTR_PERSISTENT;
 
 		/**
 		 * 'Private' variables:
@@ -256,16 +256,16 @@ else {
 	 * Please read PDO class comments to know more
 	 */
 	class _PDO {
-		const FETCH_ASSOC = PDO::FETCH_ASSOC;
-		const FETCH_NUM = PDO::FETCH_NUM;
-		const FETCH_BOTH = PDO::FETCH_BOTH;
-		const FETCH_OBJ = PDO::FETCH_OBJ;
-		const FETCH_LAZY = PDO::FETCH_LAZY;
-		const FETCH_BOUND = PDO::FETCH_BOUND;
+		const FETCH_ASSOC         = PDO::FETCH_ASSOC;
+		const FETCH_NUM           = PDO::FETCH_NUM;
+		const FETCH_BOTH          = PDO::FETCH_BOTH;
+		const FETCH_OBJ           = PDO::FETCH_OBJ;
+		const FETCH_LAZY          = PDO::FETCH_LAZY;
+		const FETCH_BOUND         = PDO::FETCH_BOUND;
 		const ATTR_SERVER_VERSION = PDO::ATTR_SERVER_VERSION;
 		const ATTR_CLIENT_VERSION = PDO::ATTR_CLIENT_VERSION;
-		const ATTR_SERVER_INFO = PDO::ATTR_SERVER_INFO;
-		const ATTR_PERSISTENT = PDO::ATTR_PERSISTENT;
+		const ATTR_SERVER_INFO    = PDO::ATTR_SERVER_INFO;
+		const ATTR_PERSISTENT     = PDO::ATTR_PERSISTENT;
 		var $__driver;
 
 		function _PDO($string_dsn, $string_username = '', $string_password = '', $array_driver_options = null) {
