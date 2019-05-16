@@ -133,7 +133,9 @@ class API {
 			'callback'  => null,
 			'where'     => null,
 			'join'      => null,
+			'prefix'    => null,
 			'id'        => null,
+			'unique'    => null,
 
 			'client_id' => null,
 			'referer'   => null,
@@ -154,7 +156,7 @@ class API {
 			}
 
 			$db = $this->getSelectdDatabase($this->query['db']);
-			$this->setDatabase();
+			$this->setDatabase($db);
 
 			if(!in_array(strtoupper($this->query['direction']), array('ASC', 'DESC'))) {
 				$this->query['direction'] = null;
@@ -193,8 +195,6 @@ class API {
 	 */
 	private function getSelectdDatabase($db = null) {
 
-		$get_db = $db;
-
 		if($db == null && !is_null($this->db)) {
 			return $this->db;
 		}
@@ -202,21 +202,23 @@ class API {
 		if(is_object($db)) {
 			foreach($this->dbs as $key => $values) {
 				if($values->name == $db->name) {
-					$get_db = $key;
+					$db = $key;
 					break;
 				}
 			}
 		}
 
 		if(empty($db)) {
-			$get_db = $this->query['db'];
+			$db = $this->query['db'];
 		}
 
-		if(!array_key_exists($get_db, $this->dbs)) {
+		if(!array_key_exists($db, $this->dbs)) {
 			Request::error('Invalid Dataset', 404, true);
 		}
 
-		return $this->dbs[$get_db];
+		$db = $this->filterDatabase($db);
+
+		return $this->dbs[$db];
 
 	}
 
@@ -227,8 +229,6 @@ class API {
 	 */
 	public function getDatabase($db = null) {
 
-		$get_db = $db;
-
 		if($db == null && !is_null($this->db)) {
 			return $this->db;
 		}
@@ -236,26 +236,28 @@ class API {
 		if(is_object($db)) {
 			foreach($this->dbs as $key => $values) {
 				if($values->name == $db->name) {
-					$get_db = $key;
+					$db = $key;
 					break;
 				}
 			}
 		}
 
 		if(empty($db)) {
-			$get_db = $this->query['db'];
+			$db = $this->query['db'];
 		}
 
-		if(!array_key_exists($get_db, $this->dbs)) {
+		if(!array_key_exists($db, $this->dbs)) {
 			foreach($this->dbs as $key => $values) {
 				if($values->default) {
-					$get_db = $key;
+					$db = $key;
 					break;
 				}
 			}
 		}
 
-		return $this->dbs[$get_db];
+		$db = $this->filterDatabase($db);
+
+		return $this->dbs[$db];
 
 	}
 
@@ -270,6 +272,10 @@ class API {
 			$db = $this->query['db'];
 		}
 
+		if(is_object($db)) {
+			$db = $this->getDatabase($db);
+		}
+
 		$db = $this->getDatabase($db);
 
 		if(!$db) {
@@ -280,6 +286,56 @@ class API {
 
 		return true;
 
+	}
+
+	/**
+	 * Filter columns and tables of config
+	 * @param $db
+	 * @return mixed
+	 */
+	private function filterDatabase($db) {
+		// Table whitelist
+		foreach($db->table_list as $key => $table) {
+			if(!$this->tableExists($table, $db)) {
+				unset($db->table_list[$key]);
+			}
+		}
+		// Table free access
+		foreach($db->table_free as $key => $table) {
+			if(!$this->tableExists($table, $db)) {
+				unset($db->table_free[$key]);
+			}
+		}
+		// Table readonly
+		foreach($db->table_readonly as $key => $table) {
+			if(!$this->tableExists($table, $db)) {
+				unset($db->table_readonly[$key]);
+			}
+		}
+		// Tables blacklist
+		foreach($db->table_blacklist as $key => $table) {
+			if(!$this->tableExists($table, $db)) {
+				unset($db->table_blacklist[$key]);
+			}
+		}
+		// Columns blacklist
+		foreach($db->column_blacklist as $table => $columns) {
+			foreach($columns as $key => $column) {
+				if(!$this->columnExists($column, $table, $db)) {
+					unset($db->column_blacklist[$table][$key]);
+				}
+			}
+		}
+		// Columns whitelist
+		foreach($db->column_list as $table => $columns) {
+			foreach($columns as $key => $column) {
+				if(!$this->columnExists($column, $table, $db)) {
+					unset($db->column_list[$table][$key]);
+				}
+			}
+		}
+
+		return $db;
 	}
 
 	/**
@@ -516,7 +572,7 @@ class API {
 			// check table name
 			if($query['table'] == null) {
 				Request::error('Must select a table', 404);
-			} elseif(!$this->checkTable($query['table'])) {
+			} elseif(!$this->checkTable($query['table'], $db)) {
 				Request::error('Invalid Table', 404);
 			}
 
@@ -529,7 +585,7 @@ class API {
 						$column       = $_split[1];
 						$column_table = $_split[0];
 					}
-					if(!$this->checkColumn($column, $column_table)) {
+					if(!$this->checkColumn($column, $column_table, $db)) {
 						Request::error('Invalid WHERE column ' . $column_table . '.' . $column, 404);
 					}
 				}
@@ -537,21 +593,33 @@ class API {
 
 			// check id
 			if(isset($query['id']) && !empty($query['id'])) {
-				$query["where"][$this->getFirstColumn($query['table'])] = $query['id'];
+				$query["where"][$this->getFirstColumn($query['table'], $db)] = $query['id'];
 			}
 
-			$sql = 'SELECT * FROM ' . $query['table'];
+			$select_columns = "*";
+			$select_tables  = array($query['table']);
 
 			// build JOIN query
-			if(isset($query['join']) && is_array($query['join'])) {
+			$join_sql = "";
+			if(isset($query['join']) && is_array($query['join']) && !empty($query['join'])) {
 
 				$methods_available = array('INNER', 'LEFT', 'RIGHT');
 
-				$join_values = array();
+				$join_values    = array();
 				foreach($query['join'] as $table => $join) {
+
 					if(!is_array($join) || count($join) < 2) {
 						break;
 					}
+
+					// Table
+					if(!$this->checkTable($table, $db)) {
+						continue;
+						Request::error('Invalid Join table ' . $table, 404);
+					}
+					$select_tables[] = $table;
+
+					// Method
 					$join_method = "";
 					if(count($join) > 2) {
 						$join['method'] = strtoupper($join['method']);
@@ -559,26 +627,53 @@ class API {
 							$join_method = $join['method'];
 						}
 					}
-					if(!$this->checkTable($table)) {
-						continue;
-						Request::error('Invalid Join table ' . $table, 404);
-					}
-					if(!$this->checkColumn($join['on'], $table)) {
+
+					// ON Column
+					if(!$this->columnExists($join['on'], $table, $db)) {
 						continue;
 						Request::error('Invalid Join column ' . $table . '.' . $join['on'], 404);
 					}
 
-					$sql .= " {$join_method} JOIN {$table} ON {$table}.{$join['on']} = ";
+					$join_sql .= " {$join_method} JOIN {$table} ON {$table}.{$join['on']} = ";
 
-					if(!$this->checkColumn($join['value'], $table)) {
+					// Value
+					if(!$this->columnExists($join['value'], $table, $db)) {
 						$index_value               = self::value_index("join_", $join['on'], $join_values);
 						$join_values[$index_value] = $join['value'];
-						$sql                       .= ":{$index_value}";
+						$join_sql                  .= ":{$index_value}";
 					} else {
-						$sql .= "{$query['table']}.{$join['value']}";
+						$join_sql .= "{$query['table']}.{$join['value']}";
 					}
 				}
+				if($query['prefix'] && count($select_tables) > 1) {
+					$prefix_columns = array();
+					foreach($select_tables as $table) {
+						$columns = $this->getColumns($table, $db);
+						foreach($columns as $column){
+							if($this->checkColumn($column, $table, $db)) {
+								$prefix_columns[] = "{$table}.{$column} AS {$table}__{$column}";
+							}
+						}
+					}
+					$select_columns = implode(', ', $prefix_columns);
+				}
 			}
+
+			// Prefix table before column
+			if($query['prefix']) {
+				$prefix_columns = array();
+				foreach($select_tables as $table) {
+					$columns = $this->getColumns($table, $db);
+					foreach($columns as $column){
+						if($this->checkColumn($column, $table, $db)) {
+							$prefix_columns[] = "{$table}.{$column} AS {$table}__{$column}";
+						}
+					}
+				}
+				$select_columns = implode(', ', $prefix_columns);
+			}
+
+			$sql = 'SELECT ' . $select_columns . ' FROM ' . $query['table'] . ' ' . $join_sql;
 
 			// build WHERE query
 			$restriction = $this->auth->sql_restriction($query['table'], 'READ');
@@ -639,10 +734,10 @@ class API {
 						}
 
 						$_split = array_map('trim', explode('.', $column, 2));
-						if(count($_split) > 1 && $this->checkColumn(@$_split[1], @$_split[0])) {
+						if(count($_split) > 1 && $this->checkColumn(@$_split[1], @$_split[0], $db)) {
 							$order_table = trim($_split[0]);
 							$column      = trim($_split[1]);
-						} else if(!$this->checkColumn($column, $order_table)) {
+						} else if(!$this->checkColumn($column, $order_table, $db)) {
 							continue;
 							if(count($_split) > 1) {
 								Request::error('Invalid order column ' . $_split[0] . '.' . $_split[1], 404);
@@ -656,7 +751,7 @@ class API {
 						}
 					} else {
 						$_split = array_map('trim', explode('.', $column_direction, 2));
-						if(count($_split) > 1 && $this->checkColumn(@$_split[1], @$_split[0])) {
+						if(count($_split) > 1 && $this->checkColumn(@$_split[1], @$_split[0], $db)) {
 							$order_table = $_split[0];
 							$column      = $_split[1];
 						} else if($this->checkColumn($column_direction, $order_table)) {
@@ -684,7 +779,7 @@ class API {
 			}
 
 			// build LIMIT query
-			if(isset($query['limit']) && is_numeric($query['limit'])) {
+			if(is_numeric($query['limit'])) {
 				$sql .= " LIMIT " . (int) $query['limit'];
 			}
 
@@ -713,14 +808,30 @@ class API {
 			}
 
 			$this->logger->debug($sql_compiled);
-			//die($sql_compiled);
 
 			$sth->execute();
 
 			$results = $sth->fetchAll(PDO::FETCH_OBJ);
 			$results = $this->hooks->apply_filters('on_read', $results, $query['table']);
 
-			$results = $this->sanitize_results($query['table'], $results);
+			// Sanitize encoding
+			$results = $this->sanitizeResults($results);
+
+			// Filter results
+			$tables = array($query['table']);
+			if(!empty($query['join'])) {
+				$tables_join = array_keys($query['join']);
+				$tables      = array_merge($tables, $tables_join);
+			}
+			if($select_columns == "*" || !$query['prefix']) {
+				$results = $this->filterResults($tables, $results, $db);
+			}
+
+			if($query['unique']) {
+				$results = array_unique($results, SORT_REGULAR);
+				$results = array_filter($results);
+			}
+			$results = array_values($results);
 
 		} catch(PDOException $e) {
 			Request::error($e);
@@ -1119,7 +1230,6 @@ class API {
 
 		header('Content-type: application/json');
 
-
 		if(is_multi_array($data)) {
 			$prefix = '';
 			$output = '[';
@@ -1238,6 +1348,17 @@ class API {
 			}
 		}
 
+		return $this->tableExists($query_table, $db);
+
+	}
+
+	/**
+	 * Verify a table exists, used to sanitize queries
+	 * @param string $query_table the table being queried
+	 * @param string $db          the database to check
+	 * @return bool true if table exists, otherwise false
+	 */
+	private function tableExists($query_table, $db = null) {
 		$tables = $this->getTables($db);
 
 		return in_array($query_table, $tables);
@@ -1304,10 +1425,20 @@ class API {
 			}
 		}
 
+		return $this->columnExists($column, $table, $db);
+	}
+
+	/**
+	 * Check if column exists
+	 * @param      $column
+	 * @param      $table
+	 * @param null $db
+	 * @return bool
+	 */
+	private function columnExists($column, $table, $db = null) {
 		$columns = $this->getColumns($table, $db);
 
 		return in_array($column, $columns);
-
 	}
 
 	/**
@@ -1318,7 +1449,7 @@ class API {
 	 */
 	public function getColumns($table, $db = null) {
 
-		if(!$this->checkTable($table)) {
+		if(!$this->tableExists($table)) {
 			return false;
 		}
 
@@ -1565,14 +1696,14 @@ class API {
 	}
 
 	/**
-	 * Return failed reponse
+	 * Return failed response
 	 */
 	private static function response_failed() {
 		Request::error("Bad request", 400);
 	}
 
 	/**
-	 * Return failed reponse
+	 * Return failed response
 	 */
 	private static function no_permissions() {
 		Request::error("No permissions", 403);
@@ -1605,37 +1736,13 @@ class API {
 	}
 
 	/**
-	 * Remove any blacklisted columns from the data set.
-	 * @param      $table
-	 * @param      $results
-	 * @param null $db
+	 * Sanitize encoding
+	 * @param array $results
 	 * @return mixed
 	 */
-	private function sanitize_results($table, $results, $db = null) {
-
-		$db = $this->getDatabase($db);
+	private function sanitizeResults($results) {
 
 		foreach($results as $key => $result) {
-
-			if(!$this->auth->is_admin) {
-				// blacklist
-				if(!empty($db->column_blacklist[$table]) && is_array($db->column_blacklist[$table])) {
-					foreach($db->column_blacklist[$table] as $column) {
-						unset($results[$key]->$column);
-					}
-				}
-
-				// whitelist
-				if(!empty($db->column_list[$table]) && is_array($db->column_list[$table])) {
-					foreach($result as $column => $value) {
-						if(count($db->column_list[$table]) > 0) {
-							if(!in_array($column, $db->column_list[$table])) {
-								unset($results[$key]->$column);
-							}
-						}
-					}
-				}
-			}
 			// Sanitize encoding
 			foreach($result as $column => $value) {
 				$results[$key]->$column = utf8_encode($value);
@@ -1645,6 +1752,50 @@ class API {
 		return $results;
 	}
 
+	/**
+	 * Remove any blacklisted columns from the data set.
+	 * @param array $table
+	 * @param array $results
+	 * @param null  $db
+	 * @return mixed
+	 */
+	private function filterResults($tables, $results, $db = null) {
+
+		$db = $this->getDatabase($db);
+
+		foreach($results as $key => $result) {
+
+			if(!$this->auth->is_admin) {
+
+				// blacklist
+				foreach($tables as $table) {
+					if(!empty($db->column_blacklist[$table]) && is_array($db->column_blacklist[$table])) {
+						foreach($db->column_blacklist[$table] as $column) {
+							unset($results[$key]->$column);
+						}
+					}
+				}
+
+				// whitelist
+				foreach($result as $column => $value) {
+					$unset = true;
+					foreach($tables as $table) {
+						if(!empty($db->column_list[$table]) &&
+						   is_array($db->column_list[$table]) &&
+						   count($db->column_list[$table]) > 0 &&
+						   in_array($column, $db->column_list[$table])) {
+							$unset = false;
+						}
+					}
+					if($unset) {
+						unset($results[$key]->$column);
+					}
+				}
+			}
+		}
+
+		return $results;
+	}
 
 	/**
 	 * @section Cache
@@ -1694,3 +1845,4 @@ class API {
 }
 
 $API = new API();
+
