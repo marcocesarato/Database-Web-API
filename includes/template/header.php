@@ -1,4 +1,3 @@
-<?php use function marcocesarato\DatabaseAPI\base_url; ?>
 <!DOCTYPE html>
 <!--[if lt IE 7]>
 <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
@@ -15,12 +14,12 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="<?php echo base_url('/includes/template/css/bootstrap-reboot.min.css'); ?>">
-    <link rel="stylesheet" href="<?php echo base_url('/includes/template/css/bootstrap-grid.min.css'); ?>">
-    <link rel="stylesheet" href="<?php echo base_url('/includes/template/css/bootstrap.min.css'); ?>">
-    <link rel="stylesheet" href="<?php echo base_url('/includes/template/css/main.css'); ?>">
+    <link rel="stylesheet" href="<?php echo marcocesarato\DatabaseAPI\base_url('/includes/template/css/bootstrap-reboot.min.css'); ?>">
+    <link rel="stylesheet" href="<?php echo marcocesarato\DatabaseAPI\base_url('/includes/template/css/bootstrap-grid.min.css'); ?>">
+    <link rel="stylesheet" href="<?php echo marcocesarato\DatabaseAPI\base_url('/includes/template/css/bootstrap.min.css'); ?>">
+    <link rel="stylesheet" href="<?php echo marcocesarato\DatabaseAPI\base_url('/includes/template/css/main.css'); ?>">
 
-    <script src="<?php echo base_url('/includes/template/js/vendor/modernizr-2.6.1-respond-1.1.0.min.js'); ?>"></script>
+    <script src="<?php echo marcocesarato\DatabaseAPI\base_url('/includes/template/js/vendor/modernizr-2.6.1-respond-1.1.0.min.js'); ?>"></script>
 </head>
 <body>
 <!--[if lt IE 7]>
