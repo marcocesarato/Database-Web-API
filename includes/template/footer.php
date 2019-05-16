@@ -1,3 +1,4 @@
+<?php use function marcocesarato\DatabaseAPI\base_url; ?>
 </div> <!-- /container -->
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>

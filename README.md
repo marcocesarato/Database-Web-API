@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.93 beta
+**Version:** 0.5.94 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -619,9 +619,10 @@ https://github.com/marcocesarato/Database-Web-API/wiki/3.2)-Hooks:-List
 | Method		| Params										 | Return | Description									|
 | ------------- | ---------------------------------------------- | ------ | ---------------------------------------------- |
 | getInstance   | -											  | Void   | Returns static reference to the class instance |
-| get		   | \$table, \$format = 'json', \$params = array() | Object | Fetch data									 |
-| insert		| \$format = 'json', \$params = array()		  | Object | Insert data									|
-| update		| \$format = 'json', \$params = array()		  | Object | Update data									|
+| get		   |  \$table, \$params = array() | Object | Fetch data									 |
+| insert		| \$params = array()		  | Object | Insert data									|
+| update		| \$params = array()		  | Object | Update data									|
+| replace		| \$params = array()		  | Object | Replace data									|
 | delete		| \$table, \$format = 'json', \$params = array() | Object | Delete data									|
 | searchElement | \$key, \$value, \$array						| Object | Search object in array						 |
 | filterBy	  | \$key, \$value, \$array, \$limit = null		| Array  | Filter results array by single key			 |

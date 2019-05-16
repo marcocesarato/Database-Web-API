@@ -47,11 +47,10 @@ class APIClient {
 	/**
 	 * get data
 	 * @param $table
-	 * @param string $format
 	 * @param array $where
 	 * @return bool|mixed
 	 */
-	public function get($table, $format = 'json', $params = array()) {
+	public function get($table, $params = array()) {
 
 		if(!$this->isConnected()) {
 			return false;
@@ -64,7 +63,7 @@ class APIClient {
 		}
 
 		$params_query = !empty($params) ? self::_buildQuery($params) : '';
-		$url          = self::$URL . '/' . $table . '.' . $format . '?' . $params_query;
+		$url          = self::$URL . '/' . $table . '.json?' . $params_query;
 		$request      = self::_request($url);
 		$this->_debug("APIClient GET: Sent GET REQUEST to " . $url);
 
@@ -74,11 +73,7 @@ class APIClient {
 			$this->_debug("APIClient GET: Error " . $request['errno'] . " => " . $request['errmsg']);
 		}
 
-		if($format == 'json') {
-			self::$_DATA[$table][$param_key] = @json_decode(self::$_DATA[$table][$param_key]);
-		} elseif($format == 'xml') {
-			self::$_DATA[$table][$param_key] = @simplexml_load_string(self::$_DATA[$table][$param_key]);
-		}
+		self::$_DATA[$table][$param_key] = @json_decode(self::$_DATA[$table][$param_key]);
 
 		if(empty(self::$_DATA[$table][$param_key])) {
 			return false;
@@ -129,26 +124,43 @@ class APIClient {
 	 * @param $url
 	 * @return mixed
 	 */
-	private static function _request($url, $post = false, $put = false, $delete = false) {
+	private static function _request($url, $body = false, $method = "GET") {
+
 		$options = array(
-			CURLOPT_RETURNTRANSFER => true,     // return web page
-			CURLOPT_HEADER         => true,             // return headers in addition to content
-			CURLOPT_FOLLOWLOCATION => true,     // follow redirects
-			CURLOPT_ENCODING       => "",             // handle all encodings
-			CURLOPT_AUTOREFERER    => true,        // set referer on redirect
-			CURLOPT_CONNECTTIMEOUT => 120,      // timeout on connect
-			CURLOPT_TIMEOUT        => 120,             // timeout on response
-			CURLOPT_MAXREDIRS      => 10,            // stop after 10 redirects
+			CURLOPT_RETURNTRANSFER => true,                 // return web page
+			CURLOPT_HEADER         => true,                 // return headers in addition to content
+			CURLOPT_FOLLOWLOCATION => true,                 // follow redirects
+			CURLOPT_ENCODING       => "",                   // handle all encodings
+			CURLOPT_AUTOREFERER    => true,                 // set referer on redirect
+			CURLOPT_CONNECTTIMEOUT => 10,      // timeout on connect
+			CURLOPT_TIMEOUT        => 10,      // timeout on response
+			CURLOPT_MAXREDIRS      => 10,                   // stop after 10 redirects
 			CURLINFO_HEADER_OUT    => true,
-			CURLOPT_SSL_VERIFYPEER => false,    // Validate SSL Cert
-			CURLOPT_SSL_VERIFYHOST => false,    // Validate SSL Cert
+			CURLOPT_SSL_VERIFYPEER => false,                // Validate SSL Cert
+			CURLOPT_SSL_VERIFYHOST => false,                // Validate SSL Cert
 			CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
 			CURLOPT_HTTPHEADER     => array("Accept-Language: " . @$_SERVER['HTTP_ACCEPT_LANGUAGE']),
 			CURLOPT_USERAGENT      => @$_SERVER['HTTP_USER_AGENT'],
-			CURLOPT_POST           => (!$post || $put || $delete ? null : 1),
-			CURLOPT_CUSTOMREQUEST  => ($put ? "PUT" : $delete ? "DELETE" : null),
-			CURLOPT_POSTFIELDS     => (!$post ? null : $post),
+			CURLOPT_POSTFIELDS     => (!$body ? null : $body),
 		);
+
+		if(!empty($body) && $method == "GET") {
+			$method = "POST";
+		}
+
+		$method = strtoupper($method);
+		if($method != "GET") {
+			switch($method) {
+				case "POST":
+					$options[CURLOPT_POST] = true;
+					break;
+				default:
+					if(in_array($method, array('PUT', 'PATCH', 'DELETE'))) {
+						$options[CURLOPT_CUSTOMREQUEST] = $method;
+					}
+					break;
+			}
+		}
 
 		$options = array_filter($options);
 
@@ -184,18 +196,17 @@ class APIClient {
 
 	/**
 	 * Insert data
-	 * @param string $format
 	 * @param array $params
 	 * @return bool|mixed
 	 */
-	public function insert($format = 'json', $params = array()) {
+	public function insert($params = array()) {
 
 		if(!$this->isConnected()) {
 			return false;
 		}
 
 		$params_query = !empty($params) ? self::_buildQuery($params) : '';
-		$url          = rtrim(self::$URL, '\\/') . '.' . $format;
+		$url          = rtrim(self::$URL, '\\/') . '.json';
 		$request      = self::_request($url, $params_query);
 		$this->_debug("APIClient INSERT: Sent POST REQUEST to " . $url);
 		//$this->_debug("APIClient INSERT: Params \r\n".var_export($params, true));
@@ -209,12 +220,7 @@ class APIClient {
 		$this->_debug("APIClient INSERT: Header " . $request['headers']);
 
 		$response = $request['content'];
-
-		if($format == 'json') {
-			$response = @json_decode($response);
-		} elseif($format == 'xml') {
-			$response = @simplexml_load_string($response);
-		}
+		$response = @json_decode($response);
 
 		if(empty($response)) {
 			return false;
@@ -227,32 +233,26 @@ class APIClient {
 
 	/**
 	 * Update data
-	 * @param string $format
 	 * @param array $params
 	 * @return bool|mixed
 	 */
-	public function update($format = 'json', $params = array()) {
+	public function update($params = array()) {
 
 		if(!$this->isConnected()) {
 			return false;
 		}
 
 		$params_query = !empty($params) ? self::_buildQuery($params) : '';
-		$url          = rtrim(self::$URL, '\\/') . '.' . $format;
-		$request      = self::_request($url, $params_query, true);
+		$url          = rtrim(self::$URL, '\\/') . '.json';
+		$request      = self::_request($url, $params_query, 'PATCH');
 		$this->_debug("APIClient UPDATE: Sent PUT REQUEST to " . $url);
 
 		if($request['errmsg']) {
-			$this->_debug("APIClient GET: Error " . $request['errno'] . " => " . $request['errmsg']);
+			$this->_debug("APIClient UPDATE: Error " . $request['errno'] . " => " . $request['errmsg']);
 		}
 
 		$response = $request['content'];
-
-		if($format == 'json') {
-			$response = @json_decode($response);
-		} elseif($format == 'xml') {
-			$response = @simplexml_load_string($response);
-		}
+		$response = @json_decode($response);
 
 		if(empty($response)) {
 			return false;
@@ -263,22 +263,54 @@ class APIClient {
 		return $response;
 	}
 
+
 	/**
-	 * Delete data
-	 * @param $table
-	 * @param string $format
+	 * Replace data
 	 * @param array $params
 	 * @return bool|mixed
 	 */
-	public function delete($table, $format = 'json', $params = array()) {
+	public function replace($params = array()) {
 
 		if(!$this->isConnected()) {
 			return false;
 		}
 
 		$params_query = !empty($params) ? self::_buildQuery($params) : '';
-		$url          = self::$URL . '/' . $table . '.' . $format . '?' . $params_query;
-		$request      = self::_request($url, false, false, true);
+		$url          = rtrim(self::$URL, '\\/') . '.json';
+		$request      = self::_request($url, $params_query, 'PUT');
+		$this->_debug("APIClient REPLACE: Sent PUT REQUEST to " . $url);
+
+		if($request['errmsg']) {
+			$this->_debug("APIClient REPLACE: Error " . $request['errno'] . " => " . $request['errmsg']);
+		}
+
+		$response = $request['content'];
+		$response = @json_decode($response);
+
+		if(empty($response)) {
+			return false;
+		}
+
+		$this->_debug("APIClient REPLACE: Response \r\n" . var_export($request, true));
+
+		return $response;
+	}
+
+	/**
+	 * Delete data
+	 * @param $table
+	 * @param array $params
+	 * @return bool|mixed
+	 */
+	public function delete($table, $params = array()) {
+
+		if(!$this->isConnected()) {
+			return false;
+		}
+
+		$params_query = !empty($params) ? self::_buildQuery($params) : '';
+		$url          = self::$URL . '/' . $table . '.json?' . $params_query;
+		$request      = self::_request($url, false, 'DELETE');
 		$this->_debug("APIClient DELETE: Sent DELETE REQUEST to " . $url);
 
 		if($request['errmsg']) {
@@ -286,12 +318,7 @@ class APIClient {
 		}
 
 		$response = $request['content'];
-
-		if($format == 'json') {
-			$response = @json_decode($response);
-		} elseif($format == 'xml') {
-			$response = @simplexml_load_string($response);
-		}
+		$response = @json_decode($response);
 
 		$this->_debug("APIClient DELETE: CURL Request \r\n" . var_export($request, true));
 
