@@ -9,7 +9,7 @@
  */
 
 if(!class_exists('PDO')) {
-	require_once(__API_ROOT__ . '/includes/classes/PDO/PDO.php');
+	require_once(__API_DIR_CLASSES__ . '/PDO/PDO.php');
 }
 
 if(!function_exists('http_response_code')) {

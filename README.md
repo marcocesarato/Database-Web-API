@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.5.98 beta
+**Version:** 0.5.99 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -548,7 +548,7 @@ Host: localhost
 
 ## Hooks
 
-For write hooks you can use `hooks/custom` folder or edit manually the examples on `hooks/actions.hooks.php` or `hooks/filters.hooks.php`
+For write hooks you can use `plugins/custom` folder or edit manually the examples on `plugins/actions.php` or `plugins/filters.php`
 
 Remember to name file like this pattern: `[FILENAME].hooks.php` or it will not be included automatically (else you can include it manually)
 

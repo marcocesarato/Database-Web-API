@@ -5,6 +5,7 @@ namespace marcocesarato\DatabaseAPI;
 use PDO;
 use PDOException;
 use SimpleXMLElement;
+use stdClass;
 
 /**
  * API Class
@@ -152,7 +153,7 @@ class API {
 
 		if($this->auth->validate($this->query)) {
 			if($this->query['db'] == null) {
-				Request::error('Must select a dataset', 400, true);
+				Request::error('Must select a Dataset', 400, true);
 			}
 
 			$db = $this->getSelectdDatabase($this->query['db']);
@@ -173,14 +174,14 @@ class API {
 			if(!empty($this->query['table'])) {
 				if(!$this->auth->is_admin) {
 					if(in_array($this->query['table'], $db->table_blacklist)) {
-						Request::error('Invalid table', 404, true);
+						Request::error('Invalid Entity', 404, true);
 					}
 					if(count($db->table_list) > 0 && !in_array($this->query['table'], $db->table_list)) {
-						Request::error('Invalid table', 404, true);
+						Request::error('Invalid Entity', 404, true);
 					}
 				}
 				if(!$this->checkTable($this->query['table'], $db)) {
-					Request::error('Invalid table', 404, true);
+					Request::error('Invalid Entity', 404, true);
 				}
 			}
 		}
@@ -215,8 +216,6 @@ class API {
 		if(!array_key_exists($db, $this->dbs)) {
 			Request::error('Invalid Dataset', 404, true);
 		}
-
-		$db = $this->filterDatabase($db);
 
 		return $this->dbs[$db];
 
@@ -255,8 +254,6 @@ class API {
 			}
 		}
 
-		$db = $this->filterDatabase($db);
-
 		return $this->dbs[$db];
 
 	}
@@ -289,56 +286,6 @@ class API {
 	}
 
 	/**
-	 * Filter columns and tables of config
-	 * @param $db
-	 * @return mixed
-	 */
-	private function filterDatabase($db) {
-		// Table whitelist
-		foreach($db->table_list as $key => $table) {
-			if(!$this->tableExists($table, $db)) {
-				unset($db->table_list[$key]);
-			}
-		}
-		// Table free access
-		foreach($db->table_free as $key => $table) {
-			if(!$this->tableExists($table, $db)) {
-				unset($db->table_free[$key]);
-			}
-		}
-		// Table readonly
-		foreach($db->table_readonly as $key => $table) {
-			if(!$this->tableExists($table, $db)) {
-				unset($db->table_readonly[$key]);
-			}
-		}
-		// Tables blacklist
-		foreach($db->table_blacklist as $key => $table) {
-			if(!$this->tableExists($table, $db)) {
-				unset($db->table_blacklist[$key]);
-			}
-		}
-		// Columns blacklist
-		foreach($db->column_blacklist as $table => $columns) {
-			foreach($columns as $key => $column) {
-				if(!$this->columnExists($column, $table, $db)) {
-					unset($db->column_blacklist[$table][$key]);
-				}
-			}
-		}
-		// Columns whitelist
-		foreach($db->column_list as $table => $columns) {
-			foreach($columns as $key => $column) {
-				if(!$this->columnExists($column, $table, $db)) {
-					unset($db->column_list[$table][$key]);
-				}
-			}
-		}
-
-		return $db;
-	}
-
-	/**
 	 * Establish a database connection
 	 * @param string $db the database slug
 	 * @return object the PDO object
@@ -348,8 +295,10 @@ class API {
 
 		// check for existing connection
 		if(empty($db) && !empty($this->db->name) && isset($this->connections[$this->db->name])) {
+			$db = $this->db->name;
+
 			return $this->connections[$db];
-		} else if(isset($this->connections[$db])) {
+		} else if(!empty($db) && is_string($db) && isset($this->connections[$db])) {
 			return $this->connections[$db];
 		}
 
@@ -467,7 +416,7 @@ class API {
 			$dbh = &$this->connect($db);
 			// check table name
 			if($query['table'] == null) {
-				Request::error('Must select a table', 404);
+				Request::error('Must select a Entity', 404);
 			} elseif($query['table'] == "index") {
 				$tables = $this->getTables($db);
 				foreach($tables as $table) {
@@ -480,7 +429,7 @@ class API {
 					}
 				}
 			} elseif(!$this->checkTable($query['table'])) {
-				Request::error('Invalid Table', 404);
+				Request::error('Invalid Entity', 404);
 			} else {
 
 				$sql = null;
@@ -488,10 +437,10 @@ class API {
 				switch($this->db->type) {
 					case "pgsql";
 						$sql = "SELECT c.column_name, c.udt_name as data_type, is_nullable, character_maximum_length, column_default
-				FROM pg_catalog.pg_statio_all_tables AS st
-				INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
-				RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
-				WHERE table_schema = 'public' AND c.table_name = :table;";
+								FROM pg_catalog.pg_statio_all_tables AS st
+								INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
+								RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
+								WHERE table_schema = 'public' AND c.table_name = :table;";
 						break;
 					case "mysql":
 						$sql = "SELECT column_name, data_type, is_nullable, character_maximum_length, column_default FROM information_schema.columns WHERE table_name = :table;";
@@ -571,9 +520,9 @@ class API {
 
 			// check table name
 			if($query['table'] == null) {
-				Request::error('Must select a table', 404);
+				Request::error('Must select a Entity', 404);
 			} elseif(!$this->checkTable($query['table'], $db)) {
-				Request::error('Invalid Table', 404);
+				Request::error('Invalid Entity', 404);
 			}
 
 			// check WHERE
@@ -586,7 +535,7 @@ class API {
 						$column_table = $_split[0];
 					}
 					if(!$this->checkColumn($column, $column_table, $db)) {
-						Request::error('Invalid WHERE column ' . $column_table . '.' . $column, 404);
+						Request::error('Invalid where condition ' . $column_table . '.' . $column, 404);
 					}
 				}
 			}
@@ -605,7 +554,7 @@ class API {
 
 				$methods_available = array('INNER', 'LEFT', 'RIGHT');
 
-				$join_values    = array();
+				$join_values = array();
 				foreach($query['join'] as $table => $join) {
 
 					if(!is_array($join) || count($join) < 2) {
@@ -615,7 +564,7 @@ class API {
 					// Table
 					if(!$this->checkTable($table, $db)) {
 						continue;
-						Request::error('Invalid Join table ' . $table, 404);
+						Request::error('Invalid Join Entity ' . $table, 404);
 					}
 					$select_tables[] = $table;
 
@@ -629,27 +578,47 @@ class API {
 					}
 
 					// ON Column
-					if(!$this->columnExists($join['on'], $table, $db)) {
+					$join_on_table  = $table;
+					$join_on_column = $join['on'];
+					$join_on_expl   = explode('.', $join['on'], 2);
+					if(count($join_on_expl) > 1) {
+						$join_on_table  = $join_on_expl[0];
+						$join_on_column = $join_on_expl[1];
+					}
+					if(!$this->columnExists($join_on_column, $join_on_table, $db) || !$this->checkTable($join_on_table, $db)) {
 						continue;
-						Request::error('Invalid Join column ' . $table . '.' . $join['on'], 404);
+						Request::error('Invalid Join condition ' . $table . '.' . $join['on'], 404);
 					}
 
-					$join_sql .= " {$join_method} JOIN {$table} ON {$table}.{$join['on']} = ";
+					$join_sql .= " {$join_method} JOIN {$table} ON {$join_on_table}.{$join_on_column} = ";
 
 					// Value
-					if(!$this->columnExists($join['value'], $table, $db)) {
+					$join_value_table  = $query['table'];
+					$join_value_column = $join['value'];
+					$join_on_expl      = explode('.', $join['value'], 2);
+					if(count($join_on_expl) > 1) {
+						$join_value_table  = $join_on_expl[0];
+						$join_value_column = $join_on_expl[1];
+					}
+
+					if(!in_array($table, array($join_on_table, $join_value_table))) {
+						continue;
+						Request::error('Invalid Join Entities ' . $join_on_table . ', ' . $join_value_table, 404);
+					}
+
+					if(!$this->columnExists($join_value_column, $join_value_table, $db) || !$this->checkTable($join_value_table, $db)) {
 						$index_value               = self::value_index("join_", $join['on'], $join_values);
 						$join_values[$index_value] = $join['value'];
 						$join_sql                  .= ":{$index_value}";
 					} else {
-						$join_sql .= "{$query['table']}.{$join['value']}";
+						$join_sql .= "{$join_value_table}.{$join_value_column}";
 					}
 				}
 				if($query['prefix'] && count($select_tables) > 1) {
 					$prefix_columns = array();
 					foreach($select_tables as $table) {
 						$columns = $this->getColumns($table, $db);
-						foreach($columns as $column){
+						foreach($columns as $column) {
 							if($this->checkColumn($column, $table, $db)) {
 								$prefix_columns[] = "{$table}.{$column} AS {$table}__{$column}";
 							}
@@ -664,7 +633,7 @@ class API {
 				$prefix_columns = array();
 				foreach($select_tables as $table) {
 					$columns = $this->getColumns($table, $db);
-					foreach($columns as $column){
+					foreach($columns as $column) {
 						if($this->checkColumn($column, $table, $db)) {
 							$prefix_columns[] = "{$table}.{$column} AS {$table}__{$column}";
 						}
@@ -740,9 +709,9 @@ class API {
 						} else if(!$this->checkColumn($column, $order_table, $db)) {
 							continue;
 							if(count($_split) > 1) {
-								Request::error('Invalid order column ' . $_split[0] . '.' . $_split[1], 404);
+								Request::error('Invalid order condition ' . $_split[0] . '.' . $_split[1], 404);
 							} else {
-								Request::error('Invalid order column ' . $order_table . '.' . $column, 404);
+								Request::error('Invalid order condition ' . $order_table . '.' . $column, 404);
 							}
 						}
 						$order_direction = trim($column_direction);
@@ -759,9 +728,9 @@ class API {
 						} else {
 							continue;
 							if(count($_split) > 1) {
-								Request::error('Invalid order column ' . $_split[0] . '.' . $_split[1], 404);
+								Request::error('Invalid order condition ' . $_split[0] . '.' . $_split[1], 404);
 							} else {
-								Request::error('Invalid order column ' . $order_table . '.' . $column_direction, 404);
+								Request::error('Invalid order condition ' . $order_table . '.' . $column_direction, 404);
 							}
 						}
 					}
@@ -812,7 +781,6 @@ class API {
 			$sth->execute();
 
 			$results = $sth->fetchAll(PDO::FETCH_OBJ);
-			$results = $this->hooks->apply_filters('on_read', $results, $query['table']);
 
 			// Sanitize encoding
 			$results = $this->sanitizeResults($results);
@@ -832,6 +800,8 @@ class API {
 				$results = array_filter($results);
 			}
 			$results = array_values($results);
+
+			$results = $this->hooks->apply_filters('on_read', $results, $query['table']);
 
 		} catch(PDOException $e) {
 			Request::error($e);
@@ -866,7 +836,7 @@ class API {
 		foreach($query['insert'] as $table => $values) {
 			$columns = array();
 			if(!$this->checkTable($table)) {
-				Request::error('Invalid Table', 404);
+				Request::error('Invalid Entity', 404);
 			}
 
 			$i = 0;
@@ -876,7 +846,7 @@ class API {
 					foreach($value as $column => $column_value) {
 						if(!$this->checkColumn($column, $table)) {
 							continue;
-							Request::error('Invalid column. The column ' . $table . '.' . $column . ' not exists!', 404);
+							Request::error('Invalid field. The field ' . $table . '.' . $column . ' not exists!', 404);
 						}
 						$columns[$i][$column] = $column_value;
 					}
@@ -884,7 +854,7 @@ class API {
 				} else {
 					if(!$this->checkColumn($key, $table)) {
 						continue;
-						Request::error('Invalid column. The column ' . $table . '.' . $key . ' not exists!', 404);
+						Request::error('Invalid field. The field ' . $table . '.' . $key . ' not exists!', 404);
 					}
 					$columns[$key] = $value;
 				}
@@ -954,7 +924,7 @@ class API {
 					if(isset($update['where']) && is_array($update['where'])) {
 						foreach($update['where'] as $column => $value) {
 							if(!$this->checkColumn($column, $table)) {
-								Request::error('Invalid Where column ' . $column, 404);
+								Request::error('Invalid where condition ' . $column, 404);
 							}
 						}
 
@@ -1008,7 +978,7 @@ class API {
 						$column_table = $_split[0];
 					}
 					if(!$this->checkColumn($column, $column_table)) {
-						Request::error('Invalid WHERE column ' . $column_table . '.' . $column, 404);
+						Request::error('Invalid where condition ' . $column_table . '.' . $column, 404);
 					}
 				}
 				foreach($query['update'][$query['table']] as $key => $values) {
@@ -1027,7 +997,7 @@ class API {
 					if(isset($update['where']) && is_array($update['where'])) {
 						foreach($update['where'] as $column => $value) {
 							if(!$this->checkColumn($column, $table)) {
-								Request::error('Invalid Where column ' . $column, 404);
+								Request::error('Invalid where condition ' . $column, 404);
 							}
 						}
 					}
@@ -1080,13 +1050,13 @@ class API {
 					$values = $this->hooks->apply_filters('on_edit', $values, $table);
 
 					if(!$this->checkTable($table)) {
-						Request::error('Invalid Table', 404);
+						Request::error('Invalid Entity', 404);
 					}
 					// check columns name
 					foreach($values as $key => $value) {
 						if(!$this->checkColumn($key, $table)) {
 							continue;
-							Request::error('Invalid column. The column ' . $table . '.' . $key . ' not exists!', 404);
+							Request::error('Invalid field. The field ' . $table . '.' . $key . ' not exists!', 404);
 						}
 						$column_values[$key] = $value;
 						$values_index[]      = $key . ' = :' . $key;
@@ -1160,7 +1130,7 @@ class API {
 
 			// check table name
 			if(!$this->checkTable($query['table'])) {
-				Request::error('Invalid Table', 404);
+				Request::error('Invalid Entity', 404);
 			}
 
 			// check ID
@@ -1628,6 +1598,7 @@ class API {
 	 */
 	private static function value_index($prefix = "_", $column, $array) {
 		$i      = 1;
+		$column = str_replace('.', '_', $column);
 		$column = $prefix . $column;
 		$index  = $column;
 		while(array_key_exists($index, $array)) {
@@ -1845,4 +1816,5 @@ class API {
 }
 
 $API = new API();
+
 

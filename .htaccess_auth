@@ -22,7 +22,7 @@
     RewriteRule .* – [L,F]
 
     RewriteRule .*\.(htaccess|git|svn|docs|hg).* %{ENV:CWD}index.php [L,QSA] # Deny access repo folder
-    RewriteRule ^(hooks|logs|screenshot|docs|documentation|client|clients)/((.*)\.php)?$ %{ENV:CWD}index.php [L,QSA] # Forbidden
+    RewriteRule ^(hooks|plugins|logs|screenshot|screenshots|screens|docs|documentation|clients)/((.*)\.php)?$ %{ENV:CWD}index.php [L,QSA] # Fobidden
 
 	#check auth
     RewriteCond %{REQUEST_FILENAME} !-f
@@ -77,7 +77,7 @@
 </IfModule>
 
 # File protection
-<Files ~ "^(config|config\.(.*))\.php">
+<Files ~ "^(config|config\.(.*)|docs)\.php">
     Order Allow,Deny
     Deny from all
 </Files>

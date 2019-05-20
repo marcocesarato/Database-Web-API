@@ -11,6 +11,45 @@ use marcocesarato\DatabaseAPI\Hooks;
 use marcocesarato\DatabaseAPI\Request;
 
 /**
+ * On read loader hooks
+ * @param $data
+ * @param $table
+ * @return mixed
+ */
+function loader_on_read_tables($data, $table) {
+	$hooks = Hooks::getInstance();
+	$data  = $hooks->apply_filters('on_read_' . $table, $data, $table);
+
+	return $data;
+}
+
+/**
+ * On write loader hooks
+ * @param $data
+ * @param $table
+ * @return mixed
+ */
+function loader_on_write_tables($data, $table) {
+	$hooks = Hooks::getInstance();
+	$data  = $hooks->apply_filters('on_write_' . $table, $data, $table);
+
+	return $data;
+}
+
+/**
+ * On edit loader hooks
+ * @param $data
+ * @param $table
+ * @return mixed
+ */
+function loader_on_edit_tables($data, $table) {
+	$hooks = Hooks::getInstance();
+	$data  = $hooks->apply_filters('on_edit_' . $table, $data, $table);
+
+	return $data;
+}
+
+/**
  * Add restriction on where conditions for each query
  * @param $restriction
  * @param $table
