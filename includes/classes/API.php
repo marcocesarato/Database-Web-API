@@ -1047,21 +1047,30 @@ class API {
 					$values_index  = array();
 					$column_values = array();
 
-					$values = $this->hooks->apply_filters('on_edit', $values, $table);
-
-					if(!$this->checkTable($table)) {
-						Request::error('Invalid Entity', 404);
-					}
 					// check columns name
 					foreach($values as $key => $value) {
 						if(!$this->checkColumn($key, $table)) {
 							continue;
 							Request::error('Invalid field. The field ' . $table . '.' . $key . ' not exists!', 404);
 						}
+					}
+
+					$values = $this->hooks->apply_filters('on_edit', $values, $table);
+
+					if(!$this->checkTable($table)) {
+						Request::error('Invalid Entity', 404);
+					}
+
+					// build SET
+					foreach($values as $key => $value) {
+						// check columns exists
+						if(!$this->columnExists($key, $table)) {
+							continue;
+							Request::error('Invalid field. The field ' . $table . '.' . $key . ' not exists!', 404);
+						}
 						$column_values[$key] = $value;
 						$values_index[]      = $key . ' = :' . $key;
 					}
-
 					$sql = 'UPDATE ' . $table;
 					$sql .= ' SET ' . implode(', ', $values_index);
 
