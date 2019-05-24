@@ -36,6 +36,7 @@ require_once(__API_DIR_CLASSES__ . '/DatabaseErrorParser.php');
 require_once(__API_DIR_CLASSES__ . '/Request.php');
 require_once(__API_DIR_CLASSES__ . '/Auth.php');
 require_once(__API_DIR_CLASSES__ . '/API.php');
+require_once(__API_DIR_CLASSES__ . '/Dump.php');
 
 // Hooks
 require_once(__API_DIR_PLUGINS__ . '/loader.php');

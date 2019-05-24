@@ -1,6 +1,6 @@
 <?php
 
-namespace marcocesarato\DatabaseAPI;
+namespace marcocesarato\DatabaseAPI\Client;
 
 /**
  * Database Web API Client
@@ -11,10 +11,15 @@ namespace marcocesarato\DatabaseAPI;
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
 class APIClient {
+	
 	// Public
-	public static $DEBUG = false;
-	public static $URL = '';
-	public static $ACCESS_TOKEN = '';
+	private static $DEBUG = false;
+	private static $URL = '';
+	private static $DATASET = '';
+	private static $ACCESS_TOKEN = '';
+	private static $TIMEOUT = 15;
+	private static $EXECUTION_TIME = 60;
+	private static $MEMORY_LIMIT = "1G";
 
 	// Protected
 	protected static $instance = null;
@@ -27,9 +32,8 @@ class APIClient {
 	 */
 	protected function __construct() {
 		// Depends from data weight
-		ini_set('memory_limit', '1G');
-		ini_set('max_execution_time', 3600);
-		set_time_limit(3600);
+		ini_set('memory_limit', self::$MEMORY_LIMIT);
+		self::setExecutionTime(self::$EXECUTION_TIME);
 	}
 
 	/**
@@ -44,7 +48,201 @@ class APIClient {
 	}
 
 	/**
-	 * get data
+	 * Is Connected
+	 * @return bool
+	 */
+	public function isConnected() {
+		if(empty(self::$ACCESS_TOKEN) || empty(self::$URL)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Set Url
+	 * @param $url
+	 */
+	public static function setUrl($url) {
+		self::$URL = $url;
+	}
+
+	/**
+	 * Get Url
+	 * @param string $page
+	 * @return string
+	 */
+	private static function getUrl($page = ""){
+		if(!empty($page)){
+			$page = ".json";
+		} else {
+			$page = "/" . ltrim($page, '/');
+		}
+		$URL = str_replace('\\', '/', self::$URL);
+		return rtrim($URL, '/') . '/api/' . self::$DATASET . $page;
+	}
+
+	/**
+	 * Set Access token
+	 * @param $token
+	 */
+	public static function setAccessToken($token) {
+		self::$ACCESS_TOKEN = $token;
+	}
+
+	/**
+	 * Set Dataset
+	 * @param $dataset
+	 */
+	public static function setDataset($dataset) {
+		self::$DATASET = $dataset;
+	}
+
+	/**
+	 * Set Timeout
+	 * @param $timeout
+	 */
+	public static function setTimeout($timeout = 15) {
+		self::$TIMEOUT = $timeout;
+	}
+
+	/**
+	 * Set max execution time
+	 * @param $time
+	 */
+	public static function setExecutionTime($time = 60) {
+		self::$EXECUTION_TIME = $time;
+		ini_set('max_execution_time', self::$EXECUTION_TIME);
+		set_time_limit(self::$EXECUTION_TIME);
+	}
+
+	/**
+	 * Build url query params
+	 * as http_build_query build a query url the difference is
+	 * that this function is array recursive and compatible with PHP4
+	 * @param        $query
+	 * @param string $parent
+	 * @return string
+	 * @author Marco Cesarato <cesarato.developer@gmail.com>
+	 */
+	private static function buildQuery($query, $parent = null) {
+		$query_array = array();
+		foreach($query as $key => $value) {
+			$_key = empty($parent) ? urlencode($key) : $parent . '[' . urlencode($key) . ']';
+			if(is_array($value)) {
+				$query_array[] = self::buildQuery($value, $_key);
+			} else {
+				$query_array[] = $_key . '=' . urlencode($value);
+			}
+		}
+
+		return implode('&', $query_array);
+	}
+
+	/**
+	 * HTTP Request
+	 * @param $url
+	 * @return mixed
+	 */
+	private static function doRequest($url, $body = null, $method = "GET") {
+
+		$options = array(
+			CURLOPT_RETURNTRANSFER => true,                 // return web page
+			CURLOPT_HEADER         => true,                 // return headers in addition to content
+			CURLOPT_FOLLOWLOCATION => true,                 // follow redirects
+			CURLOPT_ENCODING       => "",                   // handle all encodings
+			CURLOPT_AUTOREFERER    => true,                 // set referer on redirect
+			CURLOPT_CONNECTTIMEOUT => self::$TIMEOUT,      // timeout on connect
+			CURLOPT_TIMEOUT        => self::$TIMEOUT,      // timeout on response
+			CURLOPT_MAXREDIRS      => 10,                   // stop after 10 redirects
+			CURLINFO_HEADER_OUT    => true,
+			CURLOPT_SSL_VERIFYPEER => false,                // Validate SSL Cert
+			CURLOPT_SSL_VERIFYHOST => false,                // Validate SSL Cert
+			CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
+			CURLOPT_HTTPHEADER     => array(
+				"Accept-Language: " . @$_SERVER['HTTP_ACCEPT_LANGUAGE'],
+				"Cache-Control: no-cache",
+				"Access-Token: ".self::$ACCESS_TOKEN,
+			),
+			CURLOPT_USERAGENT      => @$_SERVER['HTTP_USER_AGENT'],
+			CURLOPT_POSTFIELDS     => (empty($body) ? null : $body),
+		);
+
+		if($body !== false && !empty($body) && $method == "GET") {
+			$method = "POST";
+		}
+
+		$method = strtoupper($method);
+		if($method != "GET") {
+			switch($method) {
+				default:
+					if(in_array($method, array('POST', 'PUT', 'PATCH', 'DELETE'))) {
+						$options[CURLOPT_CUSTOMREQUEST] = $method;
+					}
+					break;
+			}
+		}
+
+
+		$options = array_filter($options);
+
+
+		$ch = curl_init($url);
+
+		$rough_content = self::execRequest($ch, $options);
+		$err           = curl_errno($ch);
+		$errmsg        = curl_error($ch);
+		$header        = curl_getinfo($ch);
+		curl_close($ch);
+
+		$header_content = substr($rough_content, 0, $header['header_size']);
+		$body_content   = trim(str_replace($header_content, '', $rough_content));
+
+		$header['errno']   = $err;
+		$header['errmsg']  = $errmsg;
+		$header['headers'] = $header_content;
+		$header['content'] = $body_content;
+
+		return $header;
+	}
+
+	/**
+	 * Prevent 301/302 Code
+	 * @param $ch
+	 * @param $options
+	 * @return bool|string
+	 */
+	private static function execRequest($ch, $options) {
+		curl_setopt_array($ch, $options);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+		$rough_content = curl_exec($ch);
+		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+		if ($http_code == 301 || $http_code == 302) {
+			preg_match('/(Location:|URI:)(.*?)\n/', $rough_content, $matches);
+			if (isset($matches[2])) {
+				$redirect_url = trim($matches[2]);
+				if ($redirect_url !== '') {
+					curl_setopt($ch, CURLOPT_URL, $redirect_url);
+					return self::execRequest($ch, $options);
+				}
+			}
+		}
+		return $rough_content;
+	}
+
+	/**
+	 * Print debug message
+	 * @param $msg
+	 */
+	private function _debug($msg) {
+		if(self::$DEBUG) {
+			echo "<pre>" . $msg . "</pre>";
+		}
+	}
+
+	/**
+	 * Get data
 	 * @param       $table
 	 * @param array $where
 	 * @return bool|mixed
@@ -61,9 +259,9 @@ class APIClient {
 			return self::$_DATA[$table][$param_key];
 		}
 
-		$params_query = !empty($params) ? self::_buildQuery($params) : '';
-		$url          = self::$URL . '/' . $table . '.json?' . $params_query;
-		$request      = self::_request($url);
+		$params_query = !empty($params) ? self::buildQuery($params) : '';
+		$url          = self::getUrl($table . '.json?' . $params_query);
+		$request      = self::doRequest($url);
 		$this->_debug("APIClient GET: Sent GET REQUEST to " . $url);
 
 		self::$_DATA[$table][$param_key] = $request['content'];
@@ -84,116 +282,6 @@ class APIClient {
 	}
 
 	/**
-	 * Is Connected
-	 * @return bool
-	 */
-	public function isConnected() {
-		if(empty(self::$ACCESS_TOKEN) || empty(self::$URL)) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Build url query params
-	 * as http_build_query build a query url the difference is
-	 * that this function is array recursive and compatible with PHP4
-	 * @param        $query
-	 * @param string $parent
-	 * @return string
-	 * @author Marco Cesarato <cesarato.developer@gmail.com>
-	 */
-	private static function _buildQuery($query, $parent = null) {
-		$query_array = array();
-		foreach($query as $key => $value) {
-			$_key = empty($parent) ? urlencode($key) : $parent . '[' . urlencode($key) . ']';
-			if(is_array($value)) {
-				$query_array[] = self::_buildQuery($value, $_key);
-			} else {
-				$query_array[] = $_key . '=' . urlencode($value);
-			}
-		}
-
-		return implode('&', $query_array);
-	}
-
-	/**
-	 * HTTP Request
-	 * @param $url
-	 * @return mixed
-	 */
-	private static function _request($url, $body = false, $method = "GET") {
-
-		$options = array(
-			CURLOPT_RETURNTRANSFER => true,                 // return web page
-			CURLOPT_HEADER         => true,                 // return headers in addition to content
-			CURLOPT_FOLLOWLOCATION => true,                 // follow redirects
-			CURLOPT_ENCODING       => "",                   // handle all encodings
-			CURLOPT_AUTOREFERER    => true,                 // set referer on redirect
-			CURLOPT_CONNECTTIMEOUT => 10,      // timeout on connect
-			CURLOPT_TIMEOUT        => 10,      // timeout on response
-			CURLOPT_MAXREDIRS      => 10,                   // stop after 10 redirects
-			CURLINFO_HEADER_OUT    => true,
-			CURLOPT_SSL_VERIFYPEER => false,                // Validate SSL Cert
-			CURLOPT_SSL_VERIFYHOST => false,                // Validate SSL Cert
-			CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
-			CURLOPT_HTTPHEADER     => array("Accept-Language: " . @$_SERVER['HTTP_ACCEPT_LANGUAGE']),
-			CURLOPT_USERAGENT      => @$_SERVER['HTTP_USER_AGENT'],
-			CURLOPT_POSTFIELDS     => (!$body ? null : $body),
-		);
-
-		if(!empty($body) && $method == "GET") {
-			$method = "POST";
-		}
-
-		$method = strtoupper($method);
-		if($method != "GET") {
-			switch($method) {
-				case "POST":
-					$options[CURLOPT_POST] = true;
-					break;
-				default:
-					if(in_array($method, array('PUT', 'PATCH', 'DELETE'))) {
-						$options[CURLOPT_CUSTOMREQUEST] = $method;
-					}
-					break;
-			}
-		}
-
-		$options = array_filter($options);
-
-		$ch = curl_init($url);
-		curl_setopt_array($ch, $options);
-
-		$rough_content = curl_exec($ch);
-		$err           = curl_errno($ch);
-		$errmsg        = curl_error($ch);
-		$header        = curl_getinfo($ch);
-		curl_close($ch);
-
-		$header_content = substr($rough_content, 0, $header['header_size']);
-		$body_content   = trim(str_replace($header_content, '', $rough_content));
-
-		$header['errno']   = $err;
-		$header['errmsg']  = $errmsg;
-		$header['headers'] = $header_content;
-		$header['content'] = $body_content;
-
-		return $header;
-	}
-
-	/**
-	 * Print debug message
-	 * @param $msg
-	 */
-	private function _debug($msg) {
-		if(self::$DEBUG) {
-			echo "<pre>" . $msg . "</pre>";
-		}
-	}
-
-	/**
 	 * Insert data
 	 * @param array $params
 	 * @return bool|mixed
@@ -204,9 +292,9 @@ class APIClient {
 			return false;
 		}
 
-		$params_query = !empty($params) ? self::_buildQuery($params) : '';
-		$url          = rtrim(self::$URL, '\\/') . '.json';
-		$request      = self::_request($url, $params_query);
+		$params_query = !empty($params) ? self::buildQuery($params) : '';
+		$url          = self::getUrl();
+		$request      = self::doRequest($url, $params_query);
 		$this->_debug("APIClient INSERT: Sent POST REQUEST to " . $url);
 		//$this->_debug("APIClient INSERT: Params \r\n".var_export($params, true));
 
@@ -241,9 +329,9 @@ class APIClient {
 			return false;
 		}
 
-		$params_query = !empty($params) ? self::_buildQuery($params) : '';
-		$url          = rtrim(self::$URL, '\\/') . '.json';
-		$request      = self::_request($url, $params_query, 'PATCH');
+		$params_query = !empty($params) ? self::buildQuery($params) : '';
+		$url          = self::getUrl();
+		$request      = self::doRequest($url, $params_query, 'PATCH');
 		$this->_debug("APIClient UPDATE: Sent PUT REQUEST to " . $url);
 
 		if($request['errmsg']) {
@@ -274,9 +362,9 @@ class APIClient {
 			return false;
 		}
 
-		$params_query = !empty($params) ? self::_buildQuery($params) : '';
-		$url          = rtrim(self::$URL, '\\/') . '.json';
-		$request      = self::_request($url, $params_query, 'PUT');
+		$params_query = !empty($params) ? self::buildQuery($params) : '';
+		$url          = self::getUrl();
+		$request      = self::doRequest($url, $params_query, 'PUT');
 		$this->_debug("APIClient REPLACE: Sent PUT REQUEST to " . $url);
 
 		if($request['errmsg']) {
@@ -307,9 +395,9 @@ class APIClient {
 			return false;
 		}
 
-		$params_query = !empty($params) ? self::_buildQuery($params) : '';
-		$url          = self::$URL . '/' . $table . '.json?' . $params_query;
-		$request      = self::_request($url, false, 'DELETE');
+		$params_query = !empty($params) ? self::buildQuery($params) : '';
+		$url          = self::getUrl($table . '.json?' . $params_query);
+		$request      = self::doRequest($url, false, 'DELETE');
 		$this->_debug("APIClient DELETE: Sent DELETE REQUEST to " . $url);
 
 		if($request['errmsg']) {

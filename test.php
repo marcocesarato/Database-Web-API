@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH');
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Parse GET params
@@ -15,6 +15,11 @@ if($method != 'GET' && $method != 'DELETE') {
 	$source_input = file_get_contents("php://input");
 	parse_str($source_input, $params_input);
 	$params = array_merge($params, $params_input);
+}
+
+// Read header Access-Token
+if(isset($_SERVER['HTTP_ACCESS_TOKEN'])) {
+	$params['token'] = $_SERVER['HTTP_ACCESS_TOKEN'];
 }
 
 $params['__METHOD__'] = $method;

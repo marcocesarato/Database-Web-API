@@ -191,23 +191,6 @@ function jsonp_callback_filter($callback) {
 }
 
 /**
- * Debug dump
- * @param bool $die
- */
-function dump() {
-	ob_clean();
-	$args = func_get_args();
-	if(!ini_get("xdebug.overload_var_dump")) {
-		echo "<pre>";
-		var_dump($args);
-		echo "</pre>";
-	} else {
-		var_dump($args);
-	}
-	die();
-}
-
-/**
  * Disable php errors
  */
 function disable_php_errors() {

@@ -44,7 +44,7 @@ Go to this link for go to the wiki of the platform and have a better information
 
 ## Installation
 * Set the configuration on `config.php`. Follow the below example to register a new dataset. Tip: It's best to provide read-only database credentials here if you want read only.
-* _(Optional)_ If you want enable an authentication system you must compile on the `config.php` the constant `__API_AUTH__` as on the example below, you need also to rename `.htaccess` to `.htaccess_base` and after rename `.htaccess_auth` to `.htaccess`
+* _(Optional)_ If you want enable an authentication system you must compile on the `config.php` the constant `__API_AUTH__` as on the example below.
 * _(Optional)_ Document the API. For this you can use auto-documentation using file `docs.php`
 * _(Optional)_ Use Hooks for manage permissions (as `can_read`, `can_write`, `can_edit`, `can_delete`)
 
@@ -215,15 +215,6 @@ define("__API_AUTH__",  serialize(array( // Set null for disable authentication
 * Fetch: `/[database]/[table]/[ID].[format]`
 * Fetch search by coolumn: `/[database]/[table]/[column]/[value].[format]`
 * Documentation: `/[database]/docs/[table].[format]`
-
-#### With Authentication
-
-* Fetch all: `/[token]/[database]/[table].[format]`
-* Fetch all with limit: `/[token]/[database]/[limit]/[table].[format]`
-* Fetch: `/[token]/[database]/[table]/[ID].[format]`
-* Fetch search by column: `/[token]/[database]/[table]/[column]/[value].[format]`
-* Documentation: `/[token]/[database]/docs/[table].[format]`
-
   
 
 ## Authentication
@@ -247,11 +238,14 @@ Host: localhost
 [{"token": "b279fb1d0708ed81e7a194e0c5d928b6"}]
 ```
 
- **Example of token usage on GET, POST, PUT and DELETE requests:**
+ **Example of token usage on GET, POST, PUT, PATCH and DELETE requests:**
+
+Set the header **Access-Token** with the token values received from auth request like this:
 
 ```http
-GET /bfee499dfa1387648ec8ce9d621db120/database/users.json` HTTP/1.1
+GET /database/users.json` HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
 ```
 
 
@@ -291,13 +285,13 @@ Host: localhost
 
 Retrieve data from dataset
 
-- Fetch all: `/[token]/[database]/[table].[format]`
+- Fetch all: `/[database]/[table].[format]`
 
-- Fetch all with limit: `/[token]/[database]/[limit]/[table].[format]`
+- Fetch all with limit: `/[database]/[limit]/[table].[format]`
 
-- Fetch: `/[token]/[database]/[table]/[ID].[format]`
+- Fetch: `/[database]/[table]/[ID].[format]`
 
-- Fetch search by column: `/[token]/[database]/[table]/[column]/[value].[format]`
+- Fetch search by column: `/[database]/[table]/[column]/[value].[format]`
 
 - Fetch all joining table:
 
@@ -334,21 +328,25 @@ ex: `/[database]/[table]/[column]/[value].[format]?order_by=[column]&direction=[
 ```http
 GET /dataset/users.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
 ```
 
 ```http
 GET /dataset/10/users.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
 ```
 
 ```http
 GET /dataset/users/1.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
 ```
 
 ```http
 GET /dataset/users/is_active/1.json?order_by=username&direction=desc HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
 ```
 
 ### Advanced search
@@ -438,11 +436,7 @@ ex: `/[database]/[tabel]/[colomn]/[value].[format]?order_by=[column]&direction=[
 For get auto-documentation of a database table:
 
 - Documentation index URL format : `/[database]/docs/index.[format]`
-- Documentation index URL format with Authentication: `/[token]/[database]/docs/index.[format]`
-
-
 - Documentation URL format: `/[database]/docs/[table].[format]`
-- Documentation URL format with Authentication: `/[token]/[database]/docs/[table].[format]`
 
 For have a separated file where document your database you can use `/docs.php`
 
@@ -471,6 +465,8 @@ Insert data
 ```http
 POST /dataset/users.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
+
 insert[username]=Marco&insert[email]=cesarato.developer@gmail.com&insert[password]=3vwjehvdfjhefejjvw&insert[is_active]=1
 ```
 
@@ -479,12 +475,16 @@ insert[username]=Marco&insert[email]=cesarato.developer@gmail.com&insert[passwor
 ```http
 POST /dataset.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
+
 insert[users][username]=Marco&insert[users][email]=cesarato.developer@gmail.com&insert[users][password]=3vwjehvdfjhefejjvw&insert[users][is_active]=1
 ```
 
 ```http
 POST /dataset.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
+
 insert[users][0][username]=Marco&insert[users][0][email]=cesarato.developer@gmail.com&insert[users][0][password]=3vwjehvdfjhefejjvw&insert[users][0][is_active]=1&insert[users][1][username]=Brad&insert[users][1][email]=brad@gmail.com&insert[users][1][password]=erwerwerffweeqewrf&insert[users][1][is_active]=1
 ```
 
@@ -512,6 +512,8 @@ Update data
 ```http
 PUT /dataset/users/1.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
+
 update['username']=Marco&update['email']=cesarato.developer@gmail.com&update['password']=3vwjehvdfjhefejjvw&update['is_active']=1
 ```
 
@@ -520,6 +522,8 @@ update['username']=Marco&update['email']=cesarato.developer@gmail.com&update['pa
 ```http
 PUT /dataset.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
+
 update[users][values][username]=Marco&update[users][values][email]=cesarato.developer@gmail.com&update[users][where][id]=1&update[cities][values][name]=Padova&update[cities][where][id]=1
 ```
 
@@ -528,6 +532,8 @@ update[users][values][username]=Marco&update[users][values][email]=cesarato.deve
 ```http
 PUT /dataset.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
+
 update[users][][values][username]=Marco&update[users][][values][email]=cesarato.developer@gmail.com&update[users][][where][id]=1&update[cities][][values][name]=Padova&update[cities][][where][id]=1&update[cities][][values][name]=Milano&update[cities][][where][id]=2
 ```
 
@@ -544,6 +550,7 @@ Delete data
 ```http
 DELETE /dataset/users/1.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
 ```
 
 ## Hooks
@@ -616,18 +623,23 @@ https://github.com/marcocesarato/Database-Web-API/wiki/3.2)-Hooks:-List
 
 **Class name:** APIClient
 
-| Method		| Params										 | Return | Description									|
-| ------------- | ---------------------------------------------- | ------ | ---------------------------------------------- |
-| getInstance   | -											  | Void   | Returns static reference to the class instance |
-| get		   |  \$table, \$params = array() | Object | Fetch data									 |
-| insert		| \$params = array()		  | Object | Insert data									|
-| update		| \$params = array()		  | Object | Update data									|
-| replace		| \$params = array()		  | Object | Replace data									|
-| delete		| \$table, \$format = 'json', \$params = array() | Object | Delete data									|
-| searchElement | \$key, \$value, \$array						| Object | Search object in array						 |
-| filterBy	  | \$key, \$value, \$array, \$limit = null		| Array  | Filter results array by single key			 |
-| filter		| \$value, \$array, $limit = null				| Array  | Filter results array by multiple values		|
-
+| Method           | Description                                        | Type              | Parameters                         | Return                                         |
+| ---------------- | -------------------------------------------------- | ----------------- | ---------------------------------- | ---------------------------------------------- |
+| getInstance      |                                                    | public<br>static  |                                    | Returns static reference to the class instance |
+| isConnected      | Is Connected                                       | public            |                                    | bool                                           |
+| setUrl           | Set Url                                            | public<br>static  | string $url                               |                                                |
+| setAccessToken   | Set Access token                                   | public<br>static  | string $token                             |                                                |
+| setDataset       | Set Dataset                                            | public<br>static  | string $dataset                               |                                                |
+| setTimeout       | Set Timeout                                        | public<br>static  | int $timeout = 15                           |                                                |
+| setExecutionTime | Set max execution time                              | public<br>static  | int $time = 60                              |                                                |
+| get              | Get data                                           | public            | string $table<br>array $where       | bool<br>mixed                                  |
+| insert           | Insert data                                        | public            | array $params                      | bool<br>mixed                                  |
+| update           | Update data                                        | public            | array $params                      | bool<br>mixed                                  |
+| replace          | Replace data                                       | public            | array $params                      | bool<br>mixed                                  |
+| delete           | Delete data                                        | public            | string $table<br>array $params      | bool<br>mixed                                  |
+| searchElement    | Search object in array                             | public            | $array<br>$key<br>$value           | mixed                                          |
+| filterBy         | Filter object in array                             | public            | $key<br>$value<br>$array<br>$limit | mixed                                          |
+| filter           | Filter object in array                             | public            | $values<br>$array<br>$limit        | mixed                                          |
 
 
 ## Credits

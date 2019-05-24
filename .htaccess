@@ -20,8 +20,9 @@
     RewriteCond %{REQUEST_METHOD} ^(TRACE|OPTIONS)
     RewriteRule .* – [L,F]
 
-    RewriteRule .*\.(htaccess|git|svn|docs|hg).* %{ENV:CWD}index.php [L,QSA] # Deny access repo folder
-    RewriteRule ^(hooks|plugins|logs|screenshot|screenshots|screens|docs|documentation|clients)/((.*)\.php)?$ %{ENV:CWD}index.php [L,QSA] # Fobidden
+    RewriteRule .*\.(git|svn|hg).* %{ENV:CWD}index.php [L] # Deny access repo folder
+    RewriteRule ^(config|composer|docs|.*\.([Hh][Tt][Aa])).* %{ENV:CWD}index.php [L] # Deny access
+    RewriteRule ^(vendor|hooks|plugins|logs|screenshot|screenshots|screens|docs|documentation|clients)/((.*)\.php)?$ %{ENV:CWD}index.php [L] # Fobidden
 
 	#db + table + column + value
 	RewriteCond %{REQUEST_FILENAME} !-f
@@ -70,7 +71,7 @@
     Order Allow,Deny
     Deny from all
 </Files>
-<Files ~ "^(composer)\.json">
+<Files ~ "^(composer)\.(.*)">
     Order Allow,Deny
     Deny from all
 </Files>

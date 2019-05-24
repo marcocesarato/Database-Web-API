@@ -332,6 +332,11 @@ class Request {
 			$params = array_merge($params, $params_input);
 		}
 
+		// Read header Access-Token
+		if(isset($_SERVER['HTTP_ACCESS_TOKEN'])) {
+			$params['token'] = $_SERVER['HTTP_ACCESS_TOKEN'];
+		}
+
 		if($sanitize == true) {
 			$params = self::sanitize_params($params);
 		}
