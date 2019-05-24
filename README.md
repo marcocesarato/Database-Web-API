@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.6.100 beta
+**Version:** 0.6.102 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -223,13 +223,17 @@ Authentication needed for browse the database.
 
 The authentication permit to managed the privilege of the users (read, write, modify, delete)
 
-- Authentication: `/auth/[password]/[id].[format]`
+- Authentication: `/auth.[format]`
+
+Set the header **Auth-User** with the username/user id and **Auth-Password** with the encrypted password like this:
 
 **Request example:**
 
 ```http
-GET /auth/password/1265.json HTTP/1.1
+GET /auth.json HTTP/1.1
 Host: localhost
+Auth-Account: marco.cesarato
+Auth-Password: md5password
 ```
 
 **Response example:**
@@ -253,13 +257,14 @@ Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
 
 Check authentication check is needed for verify if a token is valid.
 
-- Check authentication: `/auth/check/[token].[format]`
+- Check authentication: `/auth/check.[format]`
 
 **Request example:**
 
 ```http
-GET /auth/check/bfee499dfa1387648ec8ce9d621db120.json HTTP/1.1
+GET /auth/check.json HTTP/1.1
 Host: localhost
+Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
 ```
 
 **Response example:**

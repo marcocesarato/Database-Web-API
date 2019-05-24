@@ -1414,7 +1414,7 @@ class API {
 	 * @param null $db
 	 * @return bool
 	 */
-	private function columnExists($column, $table, $db = null) {
+	public function columnExists($column, $table, $db = null) {
 		$columns = $this->getColumns($table, $db);
 
 		return in_array($column, $columns);

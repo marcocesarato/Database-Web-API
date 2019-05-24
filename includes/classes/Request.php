@@ -337,6 +337,23 @@ class Request {
 			$params['token'] = $_SERVER['HTTP_ACCESS_TOKEN'];
 		}
 
+		// Auth
+        if(!empty($_GET['auth'])) {
+		    if(empty($params['password'])) {
+                $params['password'] = (!empty($_SERVER['HTTP_AUTH_ACCOUNT']) ? $_SERVER['HTTP_AUTH_ACCOUNT'] : uniqid(rand(), true));
+            }
+            if(empty($params['user_id'])) {
+                $params['user_id'] = (!empty($_SERVER['HTTP_AUTH_PASSWORD']) ? $_SERVER['HTTP_AUTH_PASSWORD'] : uniqid(rand(), true));
+            }
+        }
+
+        // Check token
+        if(!empty($_GET['check_auth'])) {
+            if(empty($params['check_token'])) {
+                $params['check_token'] = (!empty($_SERVER['HTTP_ACCESS_TOKEN']) ? $_SERVER['HTTP_ACCESS_TOKEN'] : uniqid(rand(), true));
+            }
+        }
+
 		if($sanitize == true) {
 			$params = self::sanitize_params($params);
 		}

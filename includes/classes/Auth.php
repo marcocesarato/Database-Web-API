@@ -2,6 +2,9 @@
 
 namespace marcocesarato\DatabaseAPI;
 
+use PDO;
+use PDOException;
+
 /**
  * Authentication Class
  * @package    Database Web API
@@ -92,16 +95,16 @@ class Auth {
 			$this->checkAPITable();
 		}
 
-		if(isset($this->query['check_counter']) && $this->validateToken($this->query['token']) && $this->is_admin) {
+		if(!empty($this->query['check_counter']) && $this->validateToken($this->query['token']) && $this->is_admin) {
 			$this->checkCounter();
-		} elseif(isset($this->query['token']) && $this->validateToken($this->query['token'])) {
+		} elseif(!empty($this->query['token']) && $this->validateToken($this->query['token'])) {
 			return true;
-		} elseif(isset($this->query['check_token']) && $this->validateToken($this->query['check_token'])) {
+		} elseif(!empty($this->query['check_token']) && $this->validateToken($this->query['check_token'])) {
 			$this->checkToken();
 		} elseif(($login_action = $this->hooks->apply_filters('auth_login_request', false, $this->query)) && $this->hooks->has_action($login_action)) {
 			// Login custom
 			$this->hooks->do_action($login_action);
-		} elseif(isset($this->query['user_id']) && isset($this->query['password'])) {
+		} elseif(!empty($this->query['user']) && !empty($this->query['password'])) {
 
 			$bind_values = array();
 
@@ -190,10 +193,10 @@ class Auth {
 	private function checkAPITable() {
 		try {
 			// Add the new columns if not exists
-			if(!$this->api->checkColumn('user_name', self::$api_table)) {
+			if(!$this->api->columnExists('user_name', self::$api_table)) {
 				$this->db->exec("ALTER TABLE " . self::$api_table . " ADD COLUMN user_name VARCHAR(255)");
 			}
-			if(!$this->api->checkColumn('counter', self::$api_table)) {
+			if(!$this->api->columnExists('counter', self::$api_table)) {
 				$this->db->exec("ALTER TABLE " . self::$api_table . " ADD COLUMN counter INT DEFAULT 0");
 			}
 			$date = date("Y-m-d H:i:s", strtotime('-1 month'));
