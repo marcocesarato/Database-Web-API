@@ -97,14 +97,14 @@ class Auth {
 
 		if(!empty($this->query['check_counter']) && $this->validateToken($this->query['token']) && $this->is_admin) {
 			$this->checkCounter();
-		} elseif(!empty($this->query['token']) && $this->validateToken($this->query['token'])) {
-			return true;
 		} elseif(!empty($this->query['check_token']) && $this->validateToken($this->query['check_token'])) {
 			$this->checkToken();
+        } elseif(!empty($this->query['token']) && $this->validateToken($this->query['token'])) {
+            return true;
 		} elseif(($login_action = $this->hooks->apply_filters('auth_login_request', false, $this->query)) && $this->hooks->has_action($login_action)) {
 			// Login custom
 			$this->hooks->do_action($login_action);
-		} elseif(!empty($this->query['user']) && !empty($this->query['password'])) {
+		} elseif(!empty($this->query['user_id']) && !empty($this->query['password'])) {
 
 			$bind_values = array();
 
