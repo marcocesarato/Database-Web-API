@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.6.103 beta
+**Version:** 0.6.104 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -213,7 +213,7 @@ define("__API_AUTH__",  serialize(array( // Set null for disable authentication
 * Fetch all: `/[database]/[table].[format]`
 * Fetch all with limit: `/[database]/[limit]/[table].[format]`
 * Fetch: `/[database]/[table]/[ID].[format]`
-* Fetch search by coolumn: `/[database]/[table]/[column]/[value].[format]`
+* Fetch search by column: `/[database]/[table]/[column]/[value].[format]`
 * Documentation: `/[database]/docs/[table].[format]`
   
 
@@ -225,7 +225,7 @@ The authentication permit to managed the privilege of the users (read, write, mo
 
 - Authentication: `/auth.[format]`
 
-Set the header **Auth-User** with the username/user id and **Auth-Password** with the encrypted password like this:
+Set the header **Auth-Account** with the username/user id and **Auth-Password** with the encrypted password like this:
 
 **Request example:**
 
