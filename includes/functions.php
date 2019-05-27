@@ -107,16 +107,17 @@ function build_base_url($url) {
  * @return array|string
  */
 function trim_all($arr, $charlist = ' ') {
-	if (is_string($arr)) {
+	if(is_string($arr)) {
 		return trim($arr, $charlist);
-	} elseif (is_array($arr)) {
-		foreach($arr as $key => $value){
-			if (is_array($value)) {
+	} elseif(is_array($arr)) {
+		foreach($arr as $key => $value) {
+			if(is_array($value)) {
 				$result[$key] = trim_all($value, $charlist);
 			} else {
 				$result[$key] = trim($value, $charlist);
 			}
 		}
+
 		return $result;
 	} else {
 		return $arr;

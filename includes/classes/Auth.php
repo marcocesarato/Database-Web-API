@@ -99,8 +99,8 @@ class Auth {
 			$this->checkCounter();
 		} elseif(!empty($this->query['check_token']) && $this->validateToken($this->query['check_token'])) {
 			$this->checkToken();
-        } elseif(!empty($this->query['token']) && $this->validateToken($this->query['token'])) {
-            return true;
+		} elseif(!empty($this->query['token']) && $this->validateToken($this->query['token'])) {
+			return true;
 		} elseif(($login_action = $this->hooks->apply_filters('auth_login_request', false, $this->query)) && $this->hooks->has_action($login_action)) {
 			// Login custom
 			$this->hooks->do_action($login_action);

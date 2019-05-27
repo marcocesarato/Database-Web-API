@@ -11,7 +11,7 @@ namespace marcocesarato\DatabaseAPI\Client;
  * @link       https://github.com/marcocesarato/Database-Web-API
  */
 class APIClient {
-	
+
 	// Public
 	private static $DEBUG = false;
 	private static $URL = '';
@@ -72,13 +72,14 @@ class APIClient {
 	 * @param string $page
 	 * @return string
 	 */
-	private static function getUrl($page = ""){
-		if(!empty($page)){
+	private static function getUrl($page = "") {
+		if(!empty($page)) {
 			$page = ".json";
 		} else {
 			$page = "/" . ltrim($page, '/');
 		}
 		$URL = str_replace('\\', '/', self::$URL);
+
 		return rtrim($URL, '/') . '/api/' . self::$DATASET . $page;
 	}
 
@@ -162,7 +163,7 @@ class APIClient {
 			CURLOPT_HTTPHEADER     => array(
 				"Accept-Language: " . @$_SERVER['HTTP_ACCEPT_LANGUAGE'],
 				"Cache-Control: no-cache",
-				"Access-Token: ".self::$ACCESS_TOKEN,
+				"Access-Token: " . self::$ACCESS_TOKEN,
 			),
 			CURLOPT_USERAGENT      => @$_SERVER['HTTP_USER_AGENT'],
 			CURLOPT_POSTFIELDS     => (empty($body) ? null : $body),
@@ -216,18 +217,20 @@ class APIClient {
 		curl_setopt_array($ch, $options);
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
 		$rough_content = curl_exec($ch);
-		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		$http_code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-		if ($http_code == 301 || $http_code == 302) {
+		if($http_code == 301 || $http_code == 302) {
 			preg_match('/(Location:|URI:)(.*?)\n/', $rough_content, $matches);
-			if (isset($matches[2])) {
+			if(isset($matches[2])) {
 				$redirect_url = trim($matches[2]);
-				if ($redirect_url !== '') {
+				if($redirect_url !== '') {
 					curl_setopt($ch, CURLOPT_URL, $redirect_url);
+
 					return self::execRequest($ch, $options);
 				}
 			}
 		}
+
 		return $rough_content;
 	}
 
