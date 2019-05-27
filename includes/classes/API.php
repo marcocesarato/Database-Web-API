@@ -96,6 +96,7 @@ class API {
 			'table_blacklist'  => array(),
 			'table_list'       => array(),
 			'table_free'       => array(),
+			'table_free_all'   => array(),
 			'table_readonly'   => array(),
 			'column_blacklist' => array(),
 			'column_list'      => array(),
@@ -846,7 +847,7 @@ class API {
 				if(is_array($value)) {
 					foreach($value as $column => $column_value) {
 						if(!$this->checkColumn($column, $table, $db)) {
-							//continue;
+							continue;
 							Request::error('Invalid field. The field ' . $table . '.' . $column . ' not exists!', 404);
 						}
 						$columns[$i][$column] = $column_value;
@@ -854,9 +855,7 @@ class API {
 					$i ++;
 				} else {
 					if(!$this->checkColumn($key, $table, $db)) {
-						//continue;
-						$db = $this->getDatabase($this->query['db']);
-						Dump::fatal($db);
+						continue;
 						Request::error('Invalid field. The field ' . $table . '.' . $key . ' not exists!', 404);
 					}
 					$columns[$key] = $value;
