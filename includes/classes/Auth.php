@@ -17,7 +17,7 @@ class Auth {
 
 	public static $instance;
 	public static $settings = null;
-	public static $api_table = 'api_authentications';
+	public static $api_table = 'api_auth';
 
 	public $user = array();
 	public $user_id = null;
@@ -192,13 +192,6 @@ class Auth {
 	 */
 	private function checkAPITable() {
 		try {
-			// Add the new columns if not exists
-			if(!$this->api->columnExists('user_name', self::$api_table)) {
-				$this->db->exec("ALTER TABLE " . self::$api_table . " ADD COLUMN user_name VARCHAR(255)");
-			}
-			if(!$this->api->columnExists('counter', self::$api_table)) {
-				$this->db->exec("ALTER TABLE " . self::$api_table . " ADD COLUMN counter INT DEFAULT 0");
-			}
 			$date = date("Y-m-d H:i:s", strtotime('-1 month'));
 			$this->db->exec("DELETE FROM " . self::$api_table . " WHERE last_access != date_created AND last_access < '" . $date . "'");
 		} catch(PDOException $e) {
@@ -249,14 +242,22 @@ class Auth {
 				$sth->execute();
 				$user_row = $sth->fetch();
 
-				if($user_row) {
+				if(!empty($user_row)) {
+
+					$sth         = $this->db->prepare("UPDATE " . self::$api_table . " SET last_access = :last_access, counter = :counter WHERE token = :token");
+					$last_access = date('Y-m-d H:i:s');
+					$counter     = $this->needIncrementCounter() ? intval($token_row['counter']) + 1 : intval($token_row['counter']);
+					$sth->bindParam(':counter', $counter);
+					$sth->bindParam(':last_access', $last_access);
+					$sth->bindParam(':token', $token);
+					$sth->execute();
+
 					$this->user          = $user_row;
-					$this->user_id       = $user_row[$users_columns['id']];
-					$this->authenticated = true;
+					$this->user_id       = $user_row['id'];
 					if(!empty($users_columns['admin'])) {
 						$this->is_admin = (($user_row[key($users_columns['admin'])] == reset($users_columns['admin'])) ? true : false);
 					}
-					$this->incrementCounter();
+					$this->authenticated = true;
 
 					return true;
 				}
@@ -459,7 +460,7 @@ class Auth {
 	 * Increment counter
 	 * @return bool
 	 */
-	private function incrementCounter() {
+	private function needIncrementCounter() {
 		return !($this->query['docs'] || isset($this->query['check_token']) || isset($this->query['check_counter']) || isset($this->query['user_id']) && isset($this->query['password']));
 	}
 }
