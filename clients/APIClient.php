@@ -73,7 +73,7 @@ class APIClient {
 	 * @return string
 	 */
 	private static function getUrl($page = "") {
-		if(!empty($page)) {
+		if(empty($page)) {
 			$page = ".json";
 		} else {
 			$page = "/" . ltrim($page, '/');
