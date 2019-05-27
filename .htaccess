@@ -64,6 +64,11 @@
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteRule ([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?db=$1&table=$2&id=$3&format=$4 [L,QSA]
 
+    #db + check_counter
+	RewriteCond %{REQUEST_FILENAME} !-f [NC]
+	RewriteCond %{REQUEST_FILENAME} !-d [NC]
+	RewriteRule ([^/]+)/([^/]+)/check_counter\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?token=$1&db=$2&check_counter=true&format=$3 [L,QSA]
+
 	#db + table
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
