@@ -174,16 +174,9 @@ class APIClient {
 		}
 
 		$method = strtoupper($method);
-		if($method != "GET") {
-			switch($method) {
-				default:
-					if(in_array($method, array('POST', 'PUT', 'PATCH', 'DELETE'))) {
-						$options[CURLOPT_CUSTOMREQUEST] = $method;
-					}
-					break;
-			}
+		if(in_array($method, array('POST', 'PUT', 'PATCH', 'DELETE'))) {
+			$options[CURLOPT_CUSTOMREQUEST] = $method;
 		}
-
 
 		$options = array_filter($options);
 
@@ -208,23 +201,25 @@ class APIClient {
 	}
 
 	/**
-	 * Prevent 301/302 Code
-	 * @param $ch
-	 * @param $options
+	 * Prevent 301/302/307 Code
+	 * @param resource $ch
+	 * @param array    $options
 	 * @return bool|string
 	 */
-	private static function execRequest($ch, $options) {
+	private static function execRequest($ch, $options = array()) {
+
+		$options[CURLOPT_FOLLOWLOCATION] = false;
 		curl_setopt_array($ch, $options);
-		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+
 		$rough_content = curl_exec($ch);
 		$http_code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-		if($http_code == 301 || $http_code == 302) {
+		if($http_code == 301 || $http_code == 302 || $http_code == 307) {
 			preg_match('/(Location:|URI:)(.*?)\n/', $rough_content, $matches);
 			if(isset($matches[2])) {
 				$redirect_url = trim($matches[2]);
 				if($redirect_url !== '') {
-					curl_setopt($ch, CURLOPT_URL, $redirect_url);
+					$options[CURLOPT_URL] = $redirect_url;
 
 					return self::execRequest($ch, $options);
 				}

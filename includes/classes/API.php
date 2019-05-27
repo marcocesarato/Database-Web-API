@@ -365,19 +365,13 @@ class API {
 				}
 				break;
 			case 'POST':
-				if($this->auth->can_write($query['table'])) {
-					return $this->query_post($query, $db);
-				}
+				return $this->query_post($query, $db);
 				break;
 			case 'PUT':
-				if($this->auth->can_edit($query['table'])) {
-					return $this->query_put($query, $db);
-				}
+				return $this->query_put($query, $db);
 				break;
 			case 'PATCH':
-				if($this->auth->can_edit($query['table'])) {
-					return $this->query_patch($query, $db);
-				}
+				return $this->query_patch($query, $db);
 				break;
 			case 'DELETE':
 				if($this->auth->can_delete($query['table'])) {
@@ -744,7 +738,9 @@ class API {
 				if(empty($query['direction'])) {
 					$query['direction'] = "";
 				}
-				$sql .= " ORDER BY " . implode(", ", $order_query) . " {$query['direction']}";
+				if(!empty($order_query)) {
+					$sql .= " ORDER BY " . implode(", ", $order_query) . " {$query['direction']}";
+				}
 			}
 
 			// build LIMIT query
@@ -825,8 +821,8 @@ class API {
 		$dbh = &$this->connect($db);
 
 		// check values
-		if(!empty($query['insert']) && !is_array($query['insert']) && count($query['insert']) <= 0) {
-			Request::error('Invalid values', 400);
+		if(!empty($query['insert']) && !is_array($query['insert']) || count($query['insert']) < 1) {
+			Request::error('Invalid insert values', 400);
 		}
 
 		if(!empty($query['table']) && !is_multi_array($query['insert'])) {
@@ -834,6 +830,11 @@ class API {
 		}
 
 		foreach($query['insert'] as $table => $values) {
+
+			if(!$this->auth->can_write($table)) {
+				self::no_permissions();
+			}
+
 			$columns = array();
 			if(!$this->checkTable($table)) {
 				Request::error('Invalid Entity', 404);
@@ -844,16 +845,18 @@ class API {
 			foreach($values as $key => $value) {
 				if(is_array($value)) {
 					foreach($value as $column => $column_value) {
-						if(!$this->checkColumn($column, $table)) {
-							continue;
+						if(!$this->checkColumn($column, $table, $db)) {
+							//continue;
 							Request::error('Invalid field. The field ' . $table . '.' . $column . ' not exists!', 404);
 						}
 						$columns[$i][$column] = $column_value;
 					}
 					$i ++;
 				} else {
-					if(!$this->checkColumn($key, $table)) {
-						continue;
+					if(!$this->checkColumn($key, $table, $db)) {
+						//continue;
+						$db = $this->getDatabase($this->query['db']);
+						Dump::fatal($db);
 						Request::error('Invalid field. The field ' . $table . '.' . $key . ' not exists!', 404);
 					}
 					$columns[$key] = $value;
@@ -916,39 +919,44 @@ class API {
 
 		$query = $this->query_update_parse($query);
 
-		if(!isset($query['update']) && !is_array($query['update']) && count($query['update']) <= 0) {
-			Request::error('Invalid values', 400);
-		} else {
-			foreach($query['update'] as $table => $u) {
-				foreach($u as $update) {
-					if(isset($update['where']) && is_array($update['where'])) {
-						foreach($update['where'] as $column => $value) {
-							if(!$this->checkColumn($column, $table)) {
-								Request::error('Invalid where condition ' . $column, 404);
-							}
+		if(empty($query['update']) || !is_array($query['update']) || count($query['update']) < 1) {
+			Request::error('Invalid replace values', 400);
+		}
+
+		foreach($query['update'] as $table => $u) {
+
+			if(!$this->auth->can_edit($table)) {
+				self::no_permissions();
+			}
+
+			foreach($u as $update) {
+				if(isset($update['where']) && is_array($update['where'])) {
+					foreach($update['where'] as $column => $value) {
+						if(!$this->checkColumn($column, $table)) {
+							Request::error('Invalid where condition ' . $column, 404);
 						}
+					}
 
-						$check          = array();
-						$check['table'] = $table;
-						$check['where'] = $update['where'];
+					$check          = array();
+					$check['table'] = $table;
+					$check['where'] = $update['where'];
 
-						$result = $this->query_get($check);
+					$result = $this->query_get($check);
 
-						if(empty($result)) {
-							$insert                   = array();
-							$insert['insert']         = array();
-							$insert['insert'][$table] = array_merge($update['where'], $update['values']);
-							if($this->auth->can_write($query['table'])) {
-								$this->query_post($insert);
-							} else {
-								self::no_permissions();
-							}
+					if(empty($result)) {
+						$insert                   = array();
+						$insert['insert']         = array();
+						$insert['insert'][$table] = array_merge($update['where'], $update['values']);
+						if($this->auth->can_write($query['table'])) {
+							$this->query_post($insert, $db);
 						} else {
-							$new_update                   = $query;
-							$new_update['update']         = array();
-							$new_update['update'][$table] = $update;
-							$this->query_patch($new_update);
+							self::no_permissions();
 						}
+					} else {
+						$new_update                   = $query;
+						$new_update['update']         = array();
+						$new_update['update'][$table] = $update;
+						$this->query_patch($new_update, $db);
 					}
 				}
 			}
@@ -989,7 +997,7 @@ class API {
 				$query['update'][$query['table']][$key]['values']            = $query['update'];
 				$query['update'][$query['table']][$key]['where'][$first_col] = $query['id'];
 			}
-		} elseif(!isset($query['update']) && !is_array($query['update']) && count($query['update']) <= 0) { // Check values
+		} elseif(!isset($query['update']) && !is_array($query['update']) && count($query['update']) < 1) { // Check values
 			Request::error('Invalid values', 400);
 		} else {
 			foreach($query['update'] as $table => $u) {
@@ -1035,13 +1043,32 @@ class API {
 	 */
 	private function query_patch($query, $db = null) {
 
+		$query = $this->query_update_parse($query);
+
+		if(empty($query['update']) || !is_array($query['update']) || count($query['update']) < 1) {
+			Request::error('Invalid update values', 400);
+		}
+
 		try {
 
-			$dbh   = &$this->connect($db);
-			$query = $this->query_update_parse($query);
+			$dbh = &$this->connect($db);
 
 			foreach($query['update'] as $table => $update) {
+
+				if(!$this->auth->can_edit($table)) {
+					self::no_permissions();
+				}
+
 				foreach($update as $values) {
+
+					if(!isset($values['where']) || !is_array($values['where']) || count($values['where']) < 1) {
+						Request::error('Invalid conditions', 400);
+					}
+
+					if(!isset($values['values']) || !is_array($values['values']) || count($values['values']) < 1) {
+						Request::error('Invalid values', 400);
+					}
+
 					$where         = $values['where'];
 					$values        = $values['values'];
 					$values_index  = array();
@@ -1825,5 +1852,3 @@ class API {
 }
 
 $API = new API();
-
-
