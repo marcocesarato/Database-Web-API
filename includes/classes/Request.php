@@ -65,6 +65,7 @@ class Request {
 			$api->render($results);
 		}
 		http_response_code($code);
+		$error = trim($error);
 		$logger->error($code . " - " . $error);
 		$results = array(
 			"response" => (object) array('status' => $code, 'message' => self::sanitize_htmlentities($error)),
@@ -333,9 +334,7 @@ class Request {
 		}
 
 		// Read header Access-Token
-		if(isset($_SERVER['HTTP_ACCESS_TOKEN'])) {
-			$params['token'] = $_SERVER['HTTP_ACCESS_TOKEN'];
-		}
+		$params['token'] = self::getToken();
 
 		// Auth
 		if(!empty($_GET['auth'])) {
@@ -366,6 +365,17 @@ class Request {
 	 */
 	public static function method() {
 		return $_SERVER['REQUEST_METHOD'];
+	}
+
+	/**
+	 * Returns the access token
+	 */
+	public static function getToken() {
+		$token = @$_GET['token'];
+		if(isset($_SERVER['HTTP_ACCESS_TOKEN'])) {
+			$token = $_SERVER['HTTP_ACCESS_TOKEN'];
+		}
+		return $token;
 	}
 
 	/**

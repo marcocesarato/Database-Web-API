@@ -90,8 +90,10 @@ class Logger {
 		// Remove new lines
 		$message = trim(preg_replace('/\s+/', ' ', $message));
 
+		$token = Request::getToken();
+
 		// Request method
-		$method = strtoupper($_SERVER['REQUEST_METHOD']);
+		$method = Request::method();
 		// Grab the url path ( for troubleshooting )
 		$path = $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
 		// Grab time - based on timezone in php.ini
@@ -99,8 +101,10 @@ class Logger {
 
 		$ip = Request::getIPAddress();
 
+		$path = str_replace($token."/" , "", $path);
+
 		// Write time, url, & message to end of file
-		@fwrite($this->file, "[$time] [$severity] [method $method] [url $path] [client $ip]: $message" . PHP_EOL);
+		@fwrite($this->file, "[$time] [$severity] [method $method] [url $path] [token $token] [client $ip]: $message" . PHP_EOL);
 	}
 
 	/**

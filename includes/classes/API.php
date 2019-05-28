@@ -833,7 +833,7 @@ class API {
 		foreach($query['insert'] as $table => $values) {
 
 			if(!$this->auth->can_write($table)) {
-				self::no_permissions();
+				self::no_permissions('- Can\'t write');
 			}
 
 			$columns = array();
@@ -852,7 +852,7 @@ class API {
 						}
 						$columns[$i][$column] = $column_value;
 					}
-					$i ++;
+					$i++;
 				} else {
 					if(!$this->checkColumn($key, $table, $db)) {
 						continue;
@@ -925,7 +925,7 @@ class API {
 		foreach($query['update'] as $table => $u) {
 
 			if(!$this->auth->can_edit($table)) {
-				self::no_permissions();
+				self::no_permissions('- Can\'t edit');
 			}
 
 			foreach($u as $update) {
@@ -946,10 +946,10 @@ class API {
 						$insert                   = array();
 						$insert['insert']         = array();
 						$insert['insert'][$table] = array_merge($update['where'], $update['values']);
-						if($this->auth->can_write($query['table'])) {
+						if($this->auth->can_write($table)) {
 							$this->query_post($insert, $db);
 						} else {
-							self::no_permissions();
+							self::no_permissions('- Can\'t write');
 						}
 					} else {
 						$new_update                   = $query;
@@ -1055,7 +1055,7 @@ class API {
 			foreach($query['update'] as $table => $update) {
 
 				if(!$this->auth->can_edit($table)) {
-					self::no_permissions();
+					self::no_permissions('- Can\'t edit');
 				}
 
 				foreach($update as $values) {
@@ -1101,7 +1101,7 @@ class API {
 					$sql .= ' SET ' . implode(', ', $values_index);
 
 					// build WHERE query
-					$restriction = $this->auth->sql_restriction($query['table'], 'EDIT');
+					$restriction = $this->auth->sql_restriction($table, 'EDIT');
 					if(is_array($where)) {
 						$where_parse  = $this->parse_where($table, $where, $sql);
 						$sql          = $where_parse["sql"] . ' AND ' . $restriction;
@@ -1139,7 +1139,6 @@ class API {
 					}
 
 					$this->logger->debug($sql_compiled);
-					//die($sql_compiled);
 
 					$sth->execute();
 				}
@@ -1711,8 +1710,8 @@ class API {
 	/**
 	 * Return failed response
 	 */
-	private static function no_permissions() {
-		Request::error("No permissions", 403);
+	private static function no_permissions($msg = "") {
+		Request::error("No permissions " . $msg, 403);
 	}
 
 
