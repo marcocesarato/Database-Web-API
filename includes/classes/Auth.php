@@ -159,10 +159,10 @@ class Auth {
 					die($this->api->$renderer($results, $query));
 				}
 			}
-			Request::error("Invalid authentication!", 401);
+			Response::error("Invalid authentication!", 401);
 
 		}
-		Request::error("Forbidden!", 403);
+		Response::error("Forbidden!", 403);
 
 		return false;
 	}
@@ -183,7 +183,7 @@ class Auth {
                 last_access TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )");
 		} catch(PDOException $e) {
-			Request::error($e->getMessage(), 500);
+			Response::error($e->getMessage(), 500);
 		}
 	}
 
@@ -195,7 +195,7 @@ class Auth {
 			$date = date("Y-m-d H:i:s", strtotime('-1 month'));
 			$this->db->exec("DELETE FROM " . self::$api_table . " WHERE last_access != date_created AND last_access < '" . $date . "'");
 		} catch(PDOException $e) {
-			Request::error($e->getMessage(), 500);
+			Response::error($e->getMessage(), 500);
 		}
 	}
 
@@ -266,7 +266,7 @@ class Auth {
 
 			return false;
 		} catch(PDOException $e) {
-			Request::error($e->getMessage(), 500);
+			Response::error($e->getMessage(), 500);
 
 			return false;
 		}
@@ -282,7 +282,7 @@ class Auth {
 			$results = $sth->fetchAll(PDO::FETCH_OBJ);
 			$this->api->render($results);
 		} catch(PDOException $e) {
-			Request::error($e->getMessage(), 500);
+			Response::error($e->getMessage(), 500);
 		}
 	}
 
@@ -303,7 +303,7 @@ class Auth {
 			$results = $this->hooks->apply_filters('auth_token_check', $results);
 			$this->api->render($results);
 		} catch(PDOException $e) {
-			Request::error($e->getMessage(), 500);
+			Response::error($e->getMessage(), 500);
 		}
 	}
 
@@ -327,7 +327,7 @@ class Auth {
 
 			return null;
 		} catch(PDOException $e) {
-			Request::error($e->getMessage(), 500);
+			Response::error($e->getMessage(), 500);
 		}
 
 		return null;
@@ -339,7 +339,7 @@ class Auth {
 	 * @param $permission
 	 * @return string
 	 */
-	public function sql_restriction($table, $permission) {
+	public function permissionSQL($table, $permission) {
 
 		$sql = "";
 
@@ -361,7 +361,7 @@ class Auth {
 	 * @param $table
 	 * @return bool
 	 */
-	public function can_read($table) {
+	public function canRead($table) {
 
 		$result = true;
 
@@ -383,7 +383,7 @@ class Auth {
 	 * @param $table
 	 * @return bool
 	 */
-	public function can_write($table) {
+	public function canWrite($table) {
 
 		$result = false;
 
@@ -409,7 +409,7 @@ class Auth {
 	 * @param $table
 	 * @return bool
 	 */
-	public function can_edit($table) {
+	public function canEdit($table) {
 
 		$result = false;
 
@@ -435,7 +435,7 @@ class Auth {
 	 * @param $table
 	 * @return bool
 	 */
-	public function can_delete($table) {
+	public function canDelete($table) {
 
 		$result = false;
 

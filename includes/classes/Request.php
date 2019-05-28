@@ -16,13 +16,85 @@ class Request {
 	public $input;
 
 	/**
-	 * Singleton constructor
+	 * Request constructor.
 	 */
 	public function __construct() {
 		self::$instance = &$this;
 		self::blockBots();
 		self::blockTor();
 		$this->input = self::getParams();
+	}
+
+	/**
+	 * Returns static reference to the class instance
+	 */
+	public static function &getInstance() {
+		return self::$instance;
+	}
+
+	/**
+	 * Returns the request parameters
+	 * @params $sanitize (optional) sanitize input data, default is true
+	 * @return $params parameters
+	 */
+	public static function getParams($sanitize = true) {
+
+		// Parse GET params
+		$source = $_SERVER['QUERY_STRING'];
+
+		parse_str($source, $params);
+
+		// Parse POST, PUT, DELETE params
+		if(self::method() != 'GET' && self::method() != 'DELETE') {
+			$source_input = file_get_contents("php://input");
+			parse_str($source_input, $params_input);
+			$params = array_merge($params, $params_input);
+		}
+
+		// Read header Access-Token
+		$params['token'] = self::getToken();
+
+		// Auth
+		if(!empty($_GET['auth'])) {
+			if(empty($params['password'])) {
+				$params['password'] = (!empty($_SERVER['HTTP_AUTH_ACCOUNT']) ? $_SERVER['HTTP_AUTH_ACCOUNT'] : uniqid(rand(), true));
+			}
+			if(empty($params['user_id'])) {
+				$params['user_id'] = (!empty($_SERVER['HTTP_AUTH_PASSWORD']) ? $_SERVER['HTTP_AUTH_PASSWORD'] : uniqid(rand(), true));
+			}
+		}
+
+		// Check token
+		if(!empty($_GET['check_auth'])) {
+			if(empty($params['check_token'])) {
+				$params['check_token'] = (!empty($_SERVER['HTTP_ACCESS_TOKEN']) ? $_SERVER['HTTP_ACCESS_TOKEN'] : uniqid(rand(), true));
+			}
+		}
+
+		if($sanitize == true) {
+			$params = self::sanitizeParams($params);
+		}
+
+		return $params;
+	}
+
+	/**
+	 * Returns the request method
+	 */
+	public static function method() {
+		return $_SERVER['REQUEST_METHOD'];
+	}
+
+	/**
+	 * Returns the access token
+	 */
+	public static function getToken() {
+		$token = @$_GET['token'];
+		if(isset($_SERVER['HTTP_ACCESS_TOKEN'])) {
+			$token = $_SERVER['HTTP_ACCESS_TOKEN'];
+		}
+
+		return $token;
 	}
 
 	/**
@@ -41,49 +113,16 @@ class Request {
 	}
 
 	/**
-	 * Halt the program with an "Internal server error" and the specified message.
-	 * @param string|object $error the error or a (PDO) exception object
-	 * @param int           $code  (optional) the error code with which to respond
-	 * @param bool          $custom_call
-	 */
-	public static function error($error, $code = 500, $custom_call = false) {
-
-		$hooks = Hooks::getInstance();
-		if($custom_call) {
-			$hooks->do_action('custom_api_call');
-		}
-		$hooks->do_action('on_error', $error, $code);
-
-		$api    = API::getInstance();
-		$logger = Logger::getInstance();
-		if(is_object($error) && method_exists($error, 'getMessage') && method_exists($error, 'getCode')) {
-			$message = DatabaseErrorParser::errorMessage($error);
-			$results = array(
-				"response" => (object) array('status' => 400, 'message' => $message),
-			);
-			$logger->error($code . " - " . $error);
-			$api->render($results);
-		}
-		http_response_code($code);
-		$error = trim($error);
-		$logger->error($code . " - " . $error);
-		$results = array(
-			"response" => (object) array('status' => $code, 'message' => self::sanitize_htmlentities($error)),
-		);
-		$api->render($results);
-	}
-
-	/**
 	 * Sanitize from HTML injection
 	 * @param      $data mixed data to sanitize
 	 * @return     $data sanitized data
 	 * @package    AIO Security Class
 	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
-	public static function sanitize_htmlentities($data) {
+	public static function sanitizeHtmlentities($data) {
 		if(is_array($data)) {
 			foreach($data as $k => $v) {
-				$data[$k] = self::sanitize_htmlentities($v);
+				$data[$k] = self::sanitizeHtmlentities($v);
 			}
 		} else {
 			$data = htmlentities($data);
@@ -315,83 +354,19 @@ class Request {
 	}
 
 	/**
-	 * Returns the request parameters
-	 * @params $sanitize (optional) sanitize input data, default is true
-	 * @return $params parameters
-	 */
-	public static function getParams($sanitize = true) {
-
-		// Parse GET params
-		$source = $_SERVER['QUERY_STRING'];
-
-		parse_str($source, $params);
-
-		// Parse POST, PUT, DELETE params
-		if(self::method() != 'GET' && self::method() != 'DELETE') {
-			$source_input = file_get_contents("php://input");
-			parse_str($source_input, $params_input);
-			$params = array_merge($params, $params_input);
-		}
-
-		// Read header Access-Token
-		$params['token'] = self::getToken();
-
-		// Auth
-		if(!empty($_GET['auth'])) {
-			if(empty($params['password'])) {
-				$params['password'] = (!empty($_SERVER['HTTP_AUTH_ACCOUNT']) ? $_SERVER['HTTP_AUTH_ACCOUNT'] : uniqid(rand(), true));
-			}
-			if(empty($params['user_id'])) {
-				$params['user_id'] = (!empty($_SERVER['HTTP_AUTH_PASSWORD']) ? $_SERVER['HTTP_AUTH_PASSWORD'] : uniqid(rand(), true));
-			}
-		}
-
-		// Check token
-		if(!empty($_GET['check_auth'])) {
-			if(empty($params['check_token'])) {
-				$params['check_token'] = (!empty($_SERVER['HTTP_ACCESS_TOKEN']) ? $_SERVER['HTTP_ACCESS_TOKEN'] : uniqid(rand(), true));
-			}
-		}
-
-		if($sanitize == true) {
-			$params = self::sanitize_params($params);
-		}
-
-		return $params;
-	}
-
-	/**
-	 * Returns the request method
-	 */
-	public static function method() {
-		return $_SERVER['REQUEST_METHOD'];
-	}
-
-	/**
-	 * Returns the access token
-	 */
-	public static function getToken() {
-		$token = @$_GET['token'];
-		if(isset($_SERVER['HTTP_ACCESS_TOKEN'])) {
-			$token = $_SERVER['HTTP_ACCESS_TOKEN'];
-		}
-		return $token;
-	}
-
-	/**
 	 * Sanitize the parameters
 	 * @param      $params mixed data to sanitize
 	 * @return     $params sanitized data
 	 * @package    AIO Security Class
 	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
-	private static function sanitize_params($params) {
+	private static function sanitizeParams($params) {
 		foreach($params as $key => $value) {
 			$value        = trim_all($value);
-			$value        = self::sanitize_rxss($value);
-			$value        = self::sanitize_striptags($value);
-			$value        = self::sanitize_htmlentities($value);
-			$value        = self::sanitize_stripslashes($value);
+			$value        = self::sanitizeRXSS($value);
+			$value        = self::sanitizeStriptags($value);
+			$value        = self::sanitizeHtmlentities($value);
+			$value        = self::sanitizeStripslashes($value);
 			$params[$key] = $value;
 		}
 
@@ -405,13 +380,13 @@ class Request {
 	 * @package    AIO Security Class
 	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
-	public static function sanitize_rxss($data) {
+	public static function sanitizeRXSS($data) {
 		if(is_array($data)) {
 			foreach($data as $k => $v) {
-				$data[$k] = self::sanitize_rxss($v);
+				$data[$k] = self::sanitizeRXSS($v);
 			}
 		} else {
-			$data = self::sanitize_xss($data);
+			$data = self::sanitizeXSS($data);
 		}
 
 		return $data;
@@ -424,7 +399,7 @@ class Request {
 	 * @package    AIO Security Class
 	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
-	private static function sanitize_xss($data) {
+	private static function sanitizeXSS($data) {
 		$data = str_replace(array("&amp;", "&lt;", "&gt;"), array("&amp;amp;", "&amp;lt;", "&amp;gt;"), $data);
 		$data = preg_replace("/(&#*\w+)[- ]+;/u", "$1;", $data);
 		$data = preg_replace("/(&#x*[0-9A-F]+);*/iu", "$1;", $data);
@@ -459,10 +434,10 @@ class Request {
 	 * @package    AIO Security Class
 	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
-	public static function sanitize_striptags($data) {
+	public static function sanitizeStriptags($data) {
 		if(is_array($data)) {
 			foreach($data as $k => $v) {
-				$data[$k] = self::sanitize_striptags($v);
+				$data[$k] = self::sanitizeStriptags($v);
 			}
 		} else {
 			$data = strip_tags($data);
@@ -478,10 +453,10 @@ class Request {
 	 * @package    AIO Security Class
 	 * @author     Marco Cesarato <cesarato.developer@gmail.com>
 	 */
-	public static function sanitize_stripslashes($data) {
+	public static function sanitizeStripslashes($data) {
 		if(is_array($data)) {
 			foreach($data as $k => $v) {
-				$data[$k] = self::sanitize_stripslashes($v);
+				$data[$k] = self::sanitizeStripslashes($v);
 			}
 		} else {
 			if(get_magic_quotes_gpc()) {
@@ -500,10 +475,26 @@ class Request {
 	}
 
 	/**
-	 * Returns static reference to the class instance
+	 * Detect if is console
+	 * @return bool
 	 */
-	public static function &getInstance() {
-		return self::$instance;
+	public static function isConsole() {
+		if(defined('STDIN')) {
+			return true;
+		}
+		if(php_sapi_name() === 'cli') {
+			return true;
+		}
+		if(array_key_exists('SHELL', $_ENV)) {
+			return true;
+		}
+		if(empty($_SERVER['REMOTE_ADDR']) and !isset($_SERVER['HTTP_USER_AGENT']) and count($_SERVER['argv']) > 0) {
+			return true;
+		}
+		if(!array_key_exists('REQUEST_METHOD', $_SERVER)) {
+			return true;
+		}
+		return false;
 	}
 }
 

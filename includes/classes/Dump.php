@@ -22,6 +22,7 @@ class Dump {
 	 * Die with dump
 	 */
 	public static function out() {
+		self::setHeader();
 		$args = func_get_args();
 		echo self::internalDump($args);
 	}
@@ -30,6 +31,7 @@ class Dump {
 	 * Die with dump
 	 */
 	public static function fatal() {
+		self::setHeader();
 		$args = func_get_args();
 		die(self::internalDump($args));
 	}
@@ -38,7 +40,7 @@ class Dump {
 	 * Clean die with dump
 	 */
 	public static function clean() {
-		header("Content-Type: text/plain");
+		self::setHeader();
 		ob_clean();
 		$args = func_get_args();
 		die(self::internalDump($args));
@@ -90,6 +92,20 @@ class Dump {
 	 */
 	public static function setDepth($depth) {
 		self::$depth = $depth;
+	}
+
+	/**
+	 * Set Header
+	 */
+	private static function setHeader(){
+		if(Request::isConsole()){
+			self::disableHighlight();
+		}
+		if(self::$highlight) {
+			header("Content-Type: text/html");
+		} else {
+			header("Content-Type: text/plain");
+		}
 	}
 
 	/**

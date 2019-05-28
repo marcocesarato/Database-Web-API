@@ -6,6 +6,7 @@
  */
 
 use marcocesarato\DatabaseAPI\API;
+use marcocesarato\DatabaseAPI\Response;
 
 /**
  * Custom API Call
@@ -52,5 +53,5 @@ function action_on_error($message, $code) {
         $api->render($results);
 
     }
-	Request::error("Invalid authentication!", 401);
+	Response::error("Invalid authentication!", 401);
 }*/
