@@ -17,6 +17,12 @@ function action_custom_api_call($query) {
 	$api->query['part_1'] = $api->query['db'];
 	$api->query['part_2'] = (!empty($api->query['limit']) ? $api->query['limit'] : $api->query['table']);
 	$api->query['part_3'] = (!empty($api->query['id']) ? $api->query['id'] : $api->query['table']);
+	$api->query['part_4'] = null;
+
+	if(!empty($api->query['where']) && count($api->query['where']) == 1){
+		$api->query['part_4'] = reset($api->query['where']);
+		$api->query['part_3'] = key($api->query['where']);
+	}
 }
 
 /**
