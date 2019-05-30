@@ -106,7 +106,7 @@ class Request {
 		   preg_match("/(havij|libwww-perl|wget|python|nikto|curl|scan|java|winhttp|clshttp|loader)/i", $_SERVER['HTTP_USER_AGENT']) ||
 		   preg_match("/(%0A|%0D|%27|%3C|%3E|%00)/i", $_SERVER['HTTP_USER_AGENT']) ||
 		   preg_match("/(;|<|>|'|\"|\)|\(|%0A|%0D|%22|%27|%28|%3C|%3E|%00).*(libwww-perl|wget|python|nikto|curl|scan|java|winhttp|HTTrack|clshttp|archiver|loader|email|harvest|extract|grab|miner)/i", $_SERVER['HTTP_USER_AGENT'])) {
-			self::error('Permission denied!', 403);
+			Response::error('Permission denied!', 403);
 		}
 		// Block Fake google bot
 		self::blockFakeGoogleBots();
@@ -142,10 +142,10 @@ class Request {
 			$host_ip = gethostbyname($name);
 			if(preg_match('/googlebot/i', $name, $matches)) {
 				if($host_ip != $ip) {
-					self::error('Permission denied!', 403);
+					Response::error('Permission denied!', 403);
 				}
 			} else {
-				self::error('Permission denied!', 403);
+				Response::error('Permission denied!', 403);
 			}
 		}
 	}
@@ -295,7 +295,7 @@ class Request {
 			$dns         = dns_get_record($torExitNode, DNS_A);
 			if(array_key_exists(0, $dns) && array_key_exists('ip', $dns[0])) {
 				if($dns[0]['ip'] == '127.0.0.2') {
-					self::error('Permission denied!', 403);
+					Response::error('Permission denied!', 403);
 				}
 			}
 
