@@ -15,8 +15,8 @@ use marcocesarato\DatabaseAPI\Response;
 function action_custom_api_call($query) {
 	$api                  = API::getInstance();
 	$api->query['part_1'] = $api->query['db'];
-	$api->query['part_2'] = $api->query['table'];
-	$api->query['part_3'] = $api->query['id'];
+	$api->query['part_2'] = (!empty($api->query['limit']) ? $api->query['limit'] : $api->query['table']);
+	$api->query['part_3'] = (!empty($api->query['id']) ? $api->query['id'] : $api->query['table']);
 }
 
 /**
