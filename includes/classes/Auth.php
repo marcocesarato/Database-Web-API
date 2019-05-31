@@ -461,7 +461,7 @@ class Auth {
 	 * @return bool
 	 */
 	private function needIncrementCounter() {
-		return !($this->query['docs'] || isset($this->query['check_token']) || isset($this->query['check_counter']) || isset($this->query['user_id']) && isset($this->query['password']));
+		return !(!empty($this->query['docs']) || !empty($this->query['check_token']) || !empty($this->query['check_counter']) || !empty($this->query['user_id']) && !empty($this->query['password']));
 	}
 }
 
