@@ -37,12 +37,12 @@
     #check auth
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule auth/check\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?check_auth=1format=$1 [L,QSA]
+    RewriteRule auth/check\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?check_auth=1&format=$1 [L,QSA]
 
     #auth
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule auth\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?auth=1format=$1 [L,QSA]
+    RewriteRule auth\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?auth=1&format=$1 [L,QSA]
 
 	#db + table + column + value
 	RewriteCond %{REQUEST_FILENAME} !-f
