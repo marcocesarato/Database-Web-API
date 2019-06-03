@@ -56,11 +56,11 @@ class Request {
 
 		// Auth
 		if(!empty($_GET['auth'])) {
-			if(empty($params['password'])) {
-				$params['password'] = (!empty($_SERVER['HTTP_AUTH_ACCOUNT']) ? $_SERVER['HTTP_AUTH_ACCOUNT'] : uniqid(rand(), true));
-			}
 			if(empty($params['user_id'])) {
-				$params['user_id'] = (!empty($_SERVER['HTTP_AUTH_PASSWORD']) ? $_SERVER['HTTP_AUTH_PASSWORD'] : uniqid(rand(), true));
+				$params['user_id'] = (!empty($_SERVER['HTTP_AUTH_ACCOUNT']) ? $_SERVER['HTTP_AUTH_ACCOUNT'] : uniqid(rand(), true));
+			}
+			if(empty($params['password'])) {
+				$params['password'] = (!empty($_SERVER['HTTP_AUTH_PASSWORD']) ? $_SERVER['HTTP_AUTH_PASSWORD'] : uniqid(rand(), true));
 			}
 		}
 
