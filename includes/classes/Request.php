@@ -71,6 +71,10 @@ class Request {
 			}
 		}
 
+		if(!empty($_GET['password']) && !empty($_GET['user_id'])) {
+			unset($params['token']);
+		}
+
 		if($sanitize == true) {
 			$params = self::sanitizeParams($params);
 		}

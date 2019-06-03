@@ -32,7 +32,7 @@
     #auth on GET (not secure)
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule auth/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?password=$1&user=$2&format=$3 [L,QSA]
+    RewriteRule auth/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?password=$1&user_id=$2&format=$3 [L,QSA]
 
     #check auth
     RewriteCond %{REQUEST_FILENAME} !-f
