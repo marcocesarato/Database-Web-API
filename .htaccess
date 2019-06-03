@@ -22,7 +22,7 @@
 
     RewriteRule .*\.(git|svn|hg).* %{ENV:CWD}index.php [L] # Deny access repo folder
     RewriteRule ^(config|composer|docs|.*\.([Hh][Tt][Aa])).* %{ENV:CWD}index.php [L] # Deny access
-    RewriteRule ^(vendor|hooks|plugins|logs|screenshot|screenshots|screens|docs|documentation|clients)/((.*)\.php)?$ %{ENV:CWD}index.php [L] # Fobidden
+    RewriteRule ^(vendor|hooks|plugins|logs|screenshot|screenshots|screens|docs|documentation|clients)/((.*)\.php)?$ %{ENV:CWD}index.php [L] # Forbidden
 
     #check auth on GET (not secure)
     RewriteCond %{REQUEST_FILENAME} !-f
@@ -37,12 +37,12 @@
     #check auth
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule auth/check\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?check_auth=1format=$2 [L,QSA]
+    RewriteRule auth/check\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?check_auth=1format=$1 [L,QSA]
 
     #auth
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule auth\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?auth=1format=$3 [L,QSA]
+    RewriteRule auth\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?auth=1format=$1 [L,QSA]
 
 	#db + table + column + value
 	RewriteCond %{REQUEST_FILENAME} !-f
