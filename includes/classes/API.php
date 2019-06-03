@@ -541,7 +541,15 @@ class API {
 				$query["where"][$this->getFirstColumn($query['table'], $db)] = $query['id'];
 			}
 
-			$select_columns = "*";
+			$selected_columns = array();
+			$columns = $this->getColumns($query['table'], $db);
+			foreach($columns as $column) {
+				if($this->checkColumn($column, $query['table'], $db)) {
+					$selected_columns[] = "{$query['table']}.{$column}";
+				}
+			}
+
+			$select_columns = implode(', ', $selected_columns);
 			$select_tables  = array($query['table']);
 
 			// build JOIN query
@@ -792,16 +800,6 @@ class API {
 
 			// Sanitize encoding
 			$results = $this->sanitizeResults($results);
-
-			// Filter results
-			$tables = array($query['table']);
-			if(!empty($query['join'])) {
-				$tables_join = array_keys($query['join']);
-				$tables      = array_merge($tables, $tables_join);
-			}
-			if($select_columns == "*" || !$query['prefix']) {
-				$results = $this->filterResults($tables, $results, $db);
-			}
 
 			if($query['unique']) {
 				$results = array_unique($results, SORT_REGULAR);
@@ -1728,51 +1726,6 @@ class API {
 			// Sanitize encoding
 			foreach($result as $column => $value) {
 				$results[$key]->$column = utf8_encode($value);
-			}
-		}
-
-		return $results;
-	}
-
-	/**
-	 * Remove any blacklisted columns from the data set.
-	 * @param array $table
-	 * @param array $results
-	 * @param null  $db
-	 * @return mixed
-	 */
-	private function filterResults($tables, $results, $db = null) {
-
-		$db = $this->getDatabase($db);
-
-		foreach($results as $key => $result) {
-
-			if(!$this->auth->is_admin) {
-
-				// blacklist
-				foreach($tables as $table) {
-					if(!empty($db->column_blacklist[$table]) && is_array($db->column_blacklist[$table])) {
-						foreach($db->column_blacklist[$table] as $column) {
-							unset($results[$key]->$column);
-						}
-					}
-				}
-
-				// whitelist
-				foreach($result as $column => $value) {
-					$unset = true;
-					foreach($tables as $table) {
-						if(!empty($db->column_list[$table]) &&
-						   is_array($db->column_list[$table]) &&
-						   count($db->column_list[$table]) > 0 &&
-						   in_array($column, $db->column_list[$table])) {
-							$unset = false;
-						}
-					}
-					if($unset) {
-						unset($results[$key]->$column);
-					}
-				}
 			}
 		}
 
