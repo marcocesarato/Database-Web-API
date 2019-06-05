@@ -151,8 +151,8 @@ class Request {
 	 */
 	public static function getRequestURI() {
 
-		$doc_root = realpath(preg_replace("/${_SERVER['SCRIPT_NAME']}$/", '', $_SERVER['SCRIPT_FILENAME']));
-
+		$base = '';
+		$doc_root = realpath(preg_replace("/". preg_quote($_SERVER['SCRIPT_NAME'], '/') . "$/", '', $_SERVER['SCRIPT_FILENAME']));
 		if(realpath(__API_ROOT__) != realpath($_SERVER['DOCUMENT_ROOT'])) {
 			$base = str_replace(realpath($_SERVER['DOCUMENT_ROOT']), '', __API_ROOT__) . "/";
 		} else if(realpath(__API_ROOT__) != $doc_root) {
