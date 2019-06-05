@@ -47,7 +47,12 @@ class Request {
 		// Parse POST, PUT, DELETE params
 		if(self::method() != 'GET' && self::method() != 'DELETE') {
 			$source_input = file_get_contents("php://input");
-			parse_str($source_input, $params_input);
+			$decoded_input = json_decode($source_input, true);
+			if(json_last_error() == JSON_ERROR_NONE && is_array($decoded_input)){
+				$params_input = $decoded_input;
+			} else {
+				parse_str($source_input, $params_input);
+			}
 			$params = array_merge($params, $params_input);
 		}
 
