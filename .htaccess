@@ -24,62 +24,6 @@
     RewriteRule ^(config|composer|docs|.*\.([Hh][Tt][Aa])).* %{ENV:CWD}index.php [L] # Deny access
     RewriteRule ^(vendor|hooks|plugins|logs|screenshot|screenshots|screens|docs|documentation|clients)/((.*)\.php)?$ %{ENV:CWD}index.php [L] # Forbidden
 
-    #check auth on GET (not secure)
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule auth/check/([^/]+)\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?check_token=$1&format=$2 [L,QSA]
-
-    #auth on GET (not secure)
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule auth/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?password=$1&user_id=$2&format=$3 [L,QSA]
-
-    #check auth
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule auth/check\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?check_auth=1&format=$1 [L,QSA]
-
-    #auth
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule auth\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?auth=1&format=$1 [L,QSA]
-
-	#db + table + column + value
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ([^/]+)/([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?db=$1&table=$2&where[$3]=$4&format=$5 [L,QSA]
-
-	#db + limit + table
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ([^/]+)/([0-9]|[1-8][0-9]|9[0-9]|100)/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?db=$1&limit=$2&table=$3&format=$4 [L,QSA]
-
-	#db + docs + table
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ([^/]+)/docs/([^/]+)\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?db=$1&table=$2&format=$3&docs=true [L,QSA]
-
-	#db + table + #id
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ([^/]+)/([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?db=$1&table=$2&id=$3&format=$4 [L,QSA]
-
-    #db + check_counter
-	RewriteCond %{REQUEST_FILENAME} !-f [NC]
-	RewriteCond %{REQUEST_FILENAME} !-d [NC]
-	RewriteRule ([^/]+)/([^/]+)/check_counter\.([a-zA-Z]{3,4})$ %{ENV:CWD}index.php?token=$1&db=$2&check_counter=true&format=$3 [L,QSA]
-
-	#db + table
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ([^/]+)/([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?&db=$1&table=$2&format=$3 [L,QSA]
-
-	#db for POST REQUEST
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ([^/]+)\.([a-zA-Z]{3,4})$  %{ENV:CWD}index.php?db=$1&format=$2 [L,QSA]
-
-	#all else
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteRule . %{ENV:CWD}index.php [L,QSA]

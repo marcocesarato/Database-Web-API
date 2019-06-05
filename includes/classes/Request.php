@@ -12,8 +12,10 @@ namespace marcocesarato\DatabaseAPI;
  */
 class Request {
 
-	static $instance;
+	public static $instance;
 	public $input;
+
+	private static $urlparsed = false;
 
 	/**
 	 * Request constructor.
@@ -39,16 +41,18 @@ class Request {
 	 */
 	public static function getParams($sanitize = true) {
 
+		self::parseUrlRewrite();
+
 		// Parse GET params
 		$source = $_SERVER['QUERY_STRING'];
 
 		parse_str($source, $params);
 
-		// Parse POST, PUT, DELETE params
-		if(self::method() != 'GET' && self::method() != 'DELETE') {
-			$source_input = file_get_contents("php://input");
+		// Parse POST, PUT, PATCH params
+		if(!in_array(self::method(), array('GET', 'DELETE'))) {
+			$source_input  = file_get_contents("php://input");
 			$decoded_input = json_decode($source_input, true);
-			if(json_last_error() == JSON_ERROR_NONE && is_array($decoded_input)){
+			if(json_last_error() == JSON_ERROR_NONE && is_array($decoded_input)) {
 				$params_input = $decoded_input;
 			} else {
 				parse_str($source_input, $params_input);
@@ -60,23 +64,23 @@ class Request {
 		$params['token'] = self::getToken();
 
 		// Auth
-		if(!empty($_GET['auth'])) {
+		if(!empty($params['auth'])) {
 			if(empty($params['user_id'])) {
 				$params['user_id'] = (!empty($_SERVER['HTTP_AUTH_ACCOUNT']) ? $_SERVER['HTTP_AUTH_ACCOUNT'] : uniqid(rand(), true));
 			}
 			if(empty($params['password'])) {
 				$params['password'] = (!empty($_SERVER['HTTP_AUTH_PASSWORD']) ? $_SERVER['HTTP_AUTH_PASSWORD'] : uniqid(rand(), true));
 			}
+			unset($params['token']);
 		}
 
 		// Check token
-		if(!empty($_GET['check_auth'])) {
-			if(empty($params['check_token'])) {
-				$params['check_token'] = (!empty($_SERVER['HTTP_ACCESS_TOKEN']) ? $_SERVER['HTTP_ACCESS_TOKEN'] : uniqid(rand(), true));
-			}
+		if(!empty($params['check_auth']) && empty($params['check_token'])) {
+			$params['check_token'] = (!empty($_SERVER['HTTP_ACCESS_TOKEN']) ? $_SERVER['HTTP_ACCESS_TOKEN'] : uniqid(rand(), true));
+			unset($params['token']);
 		}
 
-		if(!empty($_GET['password']) && !empty($_GET['user_id'])) {
+		if(empty($params['token'])) {
 			unset($params['token']);
 		}
 
@@ -86,6 +90,83 @@ class Request {
 
 		return $params;
 	}
+
+	/**
+	 * Parse url rewrite
+	 */
+	public static function parseUrlRewrite() {
+		if(!self::$urlparsed) {
+			$formats       = array('json', 'xml', 'html');
+			$rewrite_regex = array(
+				// Check Auth
+				'auth/check'                                    => 'check_auth=1&format=%s',
+				// Auth
+				'auth'                                          => 'auth=1&format=%s',
+				// Dataset + P1 + P2 + P3 + P4 (Custom requests)
+				'([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)'       => 'custom=%s&db=%s&table=%s&where[%s]=%s&format=%s',
+				// Dataset + Table + Column + Value
+				'([^/]+)/([^/]+)/([^/]+)/([^/]+)'               => 'db=%s&table=%s&where[%s]=%s&format=%s',
+				// Dataset + Limit + Table
+				'([^/]+)/([0-9]|[1-8][0-9]|9[0-9]|100)/([^/]+)' => 'db=%s&limit=%s&table=%s&format=%s',
+				// Dataset + Table docs
+				'([^/]+)/docs/([^/]+)'                          => 'db=%s&table=%s&format=%s&docs=true',
+				// Dataset + Table + ID
+				'([^/]+)/([^/]+)/([^/]+)'                       => 'db=%s&table=%s&id=%s&format=%s',
+				// Dataset + Check counter
+				'([^/]+)/check_counter'                         => 'db=%s&check_counter=true&format=%s',
+				// Dataset + Table
+				'([^/]+)/([^/]+)'                               => 'db=%s&table=%s&format=%s',
+				// Dataset (for POST/PUT/PATCH requests)
+				'([^/]+)'                                       => 'db=%s&format=%s',
+			);
+
+			$formats = implode('|', $formats);
+			$formats = "\.($formats)$";
+
+			// Parse rewrites
+			foreach($rewrite_regex as $regex => $qs) {
+				$request_uri = self::getRequestURI();
+				if(preg_match('#' . $regex . $formats . '#', $request_uri, $matches)) {
+
+					array_shift($matches);
+					$matches = array_filter($matches, function($v) {
+						return urlencode($v);
+					});
+
+					$query_string = vsprintf($qs, $matches);
+					if($_SERVER['QUERY_STRING'] != $query_string) {
+						$_SERVER['QUERY_STRING'] = $query_string . (!empty($_SERVER['QUERY_STRING']) ? '&' . $_SERVER['QUERY_STRING'] : '');
+					}
+					parse_str($_SERVER['QUERY_STRING'], $_GET);
+					break;
+				}
+			}
+			self::$urlparsed = true;
+		}
+	}
+
+	/**
+	 * Get Request URI
+	 * @return string
+	 */
+	public static function getRequestURI() {
+
+		$doc_root = realpath(preg_replace("/${_SERVER['SCRIPT_NAME']}$/", '', $_SERVER['SCRIPT_FILENAME']));
+
+		if(realpath(__API_ROOT__) != realpath($_SERVER['DOCUMENT_ROOT'])) {
+			$base = str_replace(realpath($_SERVER['DOCUMENT_ROOT']), '', __API_ROOT__) . "/";
+		} else if(realpath(__API_ROOT__) != $doc_root) {
+			$base = str_replace($doc_root, '', __API_ROOT__) . "/";
+		}
+		$base = str_replace('\\', '/', $base);
+
+		$request_uri = str_replace($base, '', $_SERVER['REQUEST_URI']);
+		$request_uri = explode('?', $request_uri, 2);
+		$request_uri = $request_uri[0];
+
+		return $request_uri;
+	}
+
 
 	/**
 	 * Returns the request method
@@ -503,6 +584,7 @@ class Request {
 		if(!array_key_exists('REQUEST_METHOD', $_SERVER)) {
 			return true;
 		}
+
 		return false;
 	}
 }

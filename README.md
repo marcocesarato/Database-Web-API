@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.6.121 beta
+**Version:** 0.6.122 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
