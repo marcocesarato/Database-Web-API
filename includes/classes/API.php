@@ -400,7 +400,7 @@ class API {
 
 		$final_result = array();
 
-		$key = md5(serialize($query) . $this->getDatabase($db)->name . '_docs');
+		$key = md5(json_encode($query) . $this->getDatabase($db)->name . '_docs');
 
 		if($cache = $this->getCache($key)) {
 			return $cache;
@@ -503,7 +503,7 @@ class API {
 	 */
 	private function get($query, $db = null) {
 
-		$key = md5(serialize($query) . $this->getDatabase($db)->name);
+		$key = md5(json_encode($query) . $this->getDatabase($db)->name);
 
 		if($cache = $this->getCache($key)) {
 			return $cache;
@@ -1749,11 +1749,21 @@ class API {
 	 */
 	private function getCache($key) {
 
-		if(!extension_loaded('apc') || (ini_get('apc.enabled') != 1)) {
-			if(!empty($this->cache[$key])) {
-				return $this->cache[$key];
+		$tmpdir = sys_get_temp_dir();
+		if(!empty($this->cache[$key])) {
+			return $this->cache[$key];
+		} else if((ini_get('opcache.enable') == 0 || ini_get('apc.enabled') == 0) && is_writable($tmpdir)) {
+			$file = $tmpdir . DIRECTORY_SEPARATOR . $key;
+			$ttl = (!empty($this->db->ttl)) ? $this->db->ttl : $this->ttl;
+			if(file_exists($file)) {
+				if((time() - @filectime($file) < $ttl)) {
+					@unlink($file);
+				} else {
+					@include($file);
+				}
 			}
-		} else {
+			return isset($value) ? $value : false;
+		} else if(extension_loaded('apc') || (ini_get('apc.enabled') == 1)) {
 			return apc_fetch($key);
 		}
 
@@ -1769,17 +1779,26 @@ class API {
 	 */
 	private function setCache($key, $value, $ttl = null) {
 
-		if($ttl == null) {
+		$this->cache[$key] = $value;
+
+		$tmpdir = sys_get_temp_dir();
+		if((ini_get('opcache.enable') == 0 || ini_get('apc.enabled') == 0) && is_writable($tmpdir)) {
+			$value = var_export($value, true);
+			// HHVM fails at __set_state, so just use object cast for now
+			$value = str_replace('stdClass::__set_state', '(object)', $value);
+			// Write to temp file first to ensure atomicity
+			$tmp = $tmpdir . DIRECTORY_SEPARATOR . $key . "." . uniqid('', true) . '.tmp';
+			file_put_contents($tmp, '<?php $val = ' . $value . ';', LOCK_EX);
+			rename($tmp, $tmpdir . DIRECTORY_SEPARATOR . $key);
+
+		} else if($ttl == null) {
 			$ttl = (!empty($this->db->ttl)) ? $this->db->ttl : $this->ttl;
 		}
-
 		$key = 'api_' . $key;
 
 		if(extension_loaded('apc') && (ini_get('apc.enabled') == 1)) {
 			return apc_store($key, $value, $ttl);
 		}
-
-		$this->cache[$key] = $value;
 
 		return true;
 	}

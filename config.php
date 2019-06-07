@@ -43,6 +43,7 @@ define("__API_DATASETS__", serialize(array(
 		'password'         => 'root', // root is default
 		'server'           => 'localhost',  // localhost default
 		'port'             => 3306, // 3306 is default
+		'ttl'              => 1, // Cache time to live. Disable cache (1 second only)
 		'type'             => 'mysql', // mysql is default
 		'table_docs'       => $docs['dataset'],
 		'table_list'       => array(), // Tables's whitelist (Allow only the tables in this list, if empty allow all)

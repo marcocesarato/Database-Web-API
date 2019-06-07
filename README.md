@@ -1,7 +1,7 @@
 # PHP Database Web API
 ![](cover.png)
 
-**Version:** 0.6.128 beta
+**Version:** 0.6.129 beta
 
 **Github:** https://github.com/marcocesarato/Database-Web-API
 
@@ -62,12 +62,13 @@ define("__API_NAME__", "Database Web API"); // API Name
 
 | Settings         | Description                                                                        | Default   |
 |------------------|------------------------------------------------------------------------------------|-----------|
-| default          | Default dataset                                                              | false     |
-| api              | Accessible through API                                                          | true      |
+| default          | Default dataset                                                                    | false     |
+| api              | Accessible through API                                                             | true      |
 | name             | Database Name                                                                      |           |
 | username         | Database Username                                                                  | root      |
 | password         | Database Password                                                                  | root      |
 | server           | Database Server Address                                                            | localhost |
+| ttl              | Cache time to live (set 1 for disable)                                             | 3600      |
 | port             | Database Port                                                                      | 3306      |
 | type             | Database Type (ex. `mysql`, `psql` ecc..)                                          | mysql     |
 | table_list       | Database Tables Whitelist (Allow only the tables in this list, if empty allow all) | null      |
@@ -85,6 +86,7 @@ define("__API_DATASETS__", serialize(array(
 		'name' => 'database_name', // Database name
 		'username' => 'user', // root is default
 		'password' => 'passwd', // root is default
+		'ttl' => 1, // Cache time to live. Disable cache (1 second only)
 		'server' => 'localhost',  // localhost default
 		'port' => 5432, // 3306 is default
 		'type' => 'pgsql', // mysql is default
@@ -133,6 +135,7 @@ array(
 	'username' => 'website',
 	'password' => 's3cr3tpa55w0rd',
 	'server' => 'localhost',
+	'ttl' => 1,
 	'port' => 3306,
 	'type' => 'mysql',
 	'table_docs' => array(),
