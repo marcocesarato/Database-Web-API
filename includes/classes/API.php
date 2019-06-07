@@ -296,11 +296,11 @@ class API {
 	public function &connect($db = null) {
 
 		// check for existing connection
-		if(empty($db) && !empty($this->db->name) && isset($this->connections[$this->db->name])) {
+		if(empty($db) && !empty($this->db->name) && !empty($this->connections[$this->db->name])) {
 			$db = $this->db->name;
 
 			return $this->connections[$db];
-		} else if(!empty($db) && is_string($db) && isset($this->connections[$db])) {
+		} else if(!empty($db) && is_string($db) && !empty($this->connections[$db])) {
 			return $this->connections[$db];
 		}
 
@@ -522,7 +522,7 @@ class API {
 			}
 
 			// check WHERE
-			if(isset($query['where']) && is_array($query['where'])) {
+			if(!empty($query['where']) && is_array($query['where'])) {
 				foreach($query['where'] as $column => $value) {
 					$column_table = $query['table'];
 					$_split       = explode('.', $column, 2);
@@ -537,7 +537,7 @@ class API {
 			}
 
 			// check id
-			if(isset($query['id']) && !empty($query['id'])) {
+			if(!empty($query['id'])) {
 				$query["where"][$this->getFirstColumn($query['table'], $db)] = $query['id'];
 			}
 
@@ -554,7 +554,7 @@ class API {
 
 			// build JOIN query
 			$join_sql = "";
-			if(isset($query['join']) && is_array($query['join']) && !empty($query['join'])) {
+			if(!empty($query['join']) && is_array($query['join'])) {
 
 				$methods_available = array('INNER', 'LEFT', 'RIGHT');
 
@@ -624,22 +624,25 @@ class API {
 						$join_sql .= "{$join_value_table}.{$join_value_column}";
 					}
 				}
-				if(!empty($query['prefix']) && count($select_tables) > 1) {
+				if(count($select_tables) > 1) {
+					$standard_columns = array();
 					$prefix_columns = array();
 					foreach($select_tables as $table) {
 						$columns = $this->getColumns($table, $db);
 						foreach($columns as $column) {
 							if($this->checkColumn($column, $table, $db)) {
+								$standard_columns[] = "{$table}.{$column} AS {$column}";
 								$prefix_columns[] = "{$table}.{$column} AS {$table}__{$column}";
 							}
 						}
 					}
-					$select_columns = implode(', ', $prefix_columns);
+					if(!empty($query['prefix'])) {
+						$select_columns = implode(', ', $prefix_columns);
+					} else {
+						$select_columns = implode(', ', $standard_columns);
+					}
 				}
-			}
-
-			// Prefix table before column
-			if(!empty($query['prefix'])) {
+			} else if(!empty($query['prefix'])) {
 				$prefix_columns = array();
 				foreach($select_tables as $table) {
 					$columns = $this->getColumns($table, $db);
@@ -656,7 +659,7 @@ class API {
 
 			// build WHERE query
 			$restriction = $this->auth->permissionSQL($query['table'], 'READ');
-			if(isset($query['where']) && is_array($query['where'])) {
+			if(!empty($query['where']) && is_array($query['where'])) {
 				$where        = $this->parseWhere($query['table'], $query['where'], $sql);
 				$sql          = $where["sql"] . ' AND ' . $restriction;
 				$where_values = $where["values"];
@@ -773,7 +776,7 @@ class API {
 			$sth = $dbh->prepare($sql);
 
 			// bind WHERE values
-			if(isset($where_values) && count($where_values) > 0) {
+			if(!empty($where_values) && count($where_values) > 0) {
 				foreach($where_values as $key => $value) {
 					$type         = self::detectPDOType($value);
 					$key          = ':' . $key;
@@ -783,7 +786,7 @@ class API {
 			}
 
 			// bind JOIN values
-			if(isset($join_values) && count($join_values) > 0) {
+			if(!empty($join_values) && count($join_values) > 0) {
 				foreach($join_values as $key => $value) {
 					$type         = self::detectPDOType($value);
 					$key          = ':' . $key;
@@ -909,7 +912,7 @@ class API {
 			}
 
 			foreach($u as $update) {
-				if(isset($update['where']) && is_array($update['where'])) {
+				if(!empty($update['where']) && is_array($update['where'])) {
 					foreach($update['where'] as $column => $value) {
 						if(!$this->checkColumn($column, $table)) {
 							Response::error('Invalid where condition ' . $column, 404);
@@ -971,11 +974,11 @@ class API {
 
 				foreach($update as $values) {
 
-					if(!isset($values['where']) || !is_array($values['where']) || count($values['where']) < 1) {
+					if(empty($values['where']) || !is_array($values['where']) || count($values['where']) < 1) {
 						Response::error('Invalid conditions', 400);
 					}
 
-					if(!isset($values['values']) || !is_array($values['values']) || count($values['values']) < 1) {
+					if(empty($values['values']) || !is_array($values['values']) || count($values['values']) < 1) {
 						Response::error('Invalid values', 400);
 					}
 
@@ -1042,7 +1045,7 @@ class API {
 					}
 
 					// bind WHERE values
-					if(isset($where_values) && count($where_values) > 0) {
+					if(!empty($where_values) && count($where_values) > 0) {
 						foreach($where_values as $key => $value) {
 							$key          = ':' . $key;
 							$sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
@@ -1083,7 +1086,7 @@ class API {
 			}
 
 			// check ID
-			if(isset($query['id']) && !empty($query['id'])) {
+			if(!empty($query['id']) && !empty($query['id'])) {
 				$query["where"][$this->getFirstColumn($query['table'])] = $query['id'];
 			}
 
@@ -1091,7 +1094,7 @@ class API {
 
 			// build WHERE query
 			$restriction = $this->auth->permissionSQL($query['table'], 'DELETE');
-			if(isset($query['where']) && is_array($query['where'])) {
+			if(!empty($query['where']) && is_array($query['where'])) {
 				$where        = $this->parseWhere($query['table'], $query['where'], $sql);
 				$sql          = $where["sql"] . ' AND ' . $restriction;
 				$where_values = $where["values"];
@@ -1103,7 +1106,7 @@ class API {
 			$sql_compiled = $sql;
 
 			// bind WHERE values
-			if(isset($where_values) && count($where_values) > 0) {
+			if(!empty($where_values) && count($where_values) > 0) {
 				foreach($where_values as $key => $value) {
 					$type         = self::detectPDOType($value);
 					$key          = ':' . $key;
@@ -1167,7 +1170,7 @@ class API {
 		ob_clean();
 		$default_format = Request::method() == 'GET' ? "html" : "json";
 		$data           = $this->hooks->apply_filters('render', $data, $this->query, Request::method());
-		$renderer       = 'render' . ucfirst(strtolower(isset($this->query['format']) ? $this->query['format'] : $default_format));
+		$renderer       = 'render' . ucfirst(strtolower(!empty($this->query['format']) ? $this->query['format'] : $default_format));
 		$this->$renderer($data);
 		die();
 	}
@@ -1579,9 +1582,9 @@ class API {
 		$query     = $this->reformatUpdateQuery($query);
 		$first_col = $this->getFirstColumn($query['table']);
 		// Check id
-		if(isset($query['table']) && !empty($query['table']) && isset($query['id']) && !empty($query['id'])) {
+		if(!empty($query['table']) && !empty($query['id'])) {
 			// Check WHERE
-			if(isset($query['where']) && is_array($query['where'])) {
+			if(!empty($query['where']) && is_array($query['where'])) {
 				foreach($query['where'] as $column => $value) {
 					$column_table = $query['table'];
 					$_split       = explode('.', $column, 2);
@@ -1601,12 +1604,12 @@ class API {
 				$query['update'][$query['table']][$key]['values']            = $query['update'];
 				$query['update'][$query['table']][$key]['where'][$first_col] = $query['id'];
 			}
-		} elseif(!isset($query['update']) && !is_array($query['update']) && count($query['update']) < 1) { // Check values
+		} elseif(empty($query['update']) && !is_array($query['update']) && count($query['update']) < 1) { // Check values
 			Response::error('Invalid values', 400);
 		} else {
 			foreach($query['update'] as $table => $u) {
 				foreach($u as $update) {
-					if(isset($update['where']) && is_array($update['where'])) {
+					if(!empty($update['where']) && is_array($update['where'])) {
 						foreach($update['where'] as $column => $value) {
 							if(!$this->checkColumn($column, $table)) {
 								Response::error('Invalid where condition ' . $column, 404);
@@ -1745,7 +1748,7 @@ class API {
 	private function getCache($key) {
 
 		if(!extension_loaded('apc') || (ini_get('apc.enabled') != 1)) {
-			if(isset($this->cache[$key])) {
+			if(!empty($this->cache[$key])) {
 				return $this->cache[$key];
 			}
 		} else {
@@ -1765,7 +1768,7 @@ class API {
 	private function setCache($key, $value, $ttl = null) {
 
 		if($ttl == null) {
-			$ttl = (isset($this->db->ttl)) ? $this->db->ttl : $this->ttl;
+			$ttl = (!empty($this->db->ttl)) ? $this->db->ttl : $this->ttl;
 		}
 
 		$key = 'api_' . $key;
