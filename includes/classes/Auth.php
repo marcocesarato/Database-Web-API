@@ -37,12 +37,6 @@ class Auth {
 		self::$instance = &$this;
 		$this->logger   = Logger::getInstance();
 		$this->hooks    = Hooks::getInstance();
-		if(defined('__API_AUTH__')) {
-			self::$settings = unserialize(__API_AUTH__);
-			if(!empty(self::$settings['api_table'])) {
-				self::$api_table = preg_replace('/\s+/', '', self::$settings['api_table']);
-			}
-		}
 	}
 
 	/**
@@ -76,20 +70,18 @@ class Auth {
 			$this->table_readonly = $db_settings->table_readonly;
 		}
 
-		if(self::$settings['sqlite']) {
-			$this->db = new PDO('sqlite:' . self::$settings['sqlite_filename'] . '.sqlite');
-		} else {
-			$this->db = &$this->api->connect(self::$settings['api_database']);
-			$this->api->setDatabase(self::$settings['api_database']);
-		}
-
 		$this->query = $query;
 
-		if(empty(self::$settings)) {
+		if(defined('__API_AUTH__')) {
+			self::$settings = unserialize(__API_AUTH__);
+			if(!empty(self::$settings['api_table'])) {
+				self::$api_table = preg_replace('/\s+/', '', self::$settings['api_table']);
+			}
+		} else {
 			return true;
 		}
 
-		if(!$this->api->checkTable(self::$api_table)) {
+		if(!$this->api->tableExists(self::$api_table, self::$settings['api_database'])) {
 			$this->createAPITable(); //create the table
 		} else {
 			$this->checkAPITable();
@@ -129,34 +121,34 @@ class Auth {
 				$where_sql = (!empty($where_sql) ? " ($where_sql) AND " : "") . implode(" OR ", $where);
 			}
 
-			$this->api = API::getInstance();
-			$this->db  = &$this->api->connect(self::$settings['users']['database']);
+			$this->api      = API::getInstance();
+			$this->users_db = $this->getUsersDatabase();
 
-			$sth = $this->db->prepare("SELECT * FROM $users_table WHERE $where_sql");
+			$sth = $this->users_db->prepare("SELECT * FROM $users_table WHERE $where_sql");
 			foreach($bind_values as $col => $value) {
 				$sth->bindParam(":$col", $value);
 			}
 
 			$sth->execute();
+
 			$user_row = $sth->fetch();
 
 			$is_valid = $this->hooks->apply_filters('auth_validate_token', !empty($user_row), $user_row);
 
 			if($is_valid) {
-				$password = strtolower($query['password']);
+				$password = $query['password'];
 				if($user_row[$users_columns['password']] == $password) {
 					$token          = $this->generateToken($user_row[$users_columns['id']], $user_row[$users_columns['username']]);
 					$this->user_id  = $user_row[$users_columns['id']];
 					$this->is_admin = !empty($users_columns['admin']) ? $user_row[key(reset($users_columns['admin']))] : false;
 					// Render
-					$results  = array(
+					$results = array(
 						(object) array(
 							"token" => $token,
 						),
 					);
-					$results  = $this->hooks->apply_filters('auth_login', $results);
-					$renderer = 'render_' . $query['format'];
-					die($this->api->$renderer($results, $query));
+					$results = $this->hooks->apply_filters('auth_login', $results);
+					die($this->api->render($results));
 				}
 			}
 			Response::error("Invalid authentication!", 401);
@@ -165,6 +157,26 @@ class Auth {
 		Response::error("Forbidden!", 403);
 
 		return false;
+	}
+
+	/**
+	 * Get API Database
+	 * @return PDO
+	 */
+	public function getAPIDatabase() {
+		if(self::$settings['sqlite']) {
+			return new PDO('sqlite:' . self::$settings['sqlite_filename'] . '.sqlite');
+		}
+
+		return $this->api->connect(self::$settings['api_database']);
+	}
+
+	/**
+	 * Get Users database
+	 * @return mixed
+	 */
+	public function getUsersDatabase() {
+		return $this->api->connect(self::$settings['users']['database']);
 	}
 
 	/**
@@ -191,6 +203,7 @@ class Auth {
 	 * Check database table
 	 */
 	private function checkAPITable() {
+		$this->db = $this->getAPIDatabase();
 		try {
 			$date = date("Y-m-d H:i:s", strtotime('-1 month'));
 			$this->db->exec("DELETE FROM " . self::$api_table . " WHERE last_access != date_created AND last_access < '" . $date . "'");
@@ -213,6 +226,8 @@ class Auth {
 		$users_table   = self::$settings['users']['table'];
 		$users_columns = self::$settings['users']['columns'];
 
+		$this->db = $this->getAPIDatabase();
+
 		try {
 			$sth = $this->db->prepare("SELECT * FROM " . self::$api_table . " WHERE token = :token");
 			$sth->bindParam(':token', $token);
@@ -225,7 +240,7 @@ class Auth {
 			$auth_bypass = $this->hooks->apply_filters('auth_bypass', $auth_bypass);
 
 			// Bypass
-			if(!$exists && $auth_bypass && !isset($this->query['force_validation'])) {
+			if(!$exists && $auth_bypass && empty($this->query['force_validation'])) {
 				$exists               = true;
 				$token_row            = array();
 				$token_row['user_id'] = '1';
@@ -234,9 +249,9 @@ class Auth {
 
 			if($exists) {
 
-				$this->api = API::getInstance();
-				$this->db  = &$this->api->connect(self::$settings['api_database']);
-				$sth       = $this->db->prepare("SELECT * FROM $users_table WHERE " . $users_columns['id'] . " = :user_id");
+				$this->api      = API::getInstance();
+				$this->users_db = $this->getUsersDatabase();
+				$sth            = $this->users_db->prepare("SELECT * FROM $users_table WHERE " . $users_columns['id'] . " = :user_id");
 				$sth->bindParam(':user_id', $token_row['user_id']);
 
 				$sth->execute();
@@ -244,6 +259,7 @@ class Auth {
 
 				if(!empty($user_row)) {
 
+					$this->db    = $this->getAPIDatabase();
 					$sth         = $this->db->prepare("UPDATE " . self::$api_table . " SET last_access = :last_access, counter = :counter WHERE token = :token");
 					$last_access = date('Y-m-d H:i:s');
 					$counter     = $this->needIncrementCounter() ? intval($token_row['counter']) + 1 : intval($token_row['counter']);
@@ -252,8 +268,8 @@ class Auth {
 					$sth->bindParam(':token', $token);
 					$sth->execute();
 
-					$this->user          = $user_row;
-					$this->user_id       = $user_row['id'];
+					$this->user    = $user_row;
+					$this->user_id = $user_row['id'];
 					if(!empty($users_columns['admin'])) {
 						$this->is_admin = (($user_row[key($users_columns['admin'])] == reset($users_columns['admin'])) ? true : false);
 					}
@@ -276,6 +292,7 @@ class Auth {
 	 * Check counter
 	 */
 	private function checkCounter() {
+		$this->db = $this->getAPIDatabase();
 		try {
 			$sth = $this->db->prepare("SELECT user_id, user_name, SUM(counter) as counter FROM " . self::$api_table . " GROUP BY user_id, user_name");
 			$sth->execute();
@@ -314,6 +331,7 @@ class Auth {
 	 * @return null|string
 	 */
 	public function generateToken($user_id, $user_name) {
+		$this->db = $this->getAPIDatabase();
 		try {
 			$token = md5(uniqid(rand(), true));
 			$sth   = $this->db->prepare("INSERT INTO " . self::$api_table . " (token,user_id,user_name,user_agent) VALUES (:token,:user_id,:user_name,:user_agent)");

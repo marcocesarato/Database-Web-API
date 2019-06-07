@@ -1215,11 +1215,10 @@ class API {
 	 * @param $data
 	 */
 	public function renderHtml($data) {
-		require_once(__API_ROOT__ . '/includes/template/header.php');
+		include(__API_ROOT__ . '/includes/template/header.php');
 		//err out if no results
 		if(empty($data)) {
 			Response::error('No results found', 404);
-
 			return;
 		}
 		//render readable array data serialized
@@ -1255,7 +1254,7 @@ class API {
 			echo "</tr>";
 		}
 		echo "</table>";
-		require_once(__API_ROOT__ . '/includes/template/footer.php');
+		include(__API_ROOT__ . '/includes/template/footer.php');
 		die();
 	}
 
@@ -1284,8 +1283,10 @@ class API {
 	 */
 	public function checkTable($query_table, $db = null) {
 
-		if(empty($db)) {
-			$db = $this->getDatabase($this->query['db']);
+		if(!empty($db)) {
+			$db = $this->getDatabase($db);
+		} else {
+			$db = $this->getDatabase();
 		}
 
 		if($this->auth->authenticated && (!$this->auth->is_admin)) {
@@ -1312,7 +1313,7 @@ class API {
 	 * @param string $db          the database to check
 	 * @return bool true if table exists, otherwise false
 	 */
-	private function tableExists($query_table, $db = null) {
+	public function tableExists($query_table, $db = null) {
 		$tables = $this->getTables($db);
 
 		return in_array($query_table, $tables);
@@ -1361,8 +1362,10 @@ class API {
 	 */
 	public function checkColumn($column, $table, $db = null) {
 
-		if(empty($db)) {
-			$db = $this->getDatabase($this->query['db']);
+		if(!empty($db)) {
+			$db = $this->getDatabase($db);
+		} else {
+			$db = $this->getDatabase();
 		}
 
 		if(!$this->auth->is_admin || Request::method() == 'PUT') {
