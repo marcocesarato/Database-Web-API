@@ -624,7 +624,7 @@ class API {
 						$join_sql .= "{$join_value_table}.{$join_value_column}";
 					}
 				}
-				if($query['prefix'] && count($select_tables) > 1) {
+				if(!empty($query['prefix']) && count($select_tables) > 1) {
 					$prefix_columns = array();
 					foreach($select_tables as $table) {
 						$columns = $this->getColumns($table, $db);
@@ -639,7 +639,7 @@ class API {
 			}
 
 			// Prefix table before column
-			if($query['prefix']) {
+			if(!empty($query['prefix'])) {
 				$prefix_columns = array();
 				foreach($select_tables as $table) {
 					$columns = $this->getColumns($table, $db);
@@ -665,7 +665,7 @@ class API {
 			}
 
 			// build ORDER query
-			if(isset($query['order_by']) && !empty($query['order_by'])) {
+			if(!empty($query['order_by'])) {
 
 				$order_by = $query['order_by'];
 				if(!is_array($order_by)) {
@@ -764,7 +764,7 @@ class API {
 			}
 
 			// build LIMIT query
-			if(is_numeric($query['limit'])) {
+			if(!empty($query['limit']) && is_numeric($query['limit'])) {
 				$sql .= " LIMIT " . (int) $query['limit'];
 			}
 
@@ -801,7 +801,7 @@ class API {
 			// Sanitize encoding
 			$results = $this->sanitizeResults($results);
 
-			if($query['unique']) {
+			if(!empty($query['unique'])) {
 				$results = array_unique($results, SORT_REGULAR);
 				$results = array_filter($results);
 			}
@@ -1164,6 +1164,7 @@ class API {
 	 * @param $data
 	 */
 	public function render($data) {
+		ob_clean();
 		$default_format = Request::method() == 'GET' ? "html" : "json";
 		$data           = $this->hooks->apply_filters('render', $data, $this->query, Request::method());
 		$renderer       = 'render' . ucfirst(strtolower(isset($this->query['format']) ? $this->query['format'] : $default_format));
