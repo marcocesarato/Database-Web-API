@@ -132,6 +132,7 @@ class API {
 			'insert'    => null,
 			'update'    => null,
 			'limit'     => null,
+			'offset'    => null,
 			'format'    => null,
 			'callback'  => null,
 			'where'     => null,
@@ -767,7 +768,10 @@ class API {
 
 			// build LIMIT query
 			if(!empty($query['limit']) && is_numeric($query['limit'])) {
-				$sql .= " LIMIT " . (int) $query['limit'];
+				$sql .= " LIMIT " . intval($query['limit']);
+				if(!empty($query['offset']) && is_numeric($query['offset'])) {
+					$sql .= " OFFSET " . intval($query['offset']);
+				}
 			}
 
 			$sql_compiled = $sql;
