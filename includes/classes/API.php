@@ -660,11 +660,12 @@ class API {
 			// build WHERE query
 			$restriction = $this->auth->permissionSQL($query['table'], 'READ');
 			if(!empty($query['where']) && is_array($query['where'])) {
-				$where        = $this->parseWhere($query['table'], $query['where'], $sql);
-				$sql          = $where["sql"] . ' AND ' . $restriction;
-				$where_values = $where["values"];
+				$query['where'] = $this->hooks->apply_filters('get_query_where_' . strtolower($query['table']), $query['where']);
+				$where          = $this->parseWhere($query['table'], $query['where'], $sql);
+				$sql            = $where["sql"] . ' AND ' . $restriction;
+				$where_values   = $where["values"];
 			} else if(!empty($restriction)) {
-				$sql .= ' WHERE ' . $restriction;
+				$sql .= ' WHERE ' . $restriction . $this->hooks->apply_filters('get_where_' . strtolower($query['table']), "");
 			}
 
 			// build ORDER query
