@@ -1,25 +1,24 @@
 <?php
 /**
- * Hooks - Loader
- * @package    Database Web API
+ * Hooks - Loader.
+ *
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  */
-
 use marcocesarato\DatabaseAPI\Hooks;
 
-require_once(__API_DIR_PLUGINS__ . '/functions.php');
-require_once(__API_DIR_PLUGINS__ . '/filters.php');
-require_once(__API_DIR_PLUGINS__ . '/actions.php');
+require_once __API_DIR_PLUGINS__ . '/functions.php';
+require_once __API_DIR_PLUGINS__ . '/filters.php';
+require_once __API_DIR_PLUGINS__ . '/actions.php';
 
 $hooks = Hooks::getInstance();
 
 // Include plugins
-$dir     = new RecursiveDirectoryIterator(__API_DIR_PLUGINS__);
-$ite     = new RecursiveIteratorIterator($dir);
+$dir = new RecursiveDirectoryIterator(__API_DIR_PLUGINS__);
+$ite = new RecursiveIteratorIterator($dir);
 $pattern = '/^.+\/([^\/]+)\/([^\/]+)\.hooks\.php$/';
-$files   = new RegexIterator($ite, $pattern, RegexIterator::GET_MATCH);
-foreach($files as $file) {
-	include_once($file[0]);
+$files = new RegexIterator($ite, $pattern, RegexIterator::GET_MATCH);
+foreach ($files as $file) {
+    include_once $file[0];
 }
 
 // Register loaders

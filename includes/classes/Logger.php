@@ -3,158 +3,180 @@
 namespace marcocesarato\DatabaseAPI;
 
 /**
- * Logger Class
- * @package    Database Web API
+ * Logger Class.
+ *
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
- * @link       https://github.com/marcocesarato/Database-Web-API
+ *
+ * @see       https://github.com/marcocesarato/Database-Web-API
  */
-class Logger {
+class Logger
+{
+    public static $instance;
+    protected $log_file;
+    protected $log_dir;
+    protected $log_path;
+    protected $file;
+    protected $options = array(
+        'dateFormat' => 'd-M-Y H:i:s',
+    );
 
-	public static $instance;
-	protected $log_file;
-	protected $log_dir;
-	protected $log_path;
-	protected $file;
-	protected $options = array(
-		'dateFormat' => 'd-M-Y H:i:s',
-	);
+    /**
+     * Singleton class constructor.
+     */
+    public function __construct()
+    {
+        self::$instance = &$this;
+    }
 
-	/**
-	 * Singleton class constructor
-	 */
-	public function __construct() {
-		self::$instance = &$this;
-	}
+    /**
+     * Returns static reference to the class instance.
+     */
+    public static function &getInstance()
+    {
+        return self::$instance;
+    }
 
-	/**
-	 * Returns static reference to the class instance
-	 */
-	public static function &getInstance() {
-		return self::$instance;
-	}
+    /**
+     * Setup.
+     *
+     * @param string $log_file - path and filename of log
+     * @param array  $params
+     */
+    public function setLog($log_dir, $log_file = 'logs.log', $params = array())
+    {
+        $this->log_dir = $log_dir;
+        $this->log_file = $log_file;
+        $this->log_path = preg_replace('/\\\\/', '\\', $log_dir . '/' . $log_file);
+        $this->params = array_merge($this->options, $params);
 
-	/**
-	 * Setup
-	 * @param string $log_file - path and filename of log
-	 * @param array  $params
-	 */
-	public function setLog($log_dir, $log_file = 'logs.log', $params = array()) {
-		$this->log_dir  = $log_dir;
-		$this->log_file = $log_file;
-		$this->log_path = preg_replace('/\\\\/', '\\', $log_dir . "/" . $log_file);
-		$this->params   = array_merge($this->options, $params);
+        //Create log file if it doesn't exist.
+        if (!file_exists($this->log_path)) {
+            if (!file_exists(dirname($this->log_path))) {
+                mkdir(dirname($this->log_path), 0775, true);
+            }
+            @fopen($this->log_path, 'w'); //or exit("Can't create $log_file!");
+        }
+        //Check permissions of file.
+        if (!is_writable($this->log_path)) {
+            //throw exception if not writable
+            //throw new Exception("ERROR: Unable to write to file!", 1);
+        }
+    }
 
-		//Create log file if it doesn't exist.
-		if(!file_exists($this->log_path)) {
-			if(!file_exists(dirname($this->log_path))) {
-				mkdir(dirname($this->log_path), 0775, true);
-			}
-			@fopen($this->log_path, 'w'); //or exit("Can't create $log_file!");
-		}
-		//Check permissions of file.
-		if(!is_writable($this->log_path)) {
-			//throw exception if not writable
-			//throw new Exception("ERROR: Unable to write to file!", 1);
-		}
-	}
+    /**
+     * Info method (write info message).
+     *
+     * @param mixed $message
+     *
+     * @return void
+     */
+    public function info($message)
+    {
+        $this->writeLog($message, 'INFO');
+    }
 
-	/**
-	 * Info method (write info message)
-	 * @param mixed $message
-	 * @return void
-	 */
-	public function info($message) {
-		$this->writeLog($message, 'INFO');
-	}
+    /**
+     * Write to log file.
+     *
+     * @param mixed  $message
+     * @param string $severity
+     *
+     * @return void
+     */
+    public function writeLog($message, $severity)
+    {
+        // open log file
+        if (!is_resource($this->file)) {
+            $this->openLog();
+        }
 
-	/**
-	 * Write to log file
-	 * @param mixed  $message
-	 * @param string $severity
-	 * @return void
-	 */
-	public function writeLog($message, $severity) {
+        // Encode to JSON if is not a string
+        if (!is_string($message)) {
+            $message = json_encode($message);
+        }
 
-		// open log file
-		if(!is_resource($this->file)) {
-			$this->openLog();
-		}
+        // Remove new lines
+        $message = trim(preg_replace('/\s+/', ' ', $message));
 
-		// Encode to JSON if is not a string
-		if(!is_string($message)) {
-			$message = json_encode($message);
-		}
+        $token = Request::getToken();
 
-		// Remove new lines
-		$message = trim(preg_replace('/\s+/', ' ', $message));
+        // Request method
+        $method = Request::method();
+        // Grab the url path ( for troubleshooting )
+        $path = $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'];
+        // Grab time - based on timezone in php.ini
+        $time = date($this->params['dateFormat']);
 
-		$token = Request::getToken();
+        $ip = Request::getIPAddress();
 
-		// Request method
-		$method = Request::method();
-		// Grab the url path ( for troubleshooting )
-		$path = $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
-		// Grab time - based on timezone in php.ini
-		$time = date($this->params['dateFormat']);
+        $path = str_replace($token . '/', '', $path);
 
-		$ip = Request::getIPAddress();
+        // Write time, url, & message to end of file
+        @fwrite($this->file, "[$time] [$severity] [method $method] [url $path] [token $token] [client $ip]: $message" . PHP_EOL);
+    }
 
-		$path = str_replace($token."/" , "", $path);
+    /**
+     * Open log file.
+     *
+     * @return void
+     */
+    private function openLog()
+    {
+        $openFile = $this->log_dir . '/' . $this->log_file;
+        if (!file_exists(dirname($openFile))) {
+            mkdir(dirname($openFile), 0775, true);
+        }
+        // 'a' option = place pointer at end of file
+        $this->file = @fopen($openFile, 'a'); // or exit("Can't open $openFile!");
+    }
 
-		// Write time, url, & message to end of file
-		@fwrite($this->file, "[$time] [$severity] [method $method] [url $path] [token $token] [client $ip]: $message" . PHP_EOL);
-	}
+    /**
+     * Debug method (write debug message).
+     *
+     * @param mixed $message
+     *
+     * @return void
+     */
+    public function debug($message)
+    {
+        $this->writeLog($message, 'DEBUG');
+    }
 
-	/**
-	 * Open log file
-	 * @return void
-	 */
-	private function openLog() {
-		$openFile = $this->log_dir . "/" . $this->log_file;
-		if(!file_exists(dirname($openFile))) {
-			mkdir(dirname($openFile), 0775, true);
-		}
-		// 'a' option = place pointer at end of file
-		$this->file = @fopen($openFile, 'a'); // or exit("Can't open $openFile!");
-	}
+    /**
+     * Warning method (write warning message).
+     *
+     * @param mixed $message
+     *
+     * @return void
+     */
+    public function warning($message)
+    {
+        $this->writeLog($message, 'WARNING');
+    }
 
-	/**
-	 * Debug method (write debug message)
-	 * @param mixed $message
-	 * @return void
-	 */
-	public function debug($message) {
-		$this->writeLog($message, 'DEBUG');
-	}
+    /**
+     * Error method (write error message).
+     *
+     * @param mixed $message
+     *
+     * @return void
+     */
+    public function error($message)
+    {
+        $this->writeLog($message, 'ERROR');
+    }
 
-	/**
-	 * Warning method (write warning message)
-	 * @param mixed $message
-	 * @return void
-	 */
-	public function warning($message) {
-		$this->writeLog($message, 'WARNING');
-	}
-
-	/**
-	 * Error method (write error message)
-	 * @param mixed $message
-	 * @return void
-	 */
-	public function error($message) {
-		$this->writeLog($message, 'ERROR');
-	}
-
-	/**
-	 * Class destructor
-	 */
-	public function __destruct() {
-		if($this->file) {
-			@fclose($this->file);
-		}
-	}
+    /**
+     * Class destructor.
+     */
+    public function __destruct()
+    {
+        if ($this->file) {
+            @fclose($this->file);
+        }
+    }
 }
 
 $LOGGER = new Logger();

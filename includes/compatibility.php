@@ -1,189 +1,188 @@
 <?php
 /**
- * Compatibility
- * @package    Database Web API
+ * Compatibility.
+ *
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
- * @link       https://github.com/marcocesarato/Database-Web-API
+ *
+ * @see       https://github.com/marcocesarato/Database-Web-API
  */
-
-if(!class_exists('PDO')) {
-	require_once(__API_DIR_CLASSES__ . '/PDO/PDO.php');
+if (!class_exists('PDO')) {
+    require_once __API_DIR_CLASSES__ . '/PDO/PDO.php';
 }
 
-if(!function_exists('http_response_code')) {
+if (!function_exists('http_response_code')) {
+    /**
+     * Http response code.
+     *
+     * @param null $code
+     *
+     * @return int|mixed|null
+     */
+    function http_response_code($code = null)
+    {
+        if ($code !== null) {
+            switch ($code) {
+                case 100:
+                    $text = 'Continue';
+                    break;
+                case 101:
+                    $text = 'Switching Protocols';
+                    break;
+                case 200:
+                    $text = 'OK';
+                    break;
+                case 201:
+                    $text = 'Created';
+                    break;
+                case 202:
+                    $text = 'Accepted';
+                    break;
+                case 203:
+                    $text = 'Non-Authoritative Information';
+                    break;
+                case 204:
+                    $text = 'No Content';
+                    break;
+                case 205:
+                    $text = 'Reset Content';
+                    break;
+                case 206:
+                    $text = 'Partial Content';
+                    break;
+                case 300:
+                    $text = 'Multiple Choices';
+                    break;
+                case 301:
+                    $text = 'Moved Permanently';
+                    break;
+                case 302:
+                    $text = 'Moved Temporarily';
+                    break;
+                case 303:
+                    $text = 'See Other';
+                    break;
+                case 304:
+                    $text = 'Not Modified';
+                    break;
+                case 305:
+                    $text = 'Use Proxy';
+                    break;
+                case 400:
+                    $text = 'Bad Request';
+                    break;
+                case 401:
+                    $text = 'Unauthorized';
+                    break;
+                case 402:
+                    $text = 'Payment Required';
+                    break;
+                case 403:
+                    $text = 'Forbidden';
+                    break;
+                case 404:
+                    $text = 'Not Found';
+                    break;
+                case 405:
+                    $text = 'Method Not Allowed';
+                    break;
+                case 406:
+                    $text = 'Not Acceptable';
+                    break;
+                case 407:
+                    $text = 'Proxy Authentication Required';
+                    break;
+                case 408:
+                    $text = 'Request Time-out';
+                    break;
+                case 409:
+                    $text = 'Conflict';
+                    break;
+                case 410:
+                    $text = 'Gone';
+                    break;
+                case 411:
+                    $text = 'Length Required';
+                    break;
+                case 412:
+                    $text = 'Precondition Failed';
+                    break;
+                case 413:
+                    $text = 'Request Entity Too Large';
+                    break;
+                case 414:
+                    $text = 'Request-URI Too Large';
+                    break;
+                case 415:
+                    $text = 'Unsupported Media Type';
+                    break;
+                case 500:
+                    $text = 'Internal Server Error';
+                    break;
+                case 501:
+                    $text = 'Not Implemented';
+                    break;
+                case 502:
+                    $text = 'Bad Gateway';
+                    break;
+                case 503:
+                    $text = 'Service Unavailable';
+                    break;
+                case 504:
+                    $text = 'Gateway Time-out';
+                    break;
+                case 505:
+                    $text = 'HTTP Version not supported';
+                    break;
+                default:
+                    exit('Unknown http status code "' . htmlentities($code) . '"');
+                    break;
+            }
 
-	/**
-	 * Http response code
-	 * @param null $code
-	 * @return int|mixed|null
-	 */
-	function http_response_code($code = null) {
+            $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
 
-		if($code !== null) {
+            header($protocol . ' ' . $code . ' ' . $text);
 
-			switch($code) {
-				case 100:
-					$text = 'Continue';
-					break;
-				case 101:
-					$text = 'Switching Protocols';
-					break;
-				case 200:
-					$text = 'OK';
-					break;
-				case 201:
-					$text = 'Created';
-					break;
-				case 202:
-					$text = 'Accepted';
-					break;
-				case 203:
-					$text = 'Non-Authoritative Information';
-					break;
-				case 204:
-					$text = 'No Content';
-					break;
-				case 205:
-					$text = 'Reset Content';
-					break;
-				case 206:
-					$text = 'Partial Content';
-					break;
-				case 300:
-					$text = 'Multiple Choices';
-					break;
-				case 301:
-					$text = 'Moved Permanently';
-					break;
-				case 302:
-					$text = 'Moved Temporarily';
-					break;
-				case 303:
-					$text = 'See Other';
-					break;
-				case 304:
-					$text = 'Not Modified';
-					break;
-				case 305:
-					$text = 'Use Proxy';
-					break;
-				case 400:
-					$text = 'Bad Request';
-					break;
-				case 401:
-					$text = 'Unauthorized';
-					break;
-				case 402:
-					$text = 'Payment Required';
-					break;
-				case 403:
-					$text = 'Forbidden';
-					break;
-				case 404:
-					$text = 'Not Found';
-					break;
-				case 405:
-					$text = 'Method Not Allowed';
-					break;
-				case 406:
-					$text = 'Not Acceptable';
-					break;
-				case 407:
-					$text = 'Proxy Authentication Required';
-					break;
-				case 408:
-					$text = 'Request Time-out';
-					break;
-				case 409:
-					$text = 'Conflict';
-					break;
-				case 410:
-					$text = 'Gone';
-					break;
-				case 411:
-					$text = 'Length Required';
-					break;
-				case 412:
-					$text = 'Precondition Failed';
-					break;
-				case 413:
-					$text = 'Request Entity Too Large';
-					break;
-				case 414:
-					$text = 'Request-URI Too Large';
-					break;
-				case 415:
-					$text = 'Unsupported Media Type';
-					break;
-				case 500:
-					$text = 'Internal Server Error';
-					break;
-				case 501:
-					$text = 'Not Implemented';
-					break;
-				case 502:
-					$text = 'Bad Gateway';
-					break;
-				case 503:
-					$text = 'Service Unavailable';
-					break;
-				case 504:
-					$text = 'Gateway Time-out';
-					break;
-				case 505:
-					$text = 'HTTP Version not supported';
-					break;
-				default:
-					exit('Unknown http status code "' . htmlentities($code) . '"');
-					break;
-			}
+            $GLOBALS['http_response_code'] = $code;
+        } else {
+            $code = (isset($GLOBALS['http_response_code']) ? $GLOBALS['http_response_code'] : 200);
+        }
 
-			$protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
-
-			header($protocol . ' ' . $code . ' ' . $text);
-
-			$GLOBALS['http_response_code'] = $code;
-
-		} else {
-
-			$code = (isset($GLOBALS['http_response_code']) ? $GLOBALS['http_response_code'] : 200);
-
-		}
-
-		return $code;
-
-	}
+        return $code;
+    }
 }
 
-if(!function_exists('shortcode_atts')) {
+if (!function_exists('shortcode_atts')) {
+    /**
+     * Combine user attributes with known attributes and fill in defaults when needed.
+     * The pairs should be considered to be all of the attributes which are
+     * supported by the caller and given as a list. The returned attributes will
+     * only contain the attributes in the $pairs list.
+     * If the $atts list has unsupported attributes, then they will be ignored and
+     * removed from the final returned list.
+     *
+     * @from  Wordpress
+     *
+     * @param array $pairs entire list of supported attributes and their defaults
+     * @param array $atts  user defined attributes in shortcode tag
+     *
+     * @return array combined and filtered attribute list
+     *
+     * @since 2.5
+     */
+    function shortcode_atts($pairs, $atts)
+    {
+        $atts = (array)$atts;
+        $out = array();
+        foreach ($pairs as $name => $default) {
+            if (array_key_exists($name, $atts)) {
+                $out[$name] = $atts[$name];
+            } else {
+                $out[$name] = $default;
+            }
+        }
 
-	/**
-	 * Combine user attributes with known attributes and fill in defaults when needed.
-	 * The pairs should be considered to be all of the attributes which are
-	 * supported by the caller and given as a list. The returned attributes will
-	 * only contain the attributes in the $pairs list.
-	 * If the $atts list has unsupported attributes, then they will be ignored and
-	 * removed from the final returned list.
-	 * @from  Wordpress
-	 * @param array $pairs Entire list of supported attributes and their defaults.
-	 * @param array $atts  User defined attributes in shortcode tag.
-	 * @return array Combined and filtered attribute list.
-	 * @since 2.5
-	 */
-	function shortcode_atts($pairs, $atts) {
-		$atts = (array) $atts;
-		$out  = array();
-		foreach($pairs as $name => $default) {
-			if(array_key_exists($name, $atts)) {
-				$out[$name] = $atts[$name];
-			} else {
-				$out[$name] = $default;
-			}
-		}
-
-		return $out;
-	}
-
+        return $out;
+    }
 }

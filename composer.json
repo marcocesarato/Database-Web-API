@@ -1,5 +1,5 @@
 {
-  "name": "marcocesarato/DatabaseAPI",
+  "name": "marcocesarato/database-api",
   "description": "Dynamically generate RESTful APIs from the contents of a database table. Provides JSON, XML, and HTML. Supports most popular databases",
   "license": "GPL-3.0-or-later",
   "type": "project",
@@ -10,14 +10,38 @@
       "email": "cesarato.developer@gmail.com"
     }
   ],
+  "scripts": {
+    "post-install-cmd": "vendor/bin/cghooks add --ignore-lock",
+    "post-update-cmd": "vendor/bin/cghooks update",
+    "fix-cs": "vendor/bin/php-cs-fixer fix --config=.cs.php",
+    "check-cs": "vendor/bin/php-cs-fixer fix --dry-run --format=txt --verbose --diff --diff-format=udiff --config=.cs.php"
+  },
   "require": {
     "php": ">=5.3.0",
     "ext-simplexml": "*",
     "ext-dom": "*",
     "ext-json": "*",
     "ext-pdo": "*",
-    "ext-apc": "*",
     "ext-iconv": "*",
     "ext-curl": "*"
+  },
+  "require-dev": {
+    "brainmaestro/composer-git-hooks": "^2.8",
+    "friendsofphp/php-cs-fixer": "^2.15"
+  },
+  "config": {
+    "process-timeout": 0,
+    "sort-packages": true
+  },
+  "extra": {
+    "hooks": {
+      "pre-commit": [
+        "vendor/bin/php-cs-fixer fix --config=.cs.php"
+      ],
+      "pre-push": [
+        "vendor/bin/php-cs-fixer fix --dry-run --format=txt --verbose --diff --diff-format=udiff --config=.cs.php"
+      ],
+      "post-merge": "composer install"
+    }
   }
 }

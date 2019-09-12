@@ -1,16 +1,16 @@
 <?php
 /**
- * Config
- * @package    Database Web API
+ * Config.
+ *
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
  * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
- * @link       https://github.com/marcocesarato/Database-Web-API
+ *
+ * @see       https://github.com/marcocesarato/Database-Web-API
  */
+require_once __API_ROOT__ . '/docs.php';
 
-require_once(__API_ROOT__ . '/docs.php');
-
-define("__API_NAME__", "Database Web API"); // API Name
+define('__API_NAME__', 'Database Web API'); // API Name
 
 $users_table = 'users'; // Table where users are stored
 
@@ -34,23 +34,22 @@ $users_table = 'users'; // Table where users are stored
     ),
 )));*/
 
-
 // Datasets (list of database to connect)
-define("__API_DATASETS__", serialize(array(
-	'dataset' => array(
-		'name'             => 'database_name',
-		'username'         => 'root', // root is default
-		'password'         => 'root', // root is default
-		'server'           => 'localhost',  // localhost default
-		'port'             => 3306, // 3306 is default
-		'ttl'              => 1, // Cache time to live. Disable cache (1 second only)
-		'type'             => 'mysql', // mysql is default
-		'table_docs'       => $docs['dataset'],
-		'table_list'       => array(), // Tables's whitelist (Allow only the tables in this list, if empty allow all)
-		'table_blacklist'  => array(/*blacklist users table*/
-			$users_table,
-		), // Tables's blacklist
-		'column_list'      => array(), // Columns's whitelist (Allow only the columns in this list, if empty allow all)
-		'column_blacklist' => array(), // Columns's blacklist
-	),
+define('__API_DATASETS__', serialize(array(
+    'dataset' => array(
+        'name' => 'database_name',
+        'username' => 'root', // root is default
+        'password' => 'root', // root is default
+        'server' => 'localhost',  // localhost default
+        'port' => 3306, // 3306 is default
+        'ttl' => 1, // Cache time to live. Disable cache (1 second only)
+        'type' => 'mysql', // mysql is default
+        'table_docs' => $docs['dataset'],
+        'table_list' => array(), // Tables's whitelist (Allow only the tables in this list, if empty allow all)
+        'table_blacklist' => array(/*blacklist users table*/
+            $users_table,
+        ), // Tables's blacklist
+        'column_list' => array(), // Columns's whitelist (Allow only the columns in this list, if empty allow all)
+        'column_blacklist' => array(), // Columns's blacklist
+    ),
 )));
