@@ -2,7 +2,8 @@
   "name": "marcocesarato/DatabaseAPI",
   "description": "Dynamically generate RESTful APIs from the contents of a database table. Provides JSON, XML, and HTML. Supports most popular databases",
   "license": "GPL-3.0-or-later",
-  "minimum-stability": "dev",
+  "type": "project",
+  "minimum-stability": "stable",
   "authors": [
     {
       "name": "Marco Cesarato",
