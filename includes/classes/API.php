@@ -67,7 +67,7 @@ class API
      *
      * @param null $db
      *
-     * @return object
+     * @return \PDO
      */
     public static function getConnection($db = null)
     {
@@ -307,7 +307,9 @@ class API
      *
      * @param string $db the database slug
      *
-     * @return object the PDO object
+     * @return \PDO
+     *
+     * @todo support port #s and test on each database
      */
     public function &connect($db = null)
     {
@@ -420,7 +422,7 @@ class API
     {
         $final_result = array();
 
-        $key = md5(json_encode($query) . $this->getDatabase($db)->name . '_docs');
+        $key = crc32(json_encode($query) . $this->getDatabase($db)->name . '_docs');
 
         if ($cache = $this->getCache($key)) {
             return $cache;
@@ -520,7 +522,7 @@ class API
      */
     private function get($query, $db = null)
     {
-        $key = md5(json_encode($query) . $this->getDatabase($db)->name);
+        $key = crc32(json_encode($query) . $this->getDatabase($db)->name);
 
         if ($cache = $this->getCache($key)) {
             return $cache;
@@ -655,6 +657,7 @@ class API
                         $select_columns = implode(', ', $standard_columns);
                     }
                 }
+                // Prefix table before column
             } elseif (!empty($query['prefix'])) {
                 $prefix_columns = array();
                 foreach ($select_tables as $table) {
@@ -678,7 +681,7 @@ class API
                 $sql = $where['sql'] . ' AND ' . $restriction;
                 $where_values = $where['values'];
             } elseif (!empty($restriction)) {
-                $sql .= ' WHERE ' . $restriction . $this->hooks->apply_filters('get_where_' . strtolower($query['table']), '');
+                $sql .= ' WHERE ' . $restriction . $this->hooks->apply_filters('get_where_' . strtolower($query['table']), '', $table);
             }
 
             // build ORDER query
@@ -796,7 +799,7 @@ class API
                 foreach ($where_values as $key => $value) {
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
-                    $sql_compiled = preg_replace('/(' . preg_quote($key) . ")([,]|\s|$|\))/i", "'" . $value . "'$2", $sql_compiled);
+                    $sql_compiled = preg_replace('/(' . preg_quote($key, '/') . ")([,]|\s|$|\))/i", "'" . $value . "'$2", $sql_compiled);
                     $sth->bindValue($key, $value, $type);
                 }
             }
@@ -806,7 +809,7 @@ class API
                 foreach ($join_values as $key => $value) {
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
-                    $sql_compiled = preg_replace('/(' . preg_quote($key) . ")([,]|\s|$|\))/i", "'" . $value . "'$2", $sql_compiled);
+                    $sql_compiled = preg_replace('/(' . preg_quote($key, '/') . ")([,]|\s|$|\))/i", "'" . $value . "'$2", $sql_compiled);
                     $sth->bindValue($key, $value, $type);
                 }
             }
@@ -849,7 +852,7 @@ class API
         $dbh = &$this->connect($db);
 
         // check values
-        if (!empty($query['insert']) && !is_array($query['insert']) || count($query['insert']) < 1) {
+        if ((!empty($query['insert']) && !is_array($query['insert'])) || count($query['insert']) < 1) {
             Response::error('Invalid insert values', 400);
         }
 
@@ -1050,6 +1053,9 @@ class API
                         if (is_array($value)) {
                             $value = serialize($value);
                         }
+                        if (is_string($value) && strtolower($value) == 'null') {
+                            $value = null;
+                        }
                         $key = ':' . $key;
                         $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
                         if (empty($value)) {
@@ -1161,6 +1167,9 @@ class API
             foreach ($columns as $column => $value) {
                 if (is_array($value)) {
                     $value = serialize($value);
+                }
+                if (is_string($value) && strtolower($value) == 'null') {
+                    $value = null;
                 }
                 $column = ':' . $column;
                 $sth->bindValue($column, $value);
@@ -1355,7 +1364,7 @@ class API
      */
     public function getTables($db = null)
     {
-        $key = md5($this->getDatabase($db)->name . '_tables');
+        $key = crc32($this->getDatabase($db)->name . '_tables');
 
         if ($cache = $this->getCache($key)) {
             return $cache;
@@ -1446,7 +1455,7 @@ class API
             return false;
         }
 
-        $key = md5($this->getDatabase($db)->name . '.' . $table . '_columns');
+        $key = crc32($this->getDatabase($db)->name . '.' . $table . '_columns');
 
         if ($cache = $this->getCache($key)) {
             return $cache;
@@ -1593,7 +1602,19 @@ class API
                                 $where_sql[] = "{$table}.{$column} NOT IN (" . implode(', ', $where_not_in) . ')';
                             }
                         }
-                    } elseif (!is_array($value_condition) && is_int($condition) || $condition === '=') { // Check equal array cases
+                    } elseif ($condition === '=' && is_array($value_condition)) { // Check equal array cases
+                        foreach ($value_condition as $value) {
+                            $_value_split = explode('.', $value, 2);
+                            if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
+                                $index_value = $_value_split[0] . '.' . $_value_split[1];
+                            } else {
+                                $index_key = self::indexValue($prefix, $column, $where_values);
+                                $index_value = ' :' . $index_key;
+                                $where_values[$index_key] = $value;
+                            }
+                            $where_in[] = $index_value;
+                        }
+                    } elseif (!is_array($value_condition) && is_int($condition)) { // Check equal array cases
                         $_value_split = explode('.', $value_condition, 2);
                         if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
                             $index_value = $_value_split[0] . '.' . $_value_split[1];
@@ -1756,7 +1777,7 @@ class API
      */
     private static function debugCompileSQL($string, $key, $value)
     {
-        $string = preg_replace('/' . $key . "([,]|\s|$|\))/i", "'" . $value . "'$1", $string);
+        $string = preg_replace('/' . $key . "([,]|\s|$|\))/i", (is_null($value) ? 'NULL$1' : "'" . $value . "'$1"), $string);
 
         return $string;
     }
@@ -1801,7 +1822,8 @@ class API
         foreach ($results as $key => $result) {
             // Sanitize encoding
             foreach ($result as $column => $value) {
-                $results[$key]->$column = utf8_encode($value);
+                // Remind: change LBL_CHARSET in include/language/[iso_lang]_[iso_lang].lang.php
+                $results[$key]->$column = (mb_detect_encoding($value) == 'UTF-8') ? $value : utf8_encode($value);
             }
         }
 
