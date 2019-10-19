@@ -1890,7 +1890,6 @@ class API
         } elseif ($ttl == null) {
             $ttl = (!empty($this->db->ttl)) ? $this->db->ttl : $this->ttl;
         }
-        $key = 'api_' . $key;
 
         if (extension_loaded('apc') && (ini_get('apc.enabled') == 1)) {
             return apc_store($key, $value, $ttl);
