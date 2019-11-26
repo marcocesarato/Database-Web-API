@@ -1129,6 +1129,9 @@ class API
             // bind WHERE values
             if (!empty($where_values) && count($where_values) > 0) {
                 foreach ($where_values as $key => $value) {
+                    if (is_string($value) && strtolower($value) === 'null') {
+                        $value = null;
+                    }
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
                     $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
@@ -1168,7 +1171,7 @@ class API
                 if (is_array($value)) {
                     $value = serialize($value);
                 }
-                if (is_string($value) && strtolower($value) == 'null') {
+                if (is_string($value) && strtolower($value) === 'null') {
                     $value = null;
                 }
                 $column = ':' . $column;
@@ -1846,7 +1849,7 @@ class API
         $tmpdir = sys_get_temp_dir();
         if (!empty($this->cache[$key])) {
             return $this->cache[$key];
-        } elseif ((ini_get('opcache.enable') == 0 || ini_get('apc.enabled') == 0) && is_writable($tmpdir)) {
+        /*} elseif ((ini_get('opcache.enable') == 0 || ini_get('apc.enabled') == 0) && is_writable($tmpdir)) {
             $file = $tmpdir . DIRECTORY_SEPARATOR . $key;
             $ttl = (!empty($this->db->ttl)) ? $this->db->ttl : $this->ttl;
             if (file_exists($file)) {
@@ -1858,6 +1861,7 @@ class API
             }
 
             return isset($value) ? $value : false;
+        */
         } elseif (extension_loaded('apc') || (ini_get('apc.enabled') == 1)) {
             return apc_fetch($key);
         }
@@ -1879,7 +1883,7 @@ class API
         $this->cache[$key] = $value;
 
         $tmpdir = sys_get_temp_dir();
-        if ((ini_get('opcache.enable') == 0 || ini_get('apc.enabled') == 0) && is_writable($tmpdir)) {
+        /*if ((ini_get('opcache.enable') == 0 || ini_get('apc.enabled') == 0) && is_writable($tmpdir)) {
             $value = var_export($value, true);
             // HHVM fails at __set_state, so just use object cast for now
             $value = str_replace('stdClass::__set_state', '(object)', $value);
@@ -1887,7 +1891,8 @@ class API
             $tmp = $tmpdir . DIRECTORY_SEPARATOR . $key . '.' . uniqid('', true) . '.tmp';
             file_put_contents($tmp, '<?php $val = ' . $value . ';', LOCK_EX);
             rename($tmp, $tmpdir . DIRECTORY_SEPARATOR . $key);
-        } elseif ($ttl == null) {
+        } else*/
+        if ($ttl == null) {
             $ttl = (!empty($this->db->ttl)) ? $this->db->ttl : $this->ttl;
         }
 
