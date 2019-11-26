@@ -1053,7 +1053,7 @@ class API
                         if (is_array($value)) {
                             $value = serialize($value);
                         }
-                        if (is_string($value) && strtolower($value) == 'null') {
+                        if (is_string($value) && strtolower($value) === 'null') {
                             $value = null;
                         }
                         $key = ':' . $key;
@@ -1069,9 +1069,6 @@ class API
                         foreach ($where_values as $key => $value) {
                             $key = ':' . $key;
                             $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
-                            if (empty($value)) {
-                                $value = null;
-                            }
                             $sth->bindValue($key, $value);
                         }
                     }
