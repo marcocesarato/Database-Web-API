@@ -797,9 +797,9 @@ class API
             // bind WHERE values
             if (!empty($where_values) && count($where_values) > 0) {
                 foreach ($where_values as $key => $value) {
-	                if (is_string($value) && strtolower($value) === 'null') {
-		                $value = null;
-	                }
+                    if (is_string($value) && strtolower($value) === 'null') {
+                        $value = null;
+                    }
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
                     $sql_compiled = preg_replace('/(' . preg_quote($key, '/') . ")([,]|\s|$|\))/i", "'" . $value . "'$2", $sql_compiled);
@@ -810,9 +810,9 @@ class API
             // bind JOIN values
             if (!empty($join_values) && count($join_values) > 0) {
                 foreach ($join_values as $key => $value) {
-	                if (is_string($value) && strtolower($value) === 'null') {
-		                $value = null;
-	                }
+                    if (is_string($value) && strtolower($value) === 'null') {
+                        $value = null;
+                    }
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
                     $sql_compiled = preg_replace('/(' . preg_quote($key, '/') . ")([,]|\s|$|\))/i", "'" . $value . "'$2", $sql_compiled);
@@ -1073,10 +1073,10 @@ class API
                     // bind WHERE values
                     if (!empty($where_values) && count($where_values) > 0) {
                         foreach ($where_values as $key => $value) {
-	                        if (is_string($value) && strtolower($value) === 'null') {
-		                        $value = null;
-	                        }
-	                        $type = self::detectPDOType($value);
+                            if (is_string($value) && strtolower($value) === 'null') {
+                                $value = null;
+                            }
+                            $type = self::detectPDOType($value);
                             $key = ':' . $key;
                             $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
                             $sth->bindValue($key, $value, $type);
