@@ -262,7 +262,7 @@ class API
             $db = $this->query['db'];
         }
 
-        if (!array_key_exists($db, $this->dbs)) {
+        if (!@array_key_exists($db, $this->dbs)) {
             foreach ($this->dbs as $key => $values) {
                 if ($values->default) {
                     $db = $key;
@@ -378,8 +378,8 @@ class API
         switch (Request::method()) {
             case 'GET':
                 if ($this->auth->canRead($query['table'])) {
-                    if ($query['docs']) {
-                        return $this->documentation($query, $db);
+                    if (!empty($query['docs'])) {
+                        return $this->docs($query, $db);
                     } else {
                         return $this->get($query, $db);
                     }
@@ -398,6 +398,7 @@ class API
                 if ($this->auth->canDelete($query['table'])) {
                     return $this->delete($query, $db);
                 }
+                Response::noPermissions('- Can\'t delete');
                 break;
             default:
                 Response::failed();
@@ -411,14 +412,14 @@ class API
     }
 
     /**
-     * Build and execute the Documentation query from the GET request.
+     * Build and execute the docs query from the GET request.
      *
      * @param      $query
      * @param null $db
      *
      * @return array|bool|mixed|stdClass
      */
-    private function documentation($query, $db = null)
+    private function docs($query, $db = null)
     {
         $final_result = array();
 
@@ -431,44 +432,23 @@ class API
         try {
             $dbh = &$this->connect($db);
             // check table name
-            if ($query['table'] == null) {
-                Response::error('Must select a Entity', 404);
-            } elseif ($query['table'] == 'index') {
+            if ($query['table'] == 'index' || empty($query['table'])) {
                 $tables = $this->getTables($db);
                 foreach ($tables as $table) {
                     if ($this->checkTable($table)) {
                         $url = build_base_url('/docs/' . $table . '.' . $this->query['format']);
                         $final_result[] = (object)array(
                             'Entity' => $table,
-                            'Link' => '<a href="' . $url . '">Go to documentation</a>',
+                            'Link' => '<a href="' . $url . '">Go to docs</a>',
                         );
                     }
                 }
             } elseif (!$this->checkTable($query['table'])) {
                 Response::error('Invalid Entity', 404);
             } else {
-                $sql = null;
+                $results = $this->getTableMeta($query['table'], $db);
 
-                switch ($this->db->type) {
-                    case 'pgsql':
-                        $sql = "SELECT c.column_name, c.udt_name as data_type, is_nullable, character_maximum_length, column_default
-								FROM pg_catalog.pg_statio_all_tables AS st
-								INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
-								RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
-								WHERE table_schema = 'public' AND c.table_name = :table;";
-                        break;
-                    case 'mysql':
-                        $sql = 'SELECT column_name, data_type, is_nullable, character_maximum_length, column_default FROM information_schema.columns WHERE table_name = :table;';
-                        break;
-                }
-
-                if (!empty($sql)) {
-                    $sth = $dbh->prepare($sql);
-                    $sth->bindValue(':table', $query['table']);
-                    $sth->execute();
-
-                    $results = $sth->fetchAll();
-
+                if (!empty($results)) {
                     foreach ($results as $column) {
                         if ($this->checkColumn($column['column_name'], $query['table'])) {
                             $docs_table = !empty($this->db->table_docs[$query['table']]) ? $this->db->table_docs[$query['table']] : null;
@@ -520,7 +500,7 @@ class API
      *
      * @return array an array of results
      */
-    private function get($query, $db = null)
+    public function get($query, $db = null)
     {
         $key = crc32(json_encode($query) . $this->getDatabase($db)->name);
 
@@ -676,12 +656,13 @@ class API
             // build WHERE query
             $restriction = $this->auth->permissionSQL($query['table'], 'READ');
             if (!empty($query['where']) && is_array($query['where'])) {
-                $query['where'] = $this->hooks->apply_filters('get_query_where_' . strtolower($query['table']), $query['where']);
+                $query['where'] = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), $query['where']);
                 $where = $this->parseWhere($query['table'], $query['where'], $sql);
                 $sql = $where['sql'] . ' AND ' . $restriction;
                 $where_values = $where['values'];
             } elseif (!empty($restriction)) {
-                $sql .= ' WHERE ' . $restriction . $this->hooks->apply_filters('get_where_' . strtolower($query['table']), '', $table);
+                $where = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), '', $query['table']);
+                $sql .= ' WHERE ' . $restriction . (!empty($where) ? ' AND (' . $where . ')' : '');
             }
 
             // build ORDER query
@@ -784,9 +765,9 @@ class API
 
             // build LIMIT query
             if (!empty($query['limit']) && is_numeric($query['limit'])) {
-                $sql .= ' LIMIT ' . intval($query['limit']);
+                $sql .= ' LIMIT ' . (int)$query['limit'];
                 if (!empty($query['offset']) && is_numeric($query['offset'])) {
-                    $sql .= ' OFFSET ' . intval($query['offset']);
+                    $sql .= ' OFFSET ' . (int)$query['offset'];
                 }
             }
 
@@ -797,9 +778,7 @@ class API
             // bind WHERE values
             if (!empty($where_values) && count($where_values) > 0) {
                 foreach ($where_values as $key => $value) {
-                    if (is_string($value) && strtolower($value) === 'null') {
-                        $value = null;
-                    }
+                    $value = $this->cleanConditionValue($value, $query['table'], $key, $db);
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
                     $sql_compiled = preg_replace('/(' . preg_quote($key, '/') . ")([,]|\s|$|\))/i", "'" . $value . "'$2", $sql_compiled);
@@ -810,9 +789,7 @@ class API
             // bind JOIN values
             if (!empty($join_values) && count($join_values) > 0) {
                 foreach ($join_values as $key => $value) {
-                    if (is_string($value) && strtolower($value) === 'null') {
-                        $value = null;
-                    }
+                    $value = $this->cleanConditionValue($value, $query['table'], $key, $db);
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
                     $sql_compiled = preg_replace('/(' . preg_quote($key, '/') . ")([,]|\s|$|\))/i", "'" . $value . "'$2", $sql_compiled);
@@ -853,7 +830,7 @@ class API
      *
      * @return array an array of results
      */
-    private function post($query, $db = null)
+    public function post($query, $db = null)
     {
         $dbh = &$this->connect($db);
 
@@ -922,7 +899,7 @@ class API
      *
      * @return array
      */
-    private function put($query, $db = null)
+    public function put($query, $db = null)
     {
         $query = $this->parseUpdateQuery($query);
 
@@ -980,7 +957,7 @@ class API
      *
      * @return array an array of results
      */
-    private function patch($query, $db = null)
+    public function patch($query, $db = null)
     {
         $query = $this->parseUpdateQuery($query);
 
@@ -1056,30 +1033,19 @@ class API
 
                     // bind PUT values
                     foreach ($column_values as $key => $value) {
-                        if (is_array($value)) {
-                            $value = serialize($value);
-                        }
-                        if (is_string($value) && strtolower($value) === 'null') {
-                            $value = null;
-                        }
+                        $value = $this->cleanConditionValue($value, $table, $key, $db);
                         $key = ':' . $key;
                         $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
-                        if (empty($value)) {
-                            $value = null;
-                        }
                         $sth->bindValue($key, $value);
                     }
 
                     // bind WHERE values
                     if (!empty($where_values) && count($where_values) > 0) {
                         foreach ($where_values as $key => $value) {
-                            if (is_string($value) && strtolower($value) === 'null') {
-                                $value = null;
-                            }
-                            $type = self::detectPDOType($value);
+                            $value = $this->cleanConditionValue($value, $table, $key, $db);
                             $key = ':' . $key;
                             $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
-                            $sth->bindValue($key, $value, $type);
+                            $sth->bindValue($key, $value);
                         }
                     }
 
@@ -1103,7 +1069,7 @@ class API
      *
      * @return array an array of results
      */
-    private function delete($query, $db = null)
+    public function delete($query, $db = null)
     {
         try {
             $dbh = &$this->connect($db);
@@ -1136,9 +1102,7 @@ class API
             // bind WHERE values
             if (!empty($where_values) && count($where_values) > 0) {
                 foreach ($where_values as $key => $value) {
-                    if (is_string($value) && strtolower($value) === 'null') {
-                        $value = null;
-                    }
+                    $value = $this->cleanConditionValue($value, $query['table'], $key, $db);
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
                     $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
@@ -1175,12 +1139,7 @@ class API
 
             // bind POST values
             foreach ($columns as $column => $value) {
-                if (is_array($value)) {
-                    $value = serialize($value);
-                }
-                if (is_string($value) && strtolower($value) === 'null') {
-                    $value = null;
-                }
+                $value = $this->cleanConditionValue($value, $table, $column);
                 $column = ':' . $column;
                 $sth->bindValue($column, $value);
                 $sql_compiled = self::debugCompileSQL($sql_compiled, $column, $value);
@@ -1216,13 +1175,14 @@ class API
      * Output JSON encoded data.
      *
      * @param $data
+     * @param $simple_encode
      * @param $query
      */
-    public function renderJson($data)
+    public function renderJson($data, $simple_encode = false)
     {
         header('Content-type: application/json');
 
-        if (is_multi_array($data)) {
+        if (is_multi_array($data) && !$simple_encode) {
             $prefix = '';
             $output = '[';
             foreach ($data as $row) {
@@ -1335,7 +1295,12 @@ class API
 
         if ($this->auth->authenticated && (!$this->auth->is_admin)) {
             if (!empty($db->table_list) && is_array($db->table_list)) {
-                if (!in_array($query_table, $db->table_list)) {
+                $onColumnList = false;
+                if (!empty($db->column_list) && is_array($db->column_list)) {
+                    $onColumnList = array_key_exists($query_table, $db->column_list);
+                }
+
+                if (!in_array($query_table, $db->table_list) && !$onColumnList) {
                     return false;
                 }
             }
@@ -1433,6 +1398,120 @@ class API
         }
 
         return $this->columnExists($column, $table, $db);
+    }
+
+    /**
+     * Get Table Meta.
+     *
+     * @param $table
+     * @param $db
+     *
+     * @return array
+     */
+    private function getTableMeta($table, $db)
+    {
+        $db = $this->getDatabase($db);
+
+        $key = crc32($db->name . '.' . $table . '.meta');
+
+        if ($cache = $this->getCache($key)) {
+            return $cache;
+        }
+
+        switch ($db->type) {
+            case 'pgsql':
+                $sql = "SELECT c.column_name, c.udt_name as data_type, is_nullable, character_maximum_length, column_default
+								FROM pg_catalog.pg_statio_all_tables AS st
+								INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
+								RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
+								WHERE table_schema = 'public' AND c.table_name = :table;";
+                break;
+            case 'mysql':
+                $sql = 'SELECT column_name, data_type, is_nullable, character_maximum_length, column_default FROM information_schema.columns WHERE table_name = :table;';
+                break;
+            default:
+                return array();
+        }
+
+        $dbh = &$this->connect($db);
+
+        $sth = $dbh->prepare($sql);
+        $sth->bindValue(':table', $table);
+        $sth->execute();
+
+        $results = $sth->fetchAll();
+        $this->setCache($key, $results, $db->ttl);
+
+        return $results;
+    }
+
+    /**
+     * Get Table Meta.
+     *
+     * @param $table
+     * @param $db
+     *
+     * @return array
+     */
+    private function getTableColumnsMeta($table, $db = null)
+    {
+        $db = $this->getDatabase($db);
+
+        $key = crc32($db->name . '.' . $table . '.meta_columns');
+
+        if ($cache = $this->getCache($key)) {
+            return $cache;
+        }
+
+        $result = array();
+        $columns = $this->getTableMeta($table, $db = null);
+        foreach ($columns as $column) {
+            $result[$column['column_name']] = $column;
+        }
+
+        $this->setCache($key, $result, $db->ttl);
+
+        return $result;
+    }
+
+    /**
+     * Clean Condition Value.
+     *
+     * @param $value
+     * @param $table
+     * @param $key
+     * @param $db
+     *
+     * @return mixed
+     */
+    private function cleanConditionValue($value, $table, $key, $db = null)
+    {
+        if (is_array($value)) {
+            $value = serialize($value);
+        }
+        if (is_string($value) && strtolower($value) === 'null') {
+            $value = null;
+        }
+        if (trim($value) == '') {
+            $column = self::getColumnNameFromIndex($key, $table);
+            $metas = $this->getTableColumnsMeta($table, $db);
+            $dataType = strtolower(preg_replace('/[\d]/', '', $metas[$column]['data_type']));
+            if (!empty($metas[$column])) {
+                $default = preg_replace("/'([^']*)'.*/si", '$1', $column['column_default']);
+                $isNullable = ($metas[$column]['is_nullable'] === 'YES' || strtolower(trim($default)) === 'null');
+                $numericDataType = array(
+                    'int', 'smallint', 'tinyint', 'bigint', 'integer',
+                    'decimal', 'float', 'double', 'double precision',
+                    'numeric', 'real',
+                    'serial', 'bigserial',
+                );
+                if (in_array($dataType, $numericDataType)) {
+                    $value = ($isNullable) ? null : (float)$default;
+                }
+            }
+        }
+
+        return $value;
     }
 
     /**
@@ -1755,6 +1834,19 @@ class API
     }
 
     /**
+     * Reverse of Index Value.
+     *
+     * @param $key
+     * @param $table
+     *
+     * @return string|string[]|null
+     */
+    private static function getColumnNameFromIndex($key, $table)
+    {
+        return preg_replace(array('/^where\_/i', '/^join\_/i', '/^\_/i', '/\_[\d]+$/i', '/\_' . preg_quote($table, '/') . '/i'), '', $key);
+    }
+
+    /**
      * Detect the type of value and return the PDO::PARAM.
      *
      * @param $value
@@ -1769,7 +1861,7 @@ class API
         if (filter_var($value, FILTER_VALIDATE_INT)) {
             return PDO::PARAM_INT;
         }
-        if (is_null($value)) {
+        if ($value === null) {
             return PDO::PARAM_NULL;
         }
 
@@ -1787,7 +1879,7 @@ class API
      */
     private static function debugCompileSQL($string, $key, $value)
     {
-        $string = preg_replace('/' . $key . "([,]|\s|$|\))/i", (is_null($value) ? 'NULL$1' : "'" . $value . "'$1"), $string);
+        $string = preg_replace('/' . $key . "([,]|\s|$|\))/i", ($value === null ? 'NULL$1' : "'" . $value . "'$1"), $string);
 
         return $string;
     }
@@ -1821,19 +1913,35 @@ class API
     }
 
     /**
+     * Detect if is UTF-8.
+     */
+    private static function isUTF8($string)
+    {
+        return preg_match('%(?:'
+                          . '[\xC2-\xDF][\x80-\xBF]'                // non-overlong 2-byte
+                          . '|\xE0[\xA0-\xBF][\x80-\xBF]'           // excluding overlongs
+                          . '|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}'    // straight 3-byte
+                          . '|\xED[\x80-\x9F][\x80-\xBF]'           // excluding surrogates
+                          . '|\xF0[\x90-\xBF][\x80-\xBF]{2}'        // planes 1-3
+                          . '|[\xF1-\xF3][\x80-\xBF]{3}'            // planes 4-15
+                          . '|\xF4[\x80-\x8F][\x80-\xBF]{2}'        // plane 16
+                          . ')+%xs', $string);
+    }
+
+    /**
      * Sanitize encoding.
      *
      * @param array $results
      *
      * @return mixed
      */
-    private function sanitizeResults($results)
+    public function sanitizeResults($results)
     {
         foreach ($results as $key => $result) {
             // Sanitize encoding
             foreach ($result as $column => $value) {
                 // Remind: change LBL_CHARSET in include/language/[iso_lang]_[iso_lang].lang.php
-                $results[$key]->$column = (mb_detect_encoding($value) == 'UTF-8') ? $value : utf8_encode($value);
+                $results[$key]->$column = (self::isUTF8($value)) ? $value : utf8_encode($value);
             }
         }
 
@@ -1853,23 +1961,11 @@ class API
      */
     private function getCache($key)
     {
-        $tmpdir = sys_get_temp_dir();
-        if (!empty($this->cache[$key])) {
-            return $this->cache[$key];
-        /*} elseif ((ini_get('opcache.enable') == 0 || ini_get('apc.enabled') == 0) && is_writable($tmpdir)) {
-            $file = $tmpdir . DIRECTORY_SEPARATOR . $key;
-            $ttl = (!empty($this->db->ttl)) ? $this->db->ttl : $this->ttl;
-            if (file_exists($file)) {
-                if ((time() - @filectime($file) < $ttl)) {
-                    @unlink($file);
-                } else {
-                    @include $file;
-                }
+        if (!extension_loaded('apc') || (ini_get('apc.enabled') != 1)) {
+            if (!empty($this->cache[$key])) {
+                return $this->cache[$key];
             }
-
-            return isset($value) ? $value : false;
-        */
-        } elseif (extension_loaded('apc') || (ini_get('apc.enabled') == 1)) {
+        } else {
             return apc_fetch($key);
         }
 
@@ -1887,18 +1983,6 @@ class API
      */
     private function setCache($key, $value, $ttl = null)
     {
-        $this->cache[$key] = $value;
-
-        $tmpdir = sys_get_temp_dir();
-        /*if ((ini_get('opcache.enable') == 0 || ini_get('apc.enabled') == 0) && is_writable($tmpdir)) {
-            $value = var_export($value, true);
-            // HHVM fails at __set_state, so just use object cast for now
-            $value = str_replace('stdClass::__set_state', '(object)', $value);
-            // Write to temp file first to ensure atomicity
-            $tmp = $tmpdir . DIRECTORY_SEPARATOR . $key . '.' . uniqid('', true) . '.tmp';
-            file_put_contents($tmp, '<?php $val = ' . $value . ';', LOCK_EX);
-            rename($tmp, $tmpdir . DIRECTORY_SEPARATOR . $key);
-        } else*/
         if ($ttl == null) {
             $ttl = (!empty($this->db->ttl)) ? $this->db->ttl : $this->ttl;
         }
@@ -1906,6 +1990,8 @@ class API
         if (extension_loaded('apc') && (ini_get('apc.enabled') == 1)) {
             return apc_store($key, $value, $ttl);
         }
+
+        $this->cache[$key] = $value;
 
         return true;
     }
