@@ -658,7 +658,11 @@ class API
             if (!empty($query['where']) && is_array($query['where'])) {
                 $query['where'] = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), $query['where']);
                 $where = $this->parseWhere($query['table'], $query['where'], $sql);
-                $sql = $where['sql'] . ' AND ' . $restriction;
+                if(!empty($restriction)) {
+                    $sql = $where['sql'] . ' AND ' . $restriction;
+                } else {
+                    $sql = $where['sql'];
+                }
                 $where_values = $where['values'];
             } elseif (!empty($restriction)) {
                 $where = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), '', $query['table']);
