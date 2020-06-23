@@ -623,11 +623,12 @@ class API
                     $standard_columns = array();
                     $prefix_columns = array();
                     foreach ($select_tables as $table) {
+                        $prefix = $table . '__';
                         $columns = $this->getColumns($table, $db);
                         foreach ($columns as $column) {
                             if ($this->checkColumn($column, $table, $db)) {
                                 $standard_columns[] = "{$table}.{$column} AS {$column}";
-                                $prefix_columns[] = "{$table}.{$column} AS {$table}__{$column}";
+                                $prefix_columns[] = "{$table}.{$column} AS {$prefix}{$column}";
                             }
                         }
                     }
@@ -641,10 +642,11 @@ class API
             } elseif (!empty($query['prefix'])) {
                 $prefix_columns = array();
                 foreach ($select_tables as $table) {
+                    $prefix = $table . '__';
                     $columns = $this->getColumns($table, $db);
                     foreach ($columns as $column) {
                         if ($this->checkColumn($column, $table, $db)) {
-                            $prefix_columns[] = "{$table}.{$column} AS {$table}__{$column}";
+                            $prefix_columns[] = "{$table}.{$column} AS {$prefix}{$column}";
                         }
                     }
                 }
@@ -658,11 +660,11 @@ class API
             if (!empty($query['where']) && is_array($query['where'])) {
                 $query['where'] = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), $query['where']);
                 $where = $this->parseWhere($query['table'], $query['where'], $sql);
-                if(!empty($restriction)) {
-                    $sql = $where['sql'] . ' AND ' . $restriction;
-                } else {
-                    $sql = $where['sql'];
-                }
+	            if(!empty($restriction)) {
+		            $sql = $where['sql'] . ' AND ' . $restriction;
+	            } else {
+		            $sql = $where['sql'];
+	            }
                 $where_values = $where['values'];
             } elseif (!empty($restriction)) {
                 $where = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), '', $query['table']);
@@ -808,7 +810,7 @@ class API
             $results = $sth->fetchAll(PDO::FETCH_OBJ);
 
             // Sanitize encoding
-            $results = $this->sanitizeResults($results);
+            $results = $this->sanitizeResults($results, $query['table']);
 
             if (!empty($query['unique'])) {
                 $results = array_unique($results, SORT_REGULAR);
@@ -1056,6 +1058,10 @@ class API
                     $this->logger->debug($sql_compiled);
 
                     $sth->execute();
+
+                    if ($sth->rowCount() < 1) {
+                        Response::noPermissions();
+                    }
                 }
             }
         } catch (PDOException $e) {
@@ -1607,10 +1613,16 @@ class API
         $where_sql = array();
         $where_values = array();
 
+        $where_in = array();
+        $where_or = array();
+
         $cases = array(
             '>' => '>',
             '<' => '<',
+            '<=' => '<=',
+            '>=' => '>=',
             '%' => 'LIKE',
+            'like' => 'LIKE',
         );
 
         $sql .= ' WHERE ';
@@ -1634,8 +1646,6 @@ class API
                 }
                 $where_sql[] = "{$table}.{$column} = {$index_value}";
             } else {
-                $where_in = array();
-
                 foreach ($values_column as $condition => $value_condition) {
                     if (array_key_exists($condition, $cases)) { // Check special cases
                         $bind = $cases[$condition];
@@ -1651,13 +1661,22 @@ class API
                             $where_sql[] = "{$table}.{$column} " . $bind . " {$index_value}";
                         } else {
                             foreach ($value_condition as $value) {
-                                $index_key = self::indexValue($prefix, $column, $where_values);
-                                $index_value = ' :' . $index_key;
-                                $where_values[$index_key] = $value;
-                                $where_sql[] = "{$table}.{$column} " . $bind . " {$index_value}";
+                                if (is_array($value)) {
+                                    foreach ($value as $v) {
+                                        $index_key = self::indexValue($prefix, $column, $where_values);
+                                        $index_value = ' :' . $index_key;
+                                        $where_values[$index_key] = $v;
+                                        $where_or[] = "{$table}.{$column} " . $bind . " {$index_value}";
+                                    }
+                                } else {
+                                    $index_key = self::indexValue($prefix, $column, $where_values);
+                                    $index_value = ' :' . $index_key;
+                                    $where_values[$index_key] = $value;
+                                    $where_sql[] = "{$table}.{$column} " . $bind . " {$index_value}";
+                                }
                             }
                         }
-                    } elseif ($condition === '!') { // Check unequal cases
+                    } elseif ($condition === '!' || $condition === '<>' || $condition === '!=') { // Check unequal cases
                         $where_not_in = array();
                         if (!is_array($value_condition)) {
                             $operator = '!=';
@@ -1722,6 +1741,10 @@ class API
 
                 if (count($where_in) > 0) {
                     $where_sql[] = "{$table}.{$column} IN (" . implode(', ', $where_in) . ')';
+                }
+
+                if (count($where_or) > 0) {
+                    $where_sql[] = '(' . implode(' OR ', $where_or) . ')';
                 }
             }
         }
@@ -1939,7 +1962,7 @@ class API
      *
      * @return mixed
      */
-    public function sanitizeResults($results)
+    public function sanitizeResults($results, $table = null)
     {
         foreach ($results as $key => $result) {
             // Sanitize encoding
