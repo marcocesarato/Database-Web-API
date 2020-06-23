@@ -364,23 +364,27 @@ Access-Token: b279fb1d0708ed81e7a194e0c5d928b6
 Search single value
 
 ```php
-where[column]			   = 1	// column = 1
-where[column][=]		   = 1	// column = 1
-where[column][!]		   = 1	// column != 1
-where[column][>]		   = 1	// column > 1
-where[column][<]		   = 1	// column < 1
+where[column]			   = 1	  // column = 1
+where[column][=]		   = 1	  // column = 1
+where[column][!]		   = 1    // column != 1
+where[column][>]		   = 1	  // column > 1
+where[column][<]		   = 1	  // column < 1
+where[column][>=]		   = 1	  // column >= 1
+where[column][<=]		   = 1	  // column <= 1
 where[column][%]		   = "%1" // column LIKE "%1"
 ```
 
 Search multiple values
 
 ```php
-where[column]			   = array(1,5,7)	 // IN (...) (IN can be equal to an OR)
-where[column][=]		   = array(1,5,7)	 // IN (...) 
-where[column][!]		   = array(1,5,7)	 // NOT IN (...)
-where[column][>]		   = array(1,2)	   // column > 1 AND column > 2
-where[column][<]		   = array(1,2)	   // column < 1 AND column < 2
-where[column][%]		   = array("%1","%2") // column LIKE "%1" AND column LIKE "%2"
+where[column]			   = array(1,5,7)	  // IN (...) (IN can be equal to an OR)
+where[column][=]		   = array(1,5,7)	  // IN (...) 
+where[column][!]		   = array(1,5,7)	  // NOT IN (...)
+where[column][>]		   = array(1,2)	      // column > 1 OR column > 2
+where[column][<]		   = array(1,2)	      // column < 1 OR column < 2
+where[column][>=]		   = array(1,2)	      // column >= 1 OR column >= 2
+where[column][<=]		   = array(1,2)	      // column <= 1 OR column <= 2
+where[column][%]		   = array("%1","%2") // column LIKE "%1" OR column LIKE "%2"
 ```
 
 Specify column's table
