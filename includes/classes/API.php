@@ -660,11 +660,11 @@ class API
             if (!empty($query['where']) && is_array($query['where'])) {
                 $query['where'] = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), $query['where']);
                 $where = $this->parseWhere($query['table'], $query['where'], $sql);
-	            if(!empty($restriction)) {
-		            $sql = $where['sql'] . ' AND ' . $restriction;
-	            } else {
-		            $sql = $where['sql'];
-	            }
+                if(!empty($restriction)) {
+                    $sql = $where['sql'] . ' AND ' . $restriction;
+                } else {
+                    $sql = $where['sql'];
+                }
                 $where_values = $where['values'];
             } elseif (!empty($restriction)) {
                 $where = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), '', $query['table']);
@@ -1431,10 +1431,10 @@ class API
         switch ($db->type) {
             case 'pgsql':
                 $sql = "SELECT c.column_name, c.udt_name as data_type, is_nullable, character_maximum_length, column_default
-								FROM pg_catalog.pg_statio_all_tables AS st
-								INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
-								RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
-								WHERE table_schema = 'public' AND c.table_name = :table;";
+                                FROM pg_catalog.pg_statio_all_tables AS st
+                                INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
+                                RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
+                                WHERE table_schema = 'public' AND c.table_name = :table;";
                 break;
             case 'mysql':
                 $sql = 'SELECT column_name, data_type, is_nullable, character_maximum_length, column_default FROM information_schema.columns WHERE table_name = :table;';
@@ -1614,9 +1614,20 @@ class API
         $where_values = array();
 
         $where_in = array();
-        $where_or = array();
 
-        $cases = array(
+        $cases_equal = array(
+            '=',
+            'eq',
+            'equal'
+        );
+        $cases_not_equal = array(
+            '!',
+            '<>',
+            '!=',
+            'neq',
+            'notequal'
+        );
+        $cases_special = array(
             '>' => '>',
             '<' => '<',
             '<=' => '<=',
@@ -1634,118 +1645,109 @@ class API
                 $table = $_split[0];
                 $column = $_split[1];
             }
+	        $ref = "COALESCE({$table}.{$column}::TEXT, '')";
 
-            if (!is_array($values_column)) { // Check equal case
-                $_value_split = explode('.', $values_column, 2);
-                if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
-                    $index_value = $_value_split[0] . '.' . $_value_split[1];
-                } else {
-                    $index_key = self::indexValue($prefix, $column, $where_values);
-                    $index_value = ' :' . $index_key;
-                    $where_values[$index_key] = $values_column;
-                }
-                $where_sql[] = "{$table}.{$column} = {$index_value}";
-            } else {
-                foreach ($values_column as $condition => $value_condition) {
-                    if (array_key_exists($condition, $cases)) { // Check special cases
-                        $bind = $cases[$condition];
-                        if (!is_array($value_condition)) {
-                            $_value_split = explode('.', $value_condition, 2);
-                            if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
-                                $index_value = $_value_split[0] . '.' . $_value_split[1];
-                            } else {
-                                $index_key = self::indexValue($prefix, $column, $where_values);
-                                $index_value = ' :' . $index_key;
-                                $where_values[$index_key] = $value_condition;
-                            }
-                            $where_sql[] = "{$table}.{$column} " . $bind . " {$index_value}";
-                        } else {
-                            foreach ($value_condition as $value) {
-                                if (is_array($value)) {
-                                    foreach ($value as $v) {
-                                        $index_key = self::indexValue($prefix, $column, $where_values);
-                                        $index_value = ' :' . $index_key;
-                                        $where_values[$index_key] = $v;
-                                        $where_or[] = "{$table}.{$column} " . $bind . " {$index_value}";
-                                    }
-                                } else {
-                                    $index_key = self::indexValue($prefix, $column, $where_values);
-                                    $index_value = ' :' . $index_key;
-                                    $where_values[$index_key] = $value;
-                                    $where_sql[] = "{$table}.{$column} " . $bind . " {$index_value}";
-                                }
-                            }
+            if (!is_array($values_column)) {
+	            $values_column = array($values_column);
+            }
+
+            foreach ($values_column as $condition => $value_condition) {
+
+                if (array_key_exists($condition, $cases_special)) {
+
+                    // Check special cases
+
+                    $bind = $cases_special[$condition];
+                    if(!is_array($value_condition) ||
+                       count(array_intersect(array_keys($value_condition), $cases_equal)) > 0 ||
+                       count(array_intersect(array_keys($value_condition), $cases_not_equal)) > 0) {
+                        $value_condition = array($value_condition);
+                    }
+                    foreach ($value_condition as $value) {
+	                    $where_or = array();
+                        if (!is_array($value)) {
+                            $value = array($value);
                         }
-                    } elseif ($condition === '!' || $condition === '<>' || $condition === '!=') { // Check unequal cases
-                        $where_not_in = array();
-                        if (!is_array($value_condition)) {
-                            $operator = '!=';
-                            $value = $value_condition;
-                            $_value_split = explode('.', $value, 2);
-                            $ref = "{$table}.{$column}";
-                            if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
-                                $index_value = $_value_split[0] . '.' . $_value_split[1];
-                            } else {
-                                if (is_null($value)) {
-                                    $operator = '!=';
-                                    $index_value = "''";
-                                    $ref = "COALESCE({$table}.{$column}::TEXT, '')";
-                                } else {
-                                    $index_key = self::indexValue($prefix, $column, $where_values);
-                                    $index_value = ' :' . $index_key;
-                                    $where_values[$index_key] = $value;
-                                }
+                        foreach ($value as $k => $special_value) {
+                            $operator = $bind;
+                            if (!is_array($special_value)) {
+                                $special_value = array($special_value);
                             }
-                            $where_sql[] = "{$ref} {$operator} {$index_value}";
-                        } else {
-                            foreach ($value_condition as $value) {
-                                $_value_split = explode('.', $value, 2);
+                            foreach ($special_value as $v) {
+                                $_value_split = explode('.', $v, 2);
                                 if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
                                     $index_value = $_value_split[0] . '.' . $_value_split[1];
                                 } else {
                                     $index_key = self::indexValue($prefix, $column, $where_values);
                                     $index_value = ' :' . $index_key;
-                                    $where_values[$index_key] = $value;
+                                    $where_values[$index_key] = $v;
                                 }
-                                $where_not_in[] = $index_value;
-                            }
-
-                            if (count($where_not_in) > 0) {
-                                $where_sql[] = "{$table}.{$column} NOT IN (" . implode(', ', $where_not_in) . ')';
+                                if (in_array($k, $cases_not_equal, true)) {
+                                    // Not equal cases on or condition
+                                    $operator = "!=";
+                                } elseif (in_array($k, $cases_equal, true)) {
+                                    // Equal cases on or condition
+                                    $operator = "=";
+                                }
+                                $where_or[] = "{$ref} " . $operator . " {$index_value}";
                             }
                         }
-                    } elseif ($condition === '=' && is_array($value_condition)) { // Check equal array cases
-                        foreach ($value_condition as $value) {
-                            $_value_split = explode('.', $value, 2);
-                            if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
-                                $index_value = $_value_split[0] . '.' . $_value_split[1];
+	                    if (count($where_or) > 0) {
+		                    $where_sql[] = '(' . implode(' OR ', $where_or) . ')';
+	                    }
+                    }
+                } elseif (in_array($condition, $cases_not_equal, true)) {
+
+                    // Check unequal cases
+
+                    $where_not = array();
+                    if (!is_array($value_condition)) {
+                        $value_condition = array($value_condition);
+                    }
+
+                    foreach ($value_condition as $value) {
+                        $_value_split = explode('.', $value, 2);
+                        if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
+                            $index_value = $_value_split[0] . '.' . $_value_split[1];
+                        } else {
+                            if (is_null($value)) {
+                                $index_value = "''";
                             } else {
                                 $index_key = self::indexValue($prefix, $column, $where_values);
                                 $index_value = ' :' . $index_key;
                                 $where_values[$index_key] = $value;
                             }
-                            $where_in[] = $index_value;
                         }
-                    } elseif (!is_array($value_condition) && is_int($condition)) { // Check equal array cases
-                        $_value_split = explode('.', $value_condition, 2);
+                        $where_not[] = "{$ref} != {$index_value}";
+                    }
+
+                    if (count($where_not) > 0) {
+                        $where_sql[] = '(' . implode(' AND ', $where_not) . ')';
+                    }
+                } elseif (in_array($condition, $cases_equal, true) || is_int($condition)) {
+
+                    // Check equal cases
+
+                    if (!is_array($value_condition)) {
+                        $value_condition = array($value_condition);
+                    }
+
+                    foreach ($value_condition as $value) {
+                        $_value_split = explode('.', $value, 2);
                         if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
                             $index_value = $_value_split[0] . '.' . $_value_split[1];
                         } else {
                             $index_key = self::indexValue($prefix, $column, $where_values);
                             $index_value = ' :' . $index_key;
-                            $where_values[$index_key] = $value_condition;
+                            $where_values[$index_key] = $value;
                         }
                         $where_in[] = $index_value;
                     }
                 }
+            }
 
-                if (count($where_in) > 0) {
-                    $where_sql[] = "{$table}.{$column} IN (" . implode(', ', $where_in) . ')';
-                }
-
-                if (count($where_or) > 0) {
-                    $where_sql[] = '(' . implode(' OR ', $where_or) . ')';
-                }
+            if (count($where_in) > 0) {
+                $where_sql[] = "{$ref} IN (" . implode(', ', $where_in) . ')';
             }
         }
 
