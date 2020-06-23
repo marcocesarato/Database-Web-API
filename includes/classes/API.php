@@ -787,7 +787,7 @@ class API
                     $value = $this->cleanConditionValue($value, $query['table'], $key, $db);
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
-                    $sql_compiled = preg_replace('/(' . preg_quote($key, '/') . ")([,]|\s|$|\))/i", "'" . $value . "'$2", $sql_compiled);
+                    $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
                     $sth->bindValue($key, $value, $type);
                 }
             }
@@ -798,7 +798,7 @@ class API
                     $value = $this->cleanConditionValue($value, $query['table'], $key, $db);
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
-                    $sql_compiled = preg_replace('/(' . preg_quote($key, '/') . ")([,]|\s|$|\))/i", "'" . $value . "'$2", $sql_compiled);
+                    $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
                     $sth->bindValue($key, $value, $type);
                 }
             }
@@ -1431,10 +1431,10 @@ class API
         switch ($db->type) {
             case 'pgsql':
                 $sql = "SELECT c.column_name, c.udt_name as data_type, is_nullable, character_maximum_length, column_default
-                                FROM pg_catalog.pg_statio_all_tables AS st
-                                INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
-                                RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
-                                WHERE table_schema = 'public' AND c.table_name = :table;";
+								FROM pg_catalog.pg_statio_all_tables AS st
+								INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
+								RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
+								WHERE table_schema = 'public' AND c.table_name = :table;";
                 break;
             case 'mysql':
                 $sql = 'SELECT column_name, data_type, is_nullable, character_maximum_length, column_default FROM information_schema.columns WHERE table_name = :table;';
@@ -1618,14 +1618,14 @@ class API
         $cases_equal = array(
             '=',
             'eq',
-            'equal'
+            'equal',
         );
         $cases_not_equal = array(
             '!',
             '<>',
             '!=',
             'neq',
-            'notequal'
+            'notequal',
         );
         $cases_special = array(
             '>' => '>',
@@ -1645,26 +1645,26 @@ class API
                 $table = $_split[0];
                 $column = $_split[1];
             }
-	        $ref = "COALESCE({$table}.{$column}::TEXT, '')";
+
+            $ref = "COALESCE({$table}.{$column}::TEXT, '')";
+            $column = self::getColumnNameFromIndex($column, $table);
 
             if (!is_array($values_column)) {
-	            $values_column = array($values_column);
+                $values_column = array($values_column);
             }
 
             foreach ($values_column as $condition => $value_condition) {
-
                 if (array_key_exists($condition, $cases_special)) {
-
                     // Check special cases
 
                     $bind = $cases_special[$condition];
-                    if(!is_array($value_condition) ||
+                    if (!is_array($value_condition) ||
                        count(array_intersect(array_keys($value_condition), $cases_equal)) > 0 ||
                        count(array_intersect(array_keys($value_condition), $cases_not_equal)) > 0) {
                         $value_condition = array($value_condition);
                     }
                     foreach ($value_condition as $value) {
-	                    $where_or = array();
+                        $where_or = array();
                         if (!is_array($value)) {
                             $value = array($value);
                         }
@@ -1674,30 +1674,33 @@ class API
                                 $special_value = array($special_value);
                             }
                             foreach ($special_value as $v) {
+                                $clean_value = $this->cleanConditionValue($v, $table, $column);
+                                if ($clean_value === null) {
+                                    $clean_value = ''; // Don't accept null
+                                }
                                 $_value_split = explode('.', $v, 2);
                                 if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
                                     $index_value = $_value_split[0] . '.' . $_value_split[1];
                                 } else {
                                     $index_key = self::indexValue($prefix, $column, $where_values);
                                     $index_value = ' :' . $index_key;
-                                    $where_values[$index_key] = $v;
+                                    $where_values[$index_key] = $clean_value;
                                 }
                                 if (in_array($k, $cases_not_equal, true)) {
                                     // Not equal cases on or condition
-                                    $operator = "!=";
+                                    $operator = '!=';
                                 } elseif (in_array($k, $cases_equal, true)) {
                                     // Equal cases on or condition
-                                    $operator = "=";
+                                    $operator = '=';
                                 }
                                 $where_or[] = "{$ref} " . $operator . " {$index_value}";
                             }
                         }
-	                    if (count($where_or) > 0) {
-		                    $where_sql[] = '(' . implode(' OR ', $where_or) . ')';
-	                    }
+                        if (count($where_or) > 0) {
+                            $where_sql[] = '(' . implode(' OR ', $where_or) . ')';
+                        }
                     }
                 } elseif (in_array($condition, $cases_not_equal, true)) {
-
                     // Check unequal cases
 
                     $where_not = array();
@@ -1713,9 +1716,13 @@ class API
                             if (is_null($value)) {
                                 $index_value = "''";
                             } else {
+                                $clean_value = $this->cleanConditionValue($value, $table, $column);
+                                if ($clean_value === null) {
+                                    $clean_value = ''; // Don't accept null
+                                }
                                 $index_key = self::indexValue($prefix, $column, $where_values);
                                 $index_value = ' :' . $index_key;
-                                $where_values[$index_key] = $value;
+                                $where_values[$index_key] = $clean_value;
                             }
                         }
                         $where_not[] = "{$ref} != {$index_value}";
@@ -1725,7 +1732,6 @@ class API
                         $where_sql[] = '(' . implode(' AND ', $where_not) . ')';
                     }
                 } elseif (in_array($condition, $cases_equal, true) || is_int($condition)) {
-
                     // Check equal cases
 
                     if (!is_array($value_condition)) {
@@ -1737,9 +1743,13 @@ class API
                         if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
                             $index_value = $_value_split[0] . '.' . $_value_split[1];
                         } else {
+                            $clean_value = $this->cleanConditionValue($value, $table, $column);
+                            if ($clean_value === null) {
+                                $clean_value = ''; // Don't accept null
+                            }
                             $index_key = self::indexValue($prefix, $column, $where_values);
                             $index_value = ' :' . $index_key;
-                            $where_values[$index_key] = $value;
+                            $where_values[$index_key] = $clean_value;
                         }
                         $where_in[] = $index_value;
                     }
