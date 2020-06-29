@@ -1431,10 +1431,10 @@ class API
         switch ($db->type) {
             case 'pgsql':
                 $sql = "SELECT c.column_name, c.udt_name as data_type, is_nullable, character_maximum_length, column_default
-								FROM pg_catalog.pg_statio_all_tables AS st
-								INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
-								RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
-								WHERE table_schema = 'public' AND c.table_name = :table;";
+                                FROM pg_catalog.pg_statio_all_tables AS st
+                                INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
+                                RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
+                                WHERE table_schema = 'public' AND c.table_name = :table;";
                 break;
             case 'mysql':
                 $sql = 'SELECT column_name, data_type, is_nullable, character_maximum_length, column_default FROM information_schema.columns WHERE table_name = :table;';
@@ -1625,13 +1625,20 @@ class API
             '<>',
             '!=',
             'neq',
+            'neq',
             'notequal',
         );
         $cases_special = array(
             '>' => '>',
+            'greater' => '>',
+            'gt' => '>',
             '<' => '<',
+            'lower' => '<',
+            'lt' => '<',
             '<=' => '<=',
+            'lte' => '<=',
             '>=' => '>=',
+            'gte' => '>=',
             '%' => 'LIKE',
             'like' => 'LIKE',
         );
