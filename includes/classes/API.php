@@ -1615,30 +1615,37 @@ class API
 
         $where_in = array();
 
+        // column IN (args, ...)
         $cases_equal = array(
             '=',
             'eq',
             'equal',
         );
+        // column NOT IN (args, ...)
         $cases_not_equal = array(
             '!',
             '<>',
             '!=',
-            'neq',
+            'not',
             'neq',
             'notequal',
         );
         $cases_special = array(
+            // column > args OR column > ...
             '>' => '>',
             'greater' => '>',
             'gt' => '>',
+            // column < args OR column < ...
             '<' => '<',
             'lower' => '<',
             'lt' => '<',
+            // column <= args OR column <= ...
             '<=' => '<=',
             'lte' => '<=',
+            // column >= args OR column >= ...
             '>=' => '>=',
             'gte' => '>=',
+            // column % args OR column % ...
             '%' => 'LIKE',
             'like' => 'LIKE',
         );
