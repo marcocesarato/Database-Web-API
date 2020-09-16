@@ -185,7 +185,7 @@ class API
                 Response::error('Invalid Dataset', 404, true);
             }
 
-            if (!empty($this->query['table'])) {
+            if (!empty($this->query['table']) && !$this->query['docs']) {
                 if (!$this->auth->is_admin) {
                     if (in_array($this->query['table'], $db->table_blacklist)) {
                         Response::error('Invalid Entity', 404, true);
@@ -432,17 +432,31 @@ class API
         try {
             $dbh = &$this->connect($db);
             // check table name
-            if ($query['table'] == 'index' || empty($query['table'])) {
+            if ($query['table'] === 'index' || empty($query['table'])) {
                 $tables = $this->getTables($db);
+	            $url = build_base_url('/docs/openapi.json');
+	            $final_result = array(
+		            (object)array(
+			            'Entity' => '<b>OpenAPI Documentation</b>',
+			            'Link' => '<a href="' . $url . '">Documentation (application/json)</a>',
+		            )
+	            );
                 foreach ($tables as $table) {
                     if ($this->checkTable($table)) {
                         $url = build_base_url('/docs/' . $table . '.' . $this->query['format']);
                         $final_result[] = (object)array(
                             'Entity' => $table,
-                            'Link' => '<a href="' . $url . '">Go to docs</a>',
+                            'Link' => '<a href="' . $url . '">Entity Details</a>',
                         );
                     }
                 }
+            } elseif (($query['table'] === 'openapi' || $query['table'] === 'swagger') &&
+                      $this->query['format'] === "json") {
+	            // Open API
+	            $docs = Docs::getInstance();
+	            header('Content-type: application/json');
+	            echo json_encode($docs->generate());
+	            die();
             } elseif (!$this->checkTable($query['table'])) {
                 Response::error('Invalid Entity', 404);
             } else {
@@ -653,6 +667,7 @@ class API
                 $select_columns = implode(', ', $prefix_columns);
             }
 
+	        $select_columns = $this->hooks->apply_filters('get_select_' . strtolower($query['table']), $select_columns);
             $sql = 'SELECT ' . $select_columns . ' FROM ' . $query['table'] . ' ' . $join_sql;
 
             // build WHERE query
@@ -660,7 +675,7 @@ class API
             if (!empty($query['where']) && is_array($query['where'])) {
                 $query['where'] = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), $query['where']);
                 $where = $this->parseWhere($query['table'], $query['where'], $sql);
-                if(!empty($restriction)) {
+                if (!empty($restriction)) {
                     $sql = $where['sql'] . ' AND ' . $restriction;
                 } else {
                     $sql = $where['sql'];
@@ -670,6 +685,8 @@ class API
                 $where = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), '', $query['table']);
                 $sql .= ' WHERE ' . $restriction . (!empty($where) ? ' AND (' . $where . ')' : '');
             }
+
+	        $sql = $this->hooks->apply_filters('get_query_prefilter_' . strtolower($query['table']), $sql, $group_columns);
 
             // build ORDER query
             if (!empty($query['order_by'])) {
@@ -777,6 +794,7 @@ class API
                 }
             }
 
+	        $sql = $this->hooks->apply_filters('get_query_' . strtolower($query['table']), $sql);
             $sql_compiled = $sql;
 
             $sth = $dbh->prepare($sql);
@@ -1418,7 +1436,7 @@ class API
      *
      * @return array
      */
-    private function getTableMeta($table, $db)
+    public function getTableMeta($table, $db)
     {
         $db = $this->getDatabase($db);
 
@@ -1431,10 +1449,10 @@ class API
         switch ($db->type) {
             case 'pgsql':
                 $sql = "SELECT c.column_name, c.udt_name as data_type, is_nullable, character_maximum_length, column_default
-                                FROM pg_catalog.pg_statio_all_tables AS st
-                                INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
-                                RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
-                                WHERE table_schema = 'public' AND c.table_name = :table;";
+								FROM pg_catalog.pg_statio_all_tables AS st
+								INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid=st.relid)
+								RIGHT OUTER JOIN information_schema.columns c ON (pgd.objsubid=c.ordinal_position AND c.table_schema=st.schemaname AND c.table_name=st.relname)
+								WHERE table_schema = 'public' AND c.table_name = :table;";
                 break;
             case 'mysql':
                 $sql = 'SELECT column_name, data_type, is_nullable, character_maximum_length, column_default FROM information_schema.columns WHERE table_name = :table;';
