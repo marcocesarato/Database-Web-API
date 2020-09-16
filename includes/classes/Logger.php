@@ -18,9 +18,9 @@ class Logger
     protected $log_dir;
     protected $log_path;
     protected $file;
-    protected $options = array(
+    protected $options = [
         'dateFormat' => 'd-M-Y H:i:s',
-    );
+    ];
 
     /**
      * Singleton class constructor.
@@ -44,7 +44,7 @@ class Logger
      * @param string $log_file - path and filename of log
      * @param array  $params
      */
-    public function setLog($log_dir, $log_file = 'logs.log', $params = array())
+    public function setLog($log_dir, $log_file = 'logs.log', $params = [])
     {
         $this->log_dir = $log_dir;
         $this->log_file = $log_file;

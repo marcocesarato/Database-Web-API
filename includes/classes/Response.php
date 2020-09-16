@@ -29,7 +29,7 @@ class Response
     {
         http_response_code(200);
 
-        return array('response' => (object)array('status' => 200, 'message' => 'OK'));
+        return ['response' => (object)['status' => 200, 'message' => 'OK']];
     }
 
     /**
@@ -41,7 +41,7 @@ class Response
     {
         http_response_code(201);
 
-        return array('response' => (object)array('status' => 201, 'message' => 'OK'));
+        return ['response' => (object)['status' => 201, 'message' => 'OK']];
     }
 
     /**
@@ -81,18 +81,18 @@ class Response
         $logger = Logger::getInstance();
         if (is_object($error) && method_exists($error, 'getMessage') && method_exists($error, 'getCode')) {
             $message = DatabaseErrors::errorMessage($error);
-            $results = array(
-                'response' => (object)array('status' => 400, 'message' => $message),
-            );
+            $results = [
+                'response' => (object)['status' => 400, 'message' => $message],
+            ];
             $logger->error($code . ' - ' . $error);
             $api->render($results);
         }
         http_response_code($code);
         $error = trim($error);
         $logger->error($code . ' - ' . $error);
-        $results = array(
-            'response' => (object)array('status' => $code, 'message' => Request::sanitizeHtmlentities($error)),
-        );
+        $results = [
+            'response' => (object)['status' => $code, 'message' => Request::sanitizeHtmlentities($error)],
+        ];
         $api->render($results);
     }
 }

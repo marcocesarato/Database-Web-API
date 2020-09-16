@@ -20,13 +20,13 @@ class API
 {
     public static $instance;
     public $hooks;
-    public $dbs = array();
+    public $dbs = [];
     public $db = null;
     public $dbh = null;
-    public $query = array();
+    public $query = [];
     public $ttl = 3600;
-    public $cache = array();
-    public $connections = array();
+    public $cache = [];
+    public $connections = [];
     public $request;
 
     private static $enable_errors = false;
@@ -93,9 +93,9 @@ class API
      * @param string $name the database dataset name
      * @param array  $args the database dataset properties
      */
-    public function registerDatabase($name = null, $args = array())
+    public function registerDatabase($name = null, $args = [])
     {
-        $defaults = array(
+        $defaults = [
             'default' => false,
             'api' => true,
             'name' => null,
@@ -104,16 +104,16 @@ class API
             'server' => 'localhost',
             'port' => 3306,
             'type' => 'mysql',
-            'table_docs' => array(),
-            'table_blacklist' => array(),
-            'table_list' => array(),
-            'table_free' => array(),
-            'table_readonly' => array(),
-            'column_blacklist' => array(),
-            'column_list' => array(),
+            'table_docs' => [],
+            'table_blacklist' => [],
+            'table_list' => [],
+            'table_free' => [],
+            'table_readonly' => [],
+            'column_blacklist' => [],
+            'column_list' => [],
             'ttl' => $this->ttl,
-            'receivers' => array(),
-        );
+            'receivers' => [],
+        ];
 
         $args = shortcode_atts($defaults, $args);
         $name = $this->slugify($name);
@@ -134,7 +134,7 @@ class API
             $parts = $this->request->input;
         }
 
-        $defaults = array(
+        $defaults = [
             'db' => null,
             'table' => null,
             'order_by' => null,
@@ -161,7 +161,7 @@ class API
             'force_validation' => null,
             'user_id' => null,
             'password' => null,
-        );
+        ];
 
         $this->query = shortcode_atts($defaults, $parts);
 
@@ -173,11 +173,11 @@ class API
             $db = $this->getSelectdDatabase($this->query['db']);
             $this->setDatabase($db);
 
-            if (!in_array(strtoupper($this->query['direction']), array('ASC', 'DESC'))) {
+            if (!in_array(strtoupper($this->query['direction']), ['ASC', 'DESC'])) {
                 $this->query['direction'] = null;
             }
 
-            if (!in_array($this->query['format'], array('html', 'xml', 'json'))) {
+            if (!in_array($this->query['format'], ['html', 'xml', 'json'])) {
                 $this->query['format'] = null;
             }
 
@@ -421,7 +421,7 @@ class API
      */
     private function docs($query, $db = null)
     {
-        $final_result = array();
+        $final_result = [];
 
         $key = crc32(json_encode($query) . $this->getDatabase($db)->name . '_docs');
 
@@ -434,29 +434,29 @@ class API
             // check table name
             if ($query['table'] === 'index' || empty($query['table'])) {
                 $tables = $this->getTables($db);
-	            $url = build_base_url('/docs/openapi.json');
-	            $final_result = array(
-		            (object)array(
-			            'Entity' => '<b>OpenAPI Documentation</b>',
-			            'Link' => '<a href="' . $url . '">Documentation (application/json)</a>',
-		            )
-	            );
+                $url = build_base_url('/docs/openapi.json');
+                $final_result = [
+                    (object)[
+                        'Entity' => '<b>OpenAPI Documentation</b>',
+                        'Link' => '<a href="' . $url . '">Documentation (application/json)</a>',
+                    ],
+                ];
                 foreach ($tables as $table) {
                     if ($this->checkTable($table)) {
                         $url = build_base_url('/docs/' . $table . '.' . $this->query['format']);
-                        $final_result[] = (object)array(
+                        $final_result[] = (object)[
                             'Entity' => $table,
                             'Link' => '<a href="' . $url . '">Entity Details</a>',
-                        );
+                        ];
                     }
                 }
             } elseif (($query['table'] === 'openapi' || $query['table'] === 'swagger') &&
-                      $this->query['format'] === "json") {
-	            // Open API
-	            $docs = Docs::getInstance();
-	            header('Content-type: application/json');
-	            echo json_encode($docs->generate());
-	            die();
+                      $this->query['format'] === 'json') {
+                // Open API
+                $docs = Docs::getInstance();
+                header('Content-type: application/json');
+                echo json_encode($docs->generate());
+                die();
             } elseif (!$this->checkTable($query['table'])) {
                 Response::error('Invalid Entity', 404);
             } else {
@@ -473,14 +473,14 @@ class API
                             }
 
                             $default = preg_replace("/'([^']*)'.*/si", '$1', $column['column_default']);
-                            $tmp = array(
+                            $tmp = [
                                 'Column' => $column['column_name'],
                                 'Type' => strtoupper($column['data_type'] . (!empty($column['character_maximum_length']) ? '(' . $column['character_maximum_length'] . ')' : '')),
                                 'Optional' => strtoupper($column['is_nullable']),
                                 'Default' => empty($default) ? '-' : $default,
                                 'Description' => '',
                                 'Example' => '',
-                            );
+                            ];
                             if (!empty($docs_column) && is_array($docs_column)) {
                                 if (!empty($docs_column['description'])) {
                                     $tmp['Description'] = ucfirst($docs_column['description']);
@@ -552,7 +552,7 @@ class API
                 $query['where'][$this->getFirstColumn($query['table'], $db)] = $query['id'];
             }
 
-            $selected_columns = array();
+            $selected_columns = [];
             $columns = $this->getColumns($query['table'], $db);
             foreach ($columns as $column) {
                 if ($this->checkColumn($column, $query['table'], $db)) {
@@ -561,14 +561,14 @@ class API
             }
 
             $select_columns = implode(', ', $selected_columns);
-            $select_tables = array($query['table']);
+            $select_tables = [$query['table']];
 
             // build JOIN query
             $join_sql = '';
             if (!empty($query['join']) && is_array($query['join'])) {
-                $methods_available = array('INNER', 'LEFT', 'RIGHT');
+                $methods_available = ['INNER', 'LEFT', 'RIGHT'];
 
-                $join_values = array();
+                $join_values = [];
                 foreach ($query['join'] as $table => $join) {
                     if (!is_array($join) || count($join) < 2) {
                         break;
@@ -618,7 +618,7 @@ class API
                         $join_value_column = $join_on_expl[1];
                     }
 
-                    if (!in_array($table, array($join_on_table, $join_value_table))) {
+                    if (!in_array($table, [$join_on_table, $join_value_table])) {
                         if (!self::$enable_errors) {
                             continue;
                         }
@@ -634,8 +634,8 @@ class API
                     }
                 }
                 if (count($select_tables) > 1) {
-                    $standard_columns = array();
-                    $prefix_columns = array();
+                    $standard_columns = [];
+                    $prefix_columns = [];
                     foreach ($select_tables as $table) {
                         $prefix = $table . '__';
                         $columns = $this->getColumns($table, $db);
@@ -654,7 +654,7 @@ class API
                 }
                 // Prefix table before column
             } elseif (!empty($query['prefix'])) {
-                $prefix_columns = array();
+                $prefix_columns = [];
                 foreach ($select_tables as $table) {
                     $prefix = $table . '__';
                     $columns = $this->getColumns($table, $db);
@@ -667,7 +667,7 @@ class API
                 $select_columns = implode(', ', $prefix_columns);
             }
 
-	        $select_columns = $this->hooks->apply_filters('get_select_' . strtolower($query['table']), $select_columns);
+            $select_columns = $this->hooks->apply_filters('get_select_' . strtolower($query['table']), $select_columns);
             $sql = 'SELECT ' . $select_columns . ' FROM ' . $query['table'] . ' ' . $join_sql;
 
             // build WHERE query
@@ -686,7 +686,7 @@ class API
                 $sql .= ' WHERE ' . $restriction . (!empty($where) ? ' AND (' . $where . ')' : '');
             }
 
-	        $sql = $this->hooks->apply_filters('get_query_prefilter_' . strtolower($query['table']), $sql, $group_columns);
+            $sql = $this->hooks->apply_filters('get_query_prefilter_' . strtolower($query['table']), $sql, $group_columns);
 
             // build ORDER query
             if (!empty($query['order_by'])) {
@@ -697,7 +697,7 @@ class API
 
                 $order_by = array_map('trim', $order_by);
 
-                $order_query = array();
+                $order_query = [];
                 foreach ($order_by as $column => $column_direction) {
                     $order_table = $query['table'];
                     $direction = '';
@@ -710,7 +710,7 @@ class API
                         if (count($_split_type) > 1) {
                             $column = $_split_type[0];
                             $_type = strtoupper($_split_type[1]);
-                            if (in_array($_type, array(
+                            if (in_array($_type, [
                                 'VARCHAR',
                                 'TEXT',
                                 'CHAR',
@@ -730,7 +730,7 @@ class API
                                 'TIMESTAMP',
                                 'TIME',
                                 'YEAR',
-                            ))) {
+                            ])) {
                                 $type = $_type;
                             }
                         }
@@ -750,7 +750,7 @@ class API
                             }
                         }
                         $order_direction = trim($column_direction);
-                        if (!empty($order_direction) && in_array(strtoupper($order_direction), array('ASC', 'DESC'))) {
+                        if (!empty($order_direction) && in_array(strtoupper($order_direction), ['ASC', 'DESC'])) {
                             $direction = $order_direction;
                         }
                     } else {
@@ -794,7 +794,7 @@ class API
                 }
             }
 
-	        $sql = $this->hooks->apply_filters('get_query_' . strtolower($query['table']), $sql);
+            $sql = $this->hooks->apply_filters('get_query_' . strtolower($query['table']), $sql);
             $sql_compiled = $sql;
 
             $sth = $dbh->prepare($sql);
@@ -872,7 +872,7 @@ class API
                 Response::noPermissions('- Can\'t write');
             }
 
-            $columns = array();
+            $columns = [];
             if (!$this->checkTable($table)) {
                 Response::error('Invalid Entity', 404);
             }
@@ -944,15 +944,15 @@ class API
                         }
                     }
 
-                    $check = array();
+                    $check = [];
                     $check['table'] = $table;
                     $check['where'] = $update['where'];
 
                     $result = $this->get($check);
 
                     if (empty($result)) {
-                        $insert = array();
-                        $insert['insert'] = array();
+                        $insert = [];
+                        $insert['insert'] = [];
                         $insert['insert'][$table] = array_merge($update['where'], $update['values']);
                         if ($this->auth->canWrite($table)) {
                             $this->post($insert, $db);
@@ -961,7 +961,7 @@ class API
                         }
                     } else {
                         $new_update = $query;
-                        $new_update['update'] = array();
+                        $new_update['update'] = [];
                         $new_update['update'][$table] = $update;
                         $this->patch($new_update, $db);
                     }
@@ -1008,8 +1008,8 @@ class API
 
                     $where = $values['where'];
                     $values = $values['values'];
-                    $values_index = array();
-                    $column_values = array();
+                    $values_index = [];
+                    $column_values = [];
 
                     // check columns name
                     foreach ($values as $key => $value) {
@@ -1384,7 +1384,7 @@ class API
             Response::error($e);
         }
 
-        $tables = array();
+        $tables = [];
         while ($table = $stmt->fetch()) {
             $tables[] = $table[0];
         }
@@ -1458,7 +1458,7 @@ class API
                 $sql = 'SELECT column_name, data_type, is_nullable, character_maximum_length, column_default FROM information_schema.columns WHERE table_name = :table;';
                 break;
             default:
-                return array();
+                return [];
         }
 
         $dbh = &$this->connect($db);
@@ -1491,7 +1491,7 @@ class API
             return $cache;
         }
 
-        $result = array();
+        $result = [];
         $columns = $this->getTableMeta($table, $db = null);
         foreach ($columns as $column) {
             $result[$column['column_name']] = $column;
@@ -1527,12 +1527,12 @@ class API
             if (!empty($metas[$column])) {
                 $default = preg_replace("/'([^']*)'.*/si", '$1', $column['column_default']);
                 $isNullable = ($metas[$column]['is_nullable'] === 'YES' || strtolower(trim($default)) === 'null');
-                $numericDataType = array(
+                $numericDataType = [
                     'int', 'smallint', 'tinyint', 'bigint', 'integer',
                     'decimal', 'float', 'double', 'double precision',
                     'numeric', 'real',
                     'serial', 'bigserial',
-                );
+                ];
                 if (in_array($dataType, $numericDataType)) {
                     $value = ($isNullable) ? null : (float)$default;
                 }
@@ -1628,27 +1628,27 @@ class API
     private function parseWhere($main_table, $where, $sql)
     {
         $prefix = 'where_';
-        $where_sql = array();
-        $where_values = array();
+        $where_sql = [];
+        $where_values = [];
 
-        $where_in = array();
+        $where_in = [];
 
         // column IN (args, ...)
-        $cases_equal = array(
+        $cases_equal = [
             '=',
             'eq',
             'equal',
-        );
+        ];
         // column NOT IN (args, ...)
-        $cases_not_equal = array(
+        $cases_not_equal = [
             '!',
             '<>',
             '!=',
             'not',
             'neq',
             'notequal',
-        );
-        $cases_special = array(
+        ];
+        $cases_special = [
             // column > args OR column > ...
             '>' => '>',
             'greater' => '>',
@@ -1666,7 +1666,7 @@ class API
             // column % args OR column % ...
             '%' => 'LIKE',
             'like' => 'LIKE',
-        );
+        ];
 
         $sql .= ' WHERE ';
 
@@ -1682,7 +1682,7 @@ class API
             $column = self::getColumnNameFromIndex($column, $table);
 
             if (!is_array($values_column)) {
-                $values_column = array($values_column);
+                $values_column = [$values_column];
             }
 
             foreach ($values_column as $condition => $value_condition) {
@@ -1693,17 +1693,17 @@ class API
                     if (!is_array($value_condition) ||
                        count(array_intersect(array_keys($value_condition), $cases_equal)) > 0 ||
                        count(array_intersect(array_keys($value_condition), $cases_not_equal)) > 0) {
-                        $value_condition = array($value_condition);
+                        $value_condition = [$value_condition];
                     }
                     foreach ($value_condition as $value) {
-                        $where_or = array();
+                        $where_or = [];
                         if (!is_array($value)) {
-                            $value = array($value);
+                            $value = [$value];
                         }
                         foreach ($value as $k => $special_value) {
                             $operator = $bind;
                             if (!is_array($special_value)) {
-                                $special_value = array($special_value);
+                                $special_value = [$special_value];
                             }
                             foreach ($special_value as $v) {
                                 $clean_value = $this->cleanConditionValue($v, $table, $column);
@@ -1735,9 +1735,9 @@ class API
                 } elseif (in_array($condition, $cases_not_equal, true)) {
                     // Check unequal cases
 
-                    $where_not = array();
+                    $where_not = [];
                     if (!is_array($value_condition)) {
-                        $value_condition = array($value_condition);
+                        $value_condition = [$value_condition];
                     }
 
                     foreach ($value_condition as $value) {
@@ -1767,7 +1767,7 @@ class API
                     // Check equal cases
 
                     if (!is_array($value_condition)) {
-                        $value_condition = array($value_condition);
+                        $value_condition = [$value_condition];
                     }
 
                     foreach ($value_condition as $value) {
@@ -1799,7 +1799,7 @@ class API
 
         //die($sql);
 
-        $result = array();
+        $result = [];
         $result['sql'] = $sql;
         $result['values'] = $where_values;
 
@@ -1868,7 +1868,7 @@ class API
      */
     private function reformatUpdateQuery($query)
     {
-        $update = array();
+        $update = [];
         foreach ($query['update'] as $table => $values) {
             if (!empty($values['values'])) {
                 $update[$table][] = $values;
@@ -1914,7 +1914,7 @@ class API
      */
     private static function getColumnNameFromIndex($key, $table)
     {
-        return preg_replace(array('/^where\_/i', '/^join\_/i', '/^\_/i', '/\_[\d]+$/i', '/\_' . preg_quote($table, '/') . '/i'), '', $key);
+        return preg_replace(['/^where\_/i', '/^join\_/i', '/^\_/i', '/\_[\d]+$/i', '/\_' . preg_quote($table, '/') . '/i'], '', $key);
     }
 
     /**

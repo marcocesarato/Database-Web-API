@@ -157,7 +157,7 @@ function trim_all($arr, $charlist = ' ')
 function object_to_xml($array, $xml)
 {
     //array of keys that will be treated as attributes, not children
-    $attributes = array('id');
+    $attributes = ['id'];
 
     //recursively loop through each item
     foreach ($array as $key => $value) {

@@ -158,7 +158,7 @@ class Dump
     private static function generateDump($var)
     {
         self::$_output = '';
-        self::$_objects = array();
+        self::$_objects = [];
         self::parseDump($var, 0);
         if (self::$highlight) {
             $result = highlight_string("<?php\n" . self::$_output, true);
@@ -248,7 +248,7 @@ class Dump
                     $spaces = str_repeat(' ', $level * 4);
                     self::$_output .= "$className#$id\n" . $spaces . '(';
                     foreach ($keys as $key) {
-                        $keyDisplay = strtr(trim($key), array("\0" => ':'));
+                        $keyDisplay = strtr(trim($key), ["\0" => ':']);
                         self::$_output .= "\n" . $spaces . "    [$keyDisplay] => ";
                         self::$_output .= self::parseDump($members[$key], $level + 1);
                     }

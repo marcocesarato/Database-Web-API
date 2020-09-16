@@ -4,10 +4,10 @@ session_start();
 
 // TODO - Connection to database or something like
 // TODO - CHANGE IT
-$userinfo = array(
+$userinfo = [
     'user1' => '0b14d501a594442a01c6859541bcb3e8164d183d32937b851835442f69d5c94e', // password1
     'user2' => '6cf615d5bcaac778352a8f1f3360d23f02f34ec182e259897fd6ce485d7870d4', // password2
-);
+];
 
 if (isset($_POST['username'])) {
     $_POST['password'] = hash('sha256', $_POST['password']);
@@ -98,12 +98,12 @@ if (empty($_REQUEST['file'])) {
     echo '<ul class="list-group">';
     foreach ($logs as $log) {
         if (strrpos($log, '.log') !== false) {
-            echo '<li class="list-group-item"><a href="?file=' . $log . '">' . $log . ' (' . (date('l', strtotime(str_replace(array('log-', '.log'), '', $log)))) . ')</a></li>';
+            echo '<li class="list-group-item"><a href="?file=' . $log . '">' . $log . ' (' . (date('l', strtotime(str_replace(['log-', '.log'], '', $log)))) . ')</a></li>';
         }
     }
     echo '</ul>';
 } else {
-    $_REQUEST['file'] = str_replace(array('/', '..'), '', $_REQUEST['file']);
+    $_REQUEST['file'] = str_replace(['/', '..'], '', $_REQUEST['file']);
 
     if (file_exists('logs/' . $_REQUEST['file'])) {
         include_once '../../config.php';
@@ -113,7 +113,7 @@ if (empty($_REQUEST['file'])) {
 
         $type = 'new';
         if (strpos($f, "\n\n") !== false) {
-            $f = str_replace(array("\n\n", "\n", "\n\n"), array('[br]', '', "\n"), $f);
+            $f = str_replace(["\n\n", "\n", "\n\n"], ['[br]', '', "\n"], $f);
             $type = 'old';
         }
 
@@ -121,15 +121,15 @@ if (empty($_REQUEST['file'])) {
 
         preg_match_all($re, $f, $matches, PREG_SET_ORDER, 0);
 
-        $logs = array();
-        $users = array();
-        $log_types = array();
-        $actions = array();
+        $logs = [];
+        $users = [];
+        $log_types = [];
+        $actions = [];
         foreach ($matches as $row) {
             list($full_row, $date, $log_type, $method, $url, $token, $ip, $action, $query, $message) = $row;
 
             if (!isset($logs[$token])) {
-                $logs[$token] = array();
+                $logs[$token] = [];
 
                 if (!empty($token)) {
                     $sth = $db->prepare("SELECT u.first_name || ' ' || u.last_name FROM api_authentication AS a INNER JOIN users AS u ON u.id = a.user_id WHERE a.token = :token");
@@ -141,15 +141,15 @@ if (empty($_REQUEST['file'])) {
                     }
 
                     if (!isset($users[$name])) {
-                        $users[$name] = array();
+                        $users[$name] = [];
                     }
                     $users[$name][] = $token;
                 } elseif (!isset($users['Vuoto'])) {
-                    $users['Vuoto'] = array('-empty-');
+                    $users['Vuoto'] = ['-empty-'];
                 }
             }
             if (!isset($logs[$token][$log_type])) {
-                $logs[$token][$log_type] = array();
+                $logs[$token][$log_type] = [];
                 if (!in_array($log_type, $log_types)) {
                     $log_types[] = $log_type;
                 }
@@ -157,17 +157,17 @@ if (empty($_REQUEST['file'])) {
 
             $action_group = (empty($action) ? 'MESSAGE' : $action);
             if (!isset($logs[$token][$log_type][$action_group])) {
-                $logs[$token][$log_type][$action_group] = array();
+                $logs[$token][$log_type][$action_group] = [];
                 if (!in_array($action_group, $actions)) {
                     $actions[] = $action_group;
                 }
             }
 
-            $log = array(
+            $log = [
                 'date' => $date,
                 'url' => $url,
                 'method' => $method,
-            );
+            ];
 
             if (!empty($action)) {
                 $log['query'] = $action . $query;
@@ -212,7 +212,7 @@ if (empty($_REQUEST['file'])) {
             $log_type = $_REQUEST['type'];
             $action = $_REQUEST['action'];
 
-            $users_new = array();
+            $users_new = [];
             foreach ($users as $username => $u) {
                 foreach ($u as $t) {
                     $users_new[$t] = $username;
@@ -220,13 +220,13 @@ if (empty($_REQUEST['file'])) {
             }
             $users = $users_new;
 
-            $users_db = array();
+            $users_db = [];
             $sth = $db->prepare("SELECT id, first_name || ' ' || last_name AS name FROM users");
             if ($sth->execute()) {
                 $users_db = $sth->fetchAll(PDO::FETCH_ASSOC);
             }
 
-            $output = array();
+            $output = [];
             foreach ($logs as $t => $log) {
                 $t = empty($t) ? '-empty-' : $t;
                 if (empty($user[0]) || in_array($t, $user)) {
@@ -237,7 +237,7 @@ if (empty($_REQUEST['file'])) {
                                     $u = (isset($users[$t]) ? $users[$t] : '');
 
                                     foreach ($actions as $def) {
-                                        if (isset($def['message']) && in_array(substr($def['message'], 0, 1), array('{', '['))) {
+                                        if (isset($def['message']) && in_array(substr($def['message'], 0, 1), ['{', '['])) {
                                             $msg = json_decode($def['message'], true);
 
                                             if (isset($msg['user'])) {

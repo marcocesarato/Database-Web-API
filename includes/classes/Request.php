@@ -54,7 +54,7 @@ class Request
         parse_str($source, $params);
 
         // Parse POST, PUT, PATCH params
-        if (!in_array(self::method(), array('GET', 'DELETE'))) {
+        if (!in_array(self::method(), ['GET', 'DELETE'])) {
             $source_input = file_get_contents('php://input');
             $decoded_input = json_decode($source_input, true);
             if (json_last_error() == JSON_ERROR_NONE && is_array($decoded_input)) {
@@ -102,8 +102,8 @@ class Request
     public static function parseUrlRewrite()
     {
         if (!self::$urlparsed) {
-            $formats = array('json', 'xml', 'html');
-            $rewrite_regex = array(
+            $formats = ['json', 'xml', 'html'];
+            $rewrite_regex = [
                 // Check Auth
                 'auth/check' => 'check_auth=1&format=%s',
                 // Auth
@@ -124,7 +124,7 @@ class Request
                 '([^/]+)/([^/]+)' => 'db=%s&table=%s&format=%s',
                 // Dataset (for POST/PUT/PATCH requests)
                 '([^/]+)' => 'db=%s&format=%s',
-            );
+            ];
 
             $formats = implode('|', $formats);
             $formats = "\.($formats)$";
@@ -260,7 +260,7 @@ class Request
     public static function getIPAddress()
     {
         foreach (
-            array(
+            [
                 'HTTP_CLIENT_IP',
                 'HTTP_CF_CONNECTING_IP',
                 'HTTP_X_FORWARDED_FOR',
@@ -270,7 +270,7 @@ class Request
                 'HTTP_FORWARDED',
                 'HTTP_VIA',
                 'REMOTE_ADDR',
-            ) as $key
+            ] as $key
         ) {
             if (array_key_exists($key, $_SERVER) === true) {
                 foreach (explode(',', $_SERVER[$key]) as $ip) {
@@ -316,13 +316,13 @@ class Request
 
         $long_ip = ip2long($ip);
         // Dealing with ipv4
-        $private_ip4_addresses = array(
+        $private_ip4_addresses = [
             '10.0.0.0|10.255.255.255',     // single class A network
             '172.16.0.0|172.31.255.255',   // 16 contiguous class B network
             '192.168.0.0|192.168.255.255', // 256 contiguous class C network
             '169.254.0.0|169.254.255.255', // Link-local address also referred to as Automatic Private IP Addressing
             '127.0.0.0|127.255.255.255',    // localhost
-        );
+        ];
         if (-1 != $long_ip) {
             foreach ($private_ip4_addresses as $pri_addr) {
                 list($start, $end) = explode('|', $pri_addr);
@@ -392,12 +392,12 @@ class Request
         $ips = self::getAllIPAddress();
         $ip_server = gethostbyname($_SERVER['SERVER_NAME']);
         foreach ($ips as $ip) {
-            $query = array(
+            $query = [
                 implode('.', array_reverse(explode('.', $ip))),
                 $_SERVER['SERVER_PORT'],
                 implode('.', array_reverse(explode('.', $ip_server))),
                 'ip-port.exitlist.torproject.org',
-            );
+            ];
             $torExitNode = implode('.', $query);
             $dns = dns_get_record($torExitNode, DNS_A);
             if (array_key_exists(0, $dns) && array_key_exists('ip', $dns[0])) {
@@ -415,9 +415,9 @@ class Request
      */
     public static function getAllIPAddress()
     {
-        $ips = array();
+        $ips = [];
         foreach (
-            array(
+            [
                 'GD_PHP_HANDLER',
                 'HTTP_AKAMAI_ORIGIN_HOP',
                 'HTTP_CF_CONNECTING_IP',
@@ -436,7 +436,7 @@ class Request
                 'HTTP_X_VARNISH',
                 'HTTP_VIA',
                 'REMOTE_ADDR',
-            ) as $key
+            ] as $key
         ) {
             if (array_key_exists($key, $_SERVER) === true) {
                 foreach (explode(',', $_SERVER[$key]) as $ip) {
@@ -454,7 +454,7 @@ class Request
             }
         }
         if (empty($ips)) {
-            $ips = array('0.0.0.0');
+            $ips = ['0.0.0.0'];
         }
         $ips = array_unique($ips);
 
@@ -517,7 +517,7 @@ class Request
      */
     private static function sanitizeXSS($data)
     {
-        $data = str_replace(array('&amp;', '&lt;', '&gt;'), array('&amp;amp;', '&amp;lt;', '&amp;gt;'), $data);
+        $data = str_replace(['&amp;', '&lt;', '&gt;'], ['&amp;amp;', '&amp;lt;', '&amp;gt;'], $data);
         $data = preg_replace("/(&#*\w+)[- ]+;/u", '$1;', $data);
         $data = preg_replace('/(&#x*[0-9A-F]+);*/iu', '$1;', $data);
         $data = html_entity_decode($data, ENT_COMPAT, 'UTF-8');

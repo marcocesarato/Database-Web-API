@@ -48,31 +48,31 @@ class Hooks
      *
      * @var array
      */
-    public static $shortcode_tags = array();
+    public static $shortcode_tags = [];
     /**
      * Filters - holds list of hooks.
      *
      * @var array
      */
-    protected $filters = array();
+    protected $filters = [];
     /**
      * Merged Filters.
      *
      * @var array
      */
-    protected $merged_filters = array();
+    protected $merged_filters = [];
     /**
      * Actions.
      *
      * @var array
      */
-    protected $actions = array();
+    protected $actions = [];
     /**
      * Current Filter - holds the name of the current filter.
      *
      * @var array
      */
-    protected $current_filter = array();
+    protected $current_filter = [];
 
     /**
      * This class is not allowed to call from outside: private!
@@ -219,10 +219,10 @@ class Hooks
     public function add_filter($tag, $function_to_add, $priority = self::PRIORITY_NEUTRAL, $include_path = null)
     {
         $idx = $this->_filter_build_unique_id($function_to_add);
-        $this->filters[$tag][$priority][$idx] = array(
+        $this->filters[$tag][$priority][$idx] = [
             'function' => $function_to_add,
             'include_path' => is_string($include_path) ? $include_path : null,
-        );
+        ];
         unset($this->merged_filters[$tag]);
 
         return true;
@@ -245,10 +245,10 @@ class Hooks
         }
         if (is_object($function)) {
             // Closures are currently implemented as objects
-            $function = array(
+            $function = [
                 $function,
                 '',
-            );
+            ];
         } else {
             $function = (array)$function;
         }
@@ -414,7 +414,7 @@ class Hooks
     public function do_action($tag, $arg = '')
     {
         if (!is_array($this->actions)) {
-            $this->actions = array();
+            $this->actions = [];
         }
         if (!isset($this->actions[$tag])) {
             $this->actions[$tag] = 1;
@@ -437,7 +437,7 @@ class Hooks
         if (!isset($this->filters['all'])) {
             $this->current_filter[] = $tag;
         }
-        $args = array();
+        $args = [];
         if (
             is_array($arg)
             &&
@@ -488,7 +488,7 @@ class Hooks
     public function do_action_ref_array($tag, $args)
     {
         if (!is_array($this->actions)) {
-            $this->actions = array();
+            $this->actions = [];
         }
         if (!isset($this->actions[$tag])) {
             $this->actions[$tag] = 1;
@@ -650,7 +650,7 @@ class Hooks
      */
     public function remove_all_shortcodes()
     {
-        self::$shortcode_tags = array();
+        self::$shortcode_tags = [];
 
         return true;
     }
@@ -768,10 +768,10 @@ class Hooks
 
         return preg_replace_callback(
             "/$pattern/s",
-            array(
+            [
                 $this,
                 '_do_shortcode_tag',
-            ),
+            ],
             $content
         );
     }
@@ -793,7 +793,7 @@ class Hooks
     public function shortcode_atts($pairs, $atts, $shortcode = '')
     {
         $atts = (array)$atts;
-        $out = array();
+        $out = [];
         foreach ($pairs as $name => $default) {
             if (array_key_exists($name, $atts)) {
                 $out[$name] = $atts[$name];
@@ -812,10 +812,10 @@ class Hooks
          */
         if ($shortcode) {
             $out = $this->apply_filters(
-                array(
+                [
                     $this,
                     "shortcode_atts_{$shortcode}",
-                ),
+                ],
                 $out,
                 $pairs,
                 $atts
@@ -836,7 +836,7 @@ class Hooks
      */
     public function apply_filters($tag, $value)
     {
-        $args = array();
+        $args = [];
         // Do 'all' actions first
         if (isset($this->filters['all'])) {
             $this->current_filter[] = $tag;
@@ -896,10 +896,10 @@ class Hooks
 
         return preg_replace_callback(
             "/$pattern/s",
-            array(
+            [
                 $this,
                 '_strip_shortcode_tag',
-            ),
+            ],
             $content
         );
     }
@@ -949,7 +949,7 @@ class Hooks
      */
     public function shortcode_parse_atts($text)
     {
-        $atts = array();
+        $atts = [];
         $pattern = '/(\w+)\s*=\s*"([^"]*)"(?:\s|$)|(\w+)\s*=\s*\'([^\']*)\'(?:\s|$)|(\w+)\s*=\s*([^\s\'"]+)(?:\s|$)|"([^"]*)"(?:\s|$)|(\S+)(?:\s|$)/';
         $text = preg_replace("/[\x{00a0}\x{200b}]+/u", ' ', $text);
         if (preg_match_all($pattern, $text, $match, PREG_SET_ORDER)) {

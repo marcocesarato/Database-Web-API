@@ -26,7 +26,7 @@ class APIClient
     protected static $instance = null;
 
     // Private
-    private static $_DATA = array();
+    private static $_DATA = [];
 
     /**
      * Singleton constructor.
@@ -149,7 +149,7 @@ class APIClient
      */
     private static function buildQuery($query, $parent = null)
     {
-        $query_array = array();
+        $query_array = [];
         foreach ($query as $key => $value) {
             $_key = empty($parent) ? urlencode($key) : $parent . '[' . urlencode($key) . ']';
             if (is_array($value)) {
@@ -171,7 +171,7 @@ class APIClient
      */
     private static function doRequest($url, $body = null, $method = 'GET')
     {
-        $options = array(
+        $options = [
             CURLOPT_RETURNTRANSFER => true,                 // return web page
             CURLOPT_HEADER => true,                 // return headers in addition to content
             CURLOPT_FOLLOWLOCATION => true,                 // follow redirects
@@ -184,21 +184,21 @@ class APIClient
             CURLOPT_SSL_VERIFYPEER => false,                // Validate SSL Cert
             CURLOPT_SSL_VERIFYHOST => false,                // Validate SSL Cert
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'Accept-Language: ' . @$_SERVER['HTTP_ACCEPT_LANGUAGE'],
                 'Cache-Control: no-cache',
                 'Access-Token: ' . self::$ACCESS_TOKEN,
-            ),
+            ],
             CURLOPT_USERAGENT => @$_SERVER['HTTP_USER_AGENT'],
             CURLOPT_POSTFIELDS => (empty($body) ? null : $body),
-        );
+        ];
 
         if ($body !== false && !empty($body) && $method == 'GET') {
             $method = 'POST';
         }
 
         $method = strtoupper($method);
-        if (in_array($method, array('POST', 'PUT', 'PATCH', 'DELETE'))) {
+        if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
             $options[CURLOPT_CUSTOMREQUEST] = $method;
         }
 
@@ -231,7 +231,7 @@ class APIClient
      *
      * @return bool|string
      */
-    private static function execRequest($ch, $options = array())
+    private static function execRequest($ch, $options = [])
     {
         $options[CURLOPT_FOLLOWLOCATION] = false;
         curl_setopt_array($ch, $options);
@@ -274,7 +274,7 @@ class APIClient
      *
      * @return bool|mixed
      */
-    public function get($table, $params = array())
+    public function get($table, $params = [])
     {
         if (!$this->isConnected()) {
             return false;
@@ -315,7 +315,7 @@ class APIClient
      *
      * @return bool|mixed
      */
-    public function insert($params = array())
+    public function insert($params = [])
     {
         if (!$this->isConnected()) {
             return false;
@@ -354,7 +354,7 @@ class APIClient
      *
      * @return bool|mixed
      */
-    public function update($params = array())
+    public function update($params = [])
     {
         if (!$this->isConnected()) {
             return false;
@@ -388,7 +388,7 @@ class APIClient
      *
      * @return bool|mixed
      */
-    public function replace($params = array())
+    public function replace($params = [])
     {
         if (!$this->isConnected()) {
             return false;
@@ -423,7 +423,7 @@ class APIClient
      *
      * @return bool|mixed
      */
-    public function delete($table, $params = array())
+    public function delete($table, $params = [])
     {
         if (!$this->isConnected()) {
             return false;
@@ -497,7 +497,7 @@ class APIClient
         if (is_null($value)) {
             return null;
         }
-        $result = array();
+        $result = [];
         foreach ($array as $elem) {
             if (!empty($limit) && count($result) == $limit) {
                 break;
@@ -531,7 +531,7 @@ class APIClient
         if (is_null($values)) {
             return null;
         }
-        $result = array();
+        $result = [];
         foreach ($array as $elem) {
             if (!empty($limit) && count($result) == $limit) {
                 break;

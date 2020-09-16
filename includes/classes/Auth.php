@@ -20,16 +20,16 @@ class Auth
     public static $settings = null;
     public static $api_table = 'api_auth';
 
-    public $user = array();
+    public $user = [];
     public $user_id = null;
     public $is_admin = false;
     public $authenticated = false;
-    public $can_values = array('All', 'Owner', 'Teams');
+    public $can_values = ['All', 'Owner', 'Teams'];
     private $api;
     private $db;
-    private $table_free = array();
-    private $table_readonly = array();
-    private $query = array();
+    private $table_free = [];
+    private $table_readonly = [];
+    private $query = [];
 
     /**
      * Singleton constructor.
@@ -104,14 +104,14 @@ class Auth
             // Login custom
             $this->hooks->do_action($login_action);
         } elseif (!empty($this->query['user_id']) && !empty($this->query['password'])) {
-            $bind_values = array();
+            $bind_values = [];
 
             $users_table = self::$settings['users']['table'];
             $users_columns = self::$settings['users']['columns'];
 
             $user = strtolower($query['user_id']);
 
-            $where = array();
+            $where = [];
             foreach (self::$settings['users']['search'] as $col) {
                 $bind_values[$col] = $user;
                 $where[$col] = "$col = :$col";
@@ -119,7 +119,7 @@ class Auth
             $where_sql = implode(' OR ', $where);
 
             if (!empty(self::$settings['users']['check'])) {
-                $where = array();
+                $where = [];
                 foreach (self::$settings['users']['check'] as $col => $value) {
                     $bind_values[$col] = $value;
                     $where[$col] = "$col = :$col";
@@ -148,11 +148,11 @@ class Auth
                     $this->user_id = $user_row[$users_columns['id']];
                     $this->is_admin = !empty($users_columns['admin']) ? $user_row[key(reset($users_columns['admin']))] : false;
                     // Render
-                    $results = array(
-                        (object)array(
+                    $results = [
+                        (object)[
                             'token' => $token,
-                        ),
-                    );
+                        ],
+                    ];
                     $results = $this->hooks->apply_filters('auth_login', $results);
                     die($this->api->render($results));
                 }
@@ -255,7 +255,7 @@ class Auth
             // Bypass
             if (!$exists && $auth_bypass && empty($this->query['force_validation'])) {
                 $exists = true;
-                $token_row = array();
+                $token_row = [];
                 $token_row['user_id'] = '1';
                 $token_row['counter'] = 0;
             }
@@ -320,13 +320,13 @@ class Auth
     private function checkToken()
     {
         try {
-            $results = array(
-                'user' => (object)array(
+            $results = [
+                'user' => (object)[
                     'id' => $this->user_id,
                     'is_admin' => $this->is_admin,
-                ),
-                'response' => (object)array('status' => 200, 'message' => 'OK'),
-            );
+                ],
+                'response' => (object)['status' => 200, 'message' => 'OK'],
+            ];
 
             $this->logger->debug($results);
             $results = $this->hooks->apply_filters('auth_token_check', $results);
