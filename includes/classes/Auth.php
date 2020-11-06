@@ -16,16 +16,36 @@ use PDOException;
  */
 class Auth
 {
-    public static $instance;
-    public static $settings = null;
+    /**
+     * @var string token storage table name
+     */
     public static $api_table = 'api_auth';
 
+    /**
+     * @var self
+     */
+    public static $instance;
+    /**
+     * @var API
+     */
+    public $api;
+    /**
+     * @var Hooks
+     */
+    public $hooks;
+    /**
+     * @var Logger
+     */
+    public $logger;
+    /**
+     * @var Request
+     */
+    public static $settings;
+
     public $user = [];
-    public $user_id = null;
+    public $user_id;
     public $is_admin = false;
     public $authenticated = false;
-    public $can_values = ['All', 'Owner', 'Teams'];
-    private $api;
     private $db;
     private $table_free = [];
     private $table_readonly = [];

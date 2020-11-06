@@ -8,6 +8,7 @@
 use marcocesarato\DatabaseAPI\API;
 use marcocesarato\DatabaseAPI\Auth;
 use marcocesarato\DatabaseAPI\Hooks;
+use marcocesarato\DatabaseAPI\Response;
 
 $hooks = Hooks::getInstance();
 
@@ -69,3 +70,41 @@ function helper_on_edit($data, $table)
 }
 
 $hooks->add_filter('on_edit', 'helper_on_edit', 100);
+
+/**
+ * Patch where values.
+ *
+ * @param $where_values
+ * @param $table
+ *
+ * @return mixed
+ */
+function helper_patch_where_values($where_values, $table)
+{
+    if (empty($where_values)) {
+        Response::error('Invalid update condition', 404);
+    }
+
+    return $where_values;
+}
+
+$hooks->add_filter('patch_where_values', 'helper_patch_where_values', 100);
+
+/**
+ * Delete where values.
+ *
+ * @param $where_values
+ * @param $table
+ *
+ * @return mixed
+ */
+function helper_delete_where_values($where_values, $table)
+{
+    if (empty($where_values)) {
+        Response::error('Invalid delete condition', 404);
+    }
+
+    return $where_values;
+}
+
+$hooks->add_filter('delete_where_values', 'helper_delete_where_values', 100);

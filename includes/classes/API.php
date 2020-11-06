@@ -18,16 +18,33 @@ use stdClass;
  */
 class API
 {
+    /**
+     * @var self
+     */
     public static $instance;
+    /**
+     * @var Auth
+     */
+    public $auth;
+    /**
+     * @var Hooks
+     */
     public $hooks;
+    /**
+     * @var Logger
+     */
+    public $logger;
+    /**
+     * @var Request
+     */
+    public $request;
     public $dbs = [];
-    public $db = null;
-    public $dbh = null;
+    public $db;
+    public $dbh;
     public $query = [];
     public $ttl = 3600;
     public $cache = [];
     public $connections = [];
-    public $request;
 
     private static $enable_errors = false;
 
@@ -45,6 +62,8 @@ class API
 
     /**
      * Returns static reference to the class instance.
+     *
+     * @return self
      */
     public static function &getInstance()
     {
@@ -559,6 +578,7 @@ class API
                     $selected_columns[] = "{$query['table']}.{$column}";
                 }
             }
+            $selected_columns = $this->hooks->apply_filters('selected_columns', $selected_columns, $query['table']);
 
             $select_columns = implode(', ', $selected_columns);
             $select_tables = [$query['table']];
@@ -632,6 +652,9 @@ class API
                     } else {
                         $join_sql .= "{$join_value_table}.{$join_value_column}";
                     }
+
+                    $join_on_additional = $this->hooks->apply_filters('get_query_additional_join_on', '', $join_on_table);
+                    $join_sql .= (!empty($join_on_additional) ? ' AND (' . $join_on_additional . ') ' : '');
                 }
                 if (count($select_tables) > 1) {
                     $standard_columns = [];
@@ -664,27 +687,31 @@ class API
                         }
                     }
                 }
+                $group_columns = $selected_columns;
                 $select_columns = implode(', ', $prefix_columns);
             }
 
             $select_columns = $this->hooks->apply_filters('get_select_' . strtolower($query['table']), $select_columns);
             $sql = 'SELECT ' . $select_columns . ' FROM ' . $query['table'] . ' ' . $join_sql;
 
+            $where_exists = false;
             // build WHERE query
             $restriction = $this->auth->permissionSQL($query['table'], 'READ');
             if (!empty($query['where']) && is_array($query['where'])) {
                 $query['where'] = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), $query['where']);
-                $where = $this->parseWhere($query['table'], $query['where'], $sql);
-                if (!empty($restriction)) {
-                    $sql = $where['sql'] . ' AND ' . $restriction;
-                } else {
-                    $sql = $where['sql'];
-                }
-                $where_values = $where['values'];
-            } elseif (!empty($restriction)) {
-                $where = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), '', $query['table']);
-                $sql .= ' WHERE ' . $restriction . (!empty($where) ? ' AND (' . $where . ')' : '');
+                $where_parse = $this->parseWhere($query['table'], $query['where'], $sql);
+                $where_values = $where_parse['values'];
+                $where_exists = (!empty($where_values));
+                $sql = $where_parse['sql'];
             }
+
+            $where_values = $this->hooks->apply_filters('get_where_values', $where_values, $query['table']);
+            $where_additional = $this->hooks->apply_filters('get_query_additional_where', '', $query['table']);
+            $where_additional_table = $this->hooks->apply_filters('get_query_additional_where_' . strtolower($query['table']), '', $query['table']);
+
+            $sql .= ($where_exists ? ' AND ' : ' WHERE ') . ' (' . $restriction . ') ';
+            $sql .= (!empty($where_additional) ? ' AND (' . $where_additional . ') ' : '');
+            $sql .= (!empty($where_additional_table) ? ' AND (' . $where_additional_table . ') ' : '');
 
             $sql = $this->hooks->apply_filters('get_query_prefilter_' . strtolower($query['table']), $sql, $group_columns);
 
@@ -1042,15 +1069,26 @@ class API
                     $sql = 'UPDATE ' . $table;
                     $sql .= ' SET ' . implode(', ', $values_index);
 
+                    $where_exists = false;
                     // build WHERE query
                     $restriction = $this->auth->permissionSQL($table, 'EDIT');
                     if (is_array($where)) {
+                        $where = $this->hooks->apply_filters('patch_where_' . strtolower($table), $where);
                         $where_parse = $this->parseWhere($table, $where, $sql);
-                        $sql = $where_parse['sql'] . ' AND ' . $restriction;
                         $where_values = $where_parse['values'];
-                    } elseif (!empty($restriction)) {
-                        Response::error('Invalid condition', 404);
+                        $where_exists = (!empty($where_values));
+                        $sql = $where_parse['sql'];
                     }
+
+                    $where_values = $this->hooks->apply_filters('patch_where_values', $where_values, $table);
+                    $where_additional = $this->hooks->apply_filters('patch_query_additional_where', '', $table);
+                    $where_additional_table = $this->hooks->apply_filters('patch_query_additional_where_' . strtolower($table), '', $table);
+
+                    $sql .= ($where_exists ? ' AND ' : ' WHERE ') . ' (' . $restriction . ') ';
+                    $sql .= (!empty($where_additional) ? ' AND (' . $where_additional . ') ' : '');
+                    $sql .= (!empty($where_additional_table) ? ' AND (' . $where_additional_table . ') ' : '');
+
+                    $sql = $this->hooks->apply_filters('patch_query_prefilter_' . strtolower($table), $sql);
 
                     $sth = $dbh->prepare($sql);
                     $sql_compiled = $sql;
@@ -1114,15 +1152,26 @@ class API
 
             $sql = 'DELETE FROM ' . $query['table'];
 
+            $where_exists = false;
             // build WHERE query
             $restriction = $this->auth->permissionSQL($query['table'], 'DELETE');
             if (!empty($query['where']) && is_array($query['where'])) {
-                $where = $this->parseWhere($query['table'], $query['where'], $sql);
-                $sql = $where['sql'] . ' AND ' . $restriction;
-                $where_values = $where['values'];
-            } elseif (!empty($restriction)) {
-                Response::error('Invalid condition', 404);
+                $query['where'] = $this->hooks->apply_filters('delete_where_' . strtolower($query['table']), $query['where']);
+                $where_parse = $this->parseWhere($query['table'], $query['where'], $sql);
+                $where_values = $where_parse['values'];
+                $where_exists = (!empty($where_values));
+                $sql = $where_parse['sql'];
             }
+
+            $where_values = $this->hooks->apply_filters('delete_where_values', $where_values, $query['table']);
+            $where_additional = $this->hooks->apply_filters('delete_query_additional_where', '', $query['table']);
+            $where_additional_table = $this->hooks->apply_filters('delete_query_additional_where_' . strtolower($query['table']), '', $query['table']);
+
+            $sql .= ($where_exists ? ' AND ' : ' WHERE ') . ' (' . $restriction . ') ';
+            $sql .= (!empty($where_additional) ? ' AND (' . $where_additional . ') ' : '');
+            $sql .= (!empty($where_additional_table) ? ' AND (' . $where_additional_table . ') ' : '');
+
+            $sql = $this->hooks->apply_filters('delete_query_prefilter_' . strtolower($query['table']), $sql);
 
             $sth = $dbh->prepare($sql);
             $sql_compiled = $sql;
