@@ -3,7 +3,6 @@
  * Loader.
  *
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
- * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  *
  * @see       https://github.com/marcocesarato/Database-Web-API
@@ -11,7 +10,7 @@
 
 namespace marcocesarato\DatabaseAPI;
 
-define('__API_ROOT__', realpath(dirname(__FILE__) . '/..'));
+define('__API_ROOT__', realpath(__DIR__ . '/..'));
 define('__API_DIR_PLUGINS__', realpath(__API_ROOT__ . '/plugins/'));
 define('__API_DIR_INCLUDES__', realpath(__API_ROOT__ . '/includes/'));
 define('__API_DIR_CLASSES__', realpath(__API_DIR_INCLUDES__ . '/classes/'));

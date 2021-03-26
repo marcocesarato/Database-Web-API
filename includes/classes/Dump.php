@@ -6,7 +6,6 @@ namespace marcocesarato\DatabaseAPI;
  * Dump Class.
  *
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
- * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  *
  * @see       https://github.com/marcocesarato/Database-Web-API
@@ -36,7 +35,7 @@ class Dump
     {
         self::setHeader();
         $args = func_get_args();
-        die(self::internalDump($args));
+        exit(self::internalDump($args));
     }
 
     /**
@@ -47,7 +46,7 @@ class Dump
         self::setHeader();
         ob_clean();
         $args = func_get_args();
-        die(self::internalDump($args));
+        exit(self::internalDump($args));
     }
 
     /**

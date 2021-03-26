@@ -9,7 +9,6 @@ use PDOException;
  * Authentication Class.
  *
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
- * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  *
  * @see       https://github.com/marcocesarato/Database-Web-API
@@ -174,7 +173,7 @@ class Auth
                         ],
                     ];
                     $results = $this->hooks->apply_filters('auth_login', $results);
-                    die($this->api->render($results));
+                    exit($this->api->render($results));
                 }
             }
             Response::error('Invalid authentication!', 401);

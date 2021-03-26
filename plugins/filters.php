@@ -300,19 +300,14 @@ function filter_render($data, $query, $method)
 {
     switch ($method) {
         case 'GET':
-
             break;
         case 'POST':
-
             break;
         case 'PATCH':
-
             break;
         case 'PUT':
-
             break;
         case 'DELETE':
-
             break;
     }
 

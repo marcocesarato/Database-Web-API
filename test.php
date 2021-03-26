@@ -11,7 +11,7 @@ $source = $_SERVER['QUERY_STRING'];
 parse_str($source, $params);
 
 // Parse POST, PUT, DELETE params
-if ($method != 'GET' && $method != 'DELETE') {
+if ($method !== 'GET' && $method !== 'DELETE') {
     $source_input = file_get_contents('php://input');
     parse_str($source_input, $params_input);
     $params = array_merge($params, $params_input);
