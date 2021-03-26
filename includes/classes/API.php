@@ -11,7 +11,6 @@ use stdClass;
  * API Class.
  *
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
- * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  *
  * @see       https://github.com/marcocesarato/Database-Web-API
@@ -183,14 +182,19 @@ class API
         ];
 
         $this->query = shortcode_atts($defaults, $parts);
+        $this->query = $this->hooks->apply_filters('request_input_query', $this->query);
+
+        if (!empty($this->query['db'])) {
+            $db = $this->getSelectedDatabase($this->query['db']);
+            $this->setDatabase($db);
+        } else {
+            $this->setDatabase();
+        }
 
         if ($this->auth->validate($this->query)) {
             if ($this->query['db'] == null) {
                 Response::error('Must select a Dataset', 400, true);
             }
-
-            $db = $this->getSelectdDatabase($this->query['db']);
-            $this->setDatabase($db);
 
             if (!in_array(strtoupper($this->query['direction']), ['ASC', 'DESC'])) {
                 $this->query['direction'] = null;
@@ -337,31 +341,33 @@ class API
             $db = $this->db->name;
 
             return $this->connections[$db];
-        } elseif (!empty($db) && is_string($db) && !empty($this->connections[$db])) {
+        }
+
+        if (!empty($db) && is_string($db) && !empty($this->connections[$db])) {
             return $this->connections[$db];
         }
 
         $db = $this->getDatabase($db);
 
         try {
-            if ($db->type == 'mysql') {
+            if ($db->type === 'mysql') {
                 $dbh = new PDO("mysql:host={$db->server};port={$db->port};dbname={$db->name}", $db->username, $db->password);
-            } elseif ($db->type == 'pgsql') {
+            } elseif ($db->type === 'pgsql') {
                 $dbh = new PDO("pgsql:host={$db->server};port={$db->port};dbname={$db->name}", $db->username, $db->password);
-            } elseif ($db->type == 'mssql') {
+            } elseif ($db->type === 'mssql') {
                 $dbh = new PDO("sqlsrv:Server={$db->server},{$db->port};Database={$db->name}", $db->username, $db->password);
-            } elseif ($db->type == 'sqlite') {
+            } elseif ($db->type === 'sqlite') {
                 $dbh = new PDO("sqlite:/{$db->name}");
-            } elseif ($db->type == 'oracle') {
+            } elseif ($db->type === 'oracle') {
                 $dbh = new PDO("oci:dbname={$db->name}");
-            } elseif ($db->type == 'ibm') {
+            } elseif ($db->type === 'ibm') {
                 // May require a specified port number as per http://php.net/manual/en/ref.pdo-ibm.connection.php.
                 $dbh = new PDO("ibm:DRIVER={IBM DB2 ODBC DRIVER};DATABASE={$db->name};PORT={$db->port};HOSTNAME={$db->server};PROTOCOL=TCPIP;", $db->username, $db->password);
-            } elseif (($db->type == 'firebird') || ($db->type == 'interbase')) {
+            } elseif (($db->type === 'firebird') || ($db->type == 'interbase')) {
                 $dbh = new PDO("firebird:dbname={$db->name};host={$db->server};port={$db->port};");
-            } elseif ($db->type == '4D') {
+            } elseif ($db->type === '4D') {
                 $dbh = new PDO("4D:host={$db->server};port={$db->port};dbname={$db->name}", $db->username, $db->password);
-            } elseif ($db->type == 'informix') {
+            } elseif ($db->type === 'informix') {
                 $dbh = new PDO("informix:host={$db->server};port={$db->port};database={$db->name};server={$db->server}", $db->username, $db->password);
             } else {
                 Response::error('Unknown database type.');
@@ -399,9 +405,9 @@ class API
                 if ($this->auth->canRead($query['table'])) {
                     if (!empty($query['docs'])) {
                         return $this->docs($query, $db);
-                    } else {
-                        return $this->get($query, $db);
                     }
+
+                    return $this->get($query, $db);
                 }
                 break;
             case 'POST':
@@ -475,7 +481,7 @@ class API
                 $docs = Docs::getInstance();
                 header('Content-type: application/json');
                 echo json_encode($docs->generate());
-                die();
+                exit();
             } elseif (!$this->checkTable($query['table'])) {
                 Response::error('Invalid Entity', 404);
             } else {
@@ -580,7 +586,11 @@ class API
             }
             $selected_columns = $this->hooks->apply_filters('selected_columns', $selected_columns, $query['table']);
 
+            $group_columns = $selected_columns;
+
+            $selected_columns = $this->auth->addSelectPermissions($selected_columns, $query['table'], '', $db);
             $select_columns = implode(', ', $selected_columns);
+
             $select_tables = [$query['table']];
 
             // build JOIN query
@@ -688,6 +698,7 @@ class API
                     }
                 }
                 $group_columns = $selected_columns;
+                $prefix_columns = $this->auth->addSelectPermissions($prefix_columns, $table, $prefix, $db);
                 $select_columns = implode(', ', $prefix_columns);
             }
 
@@ -697,8 +708,10 @@ class API
             $where_exists = false;
             // build WHERE query
             $restriction = $this->auth->permissionSQL($query['table'], 'READ');
+
+            // Do not put inside if, moved here to let plugins add WHERE clause if not specified by user
+            $query['where'] = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), !empty($query['where']) ? $query['where'] : []);
             if (!empty($query['where']) && is_array($query['where'])) {
-                $query['where'] = $this->hooks->apply_filters('get_where_' . strtolower($query['table']), $query['where']);
                 $where_parse = $this->parseWhere($query['table'], $query['where'], $sql);
                 $where_values = $where_parse['values'];
                 $where_exists = (!empty($where_values));
@@ -1240,12 +1253,19 @@ class API
      */
     public function render($data)
     {
+        // Get hooks
+        $hooks = Hooks::getInstance();
+
+        // Clean
         ob_clean();
-        $default_format = Request::method() == 'GET' ? 'html' : 'json';
-        $data = $this->hooks->apply_filters('render', $data, $this->query, Request::method());
+
+        // Render
+        $default_format = Request::method() === 'GET' ? 'html' : 'json';
+        $data = $hooks->apply_filters('render', $data, $this->query, Request::method());
         $renderer = 'render' . ucfirst(strtolower(!empty($this->query['format']) ? $this->query['format'] : $default_format));
         $this->$renderer($data);
-        die();
+
+        exit();
     }
 
     /**
@@ -1262,7 +1282,7 @@ class API
         if (is_multi_array($data) && !$simple_encode) {
             $prefix = '';
             $output = '[';
-            foreach ($data as $row) {
+            foreach ($data as $key => $row) {
                 $output .= $prefix . json_encode($row);
                 $prefix = ',';
             }
@@ -1282,7 +1302,7 @@ class API
         }
         // If not JSONP, send back the data.
         echo $output;
-        die();
+        exit();
     }
 
     /**
@@ -1333,7 +1353,7 @@ class API
         }
         echo '</table>';
         include __API_ROOT__ . '/includes/template/footer.php';
-        die();
+        exit();
     }
 
     /**
@@ -1347,7 +1367,7 @@ class API
         $xml = new SimpleXMLElement('<results></results>');
         $xml = object_to_xml($data, $xml);
         echo tidy_xml($xml);
-        die();
+        exit();
     }
 
     /**
@@ -1370,7 +1390,7 @@ class API
             $db = $this->getDatabase();
         }
 
-        if ($this->auth->authenticated && (!$this->auth->is_admin)) {
+        if ($this->auth->isAuthenticated() && (!$this->auth->isAdmin())) {
             if (!empty($db->table_list) && is_array($db->table_list)) {
                 $onColumnList = false;
                 if (!empty($db->column_list) && is_array($db->column_list)) {
@@ -1424,7 +1444,7 @@ class API
 
         $dbh = &$this->connect($db);
         try {
-            if ($this->getDatabase($db)->type == 'mysql') {
+            if ($this->getDatabase($db)->type === 'mysql') {
                 $stmt = $dbh->query('SHOW TABLES');
             } else {
                 $stmt = $dbh->query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'");
@@ -1460,7 +1480,7 @@ class API
             $db = $this->getDatabase();
         }
 
-        if (!$this->auth->is_admin || Request::method() == 'PUT') {
+        if (!$this->auth->isAdmin() || Request::method() == 'PUT') {
             if (!empty($db->column_list[$table]) && is_array($db->column_list[$table])) {
                 if (!in_array($column, $db->column_list[$table])) {
                     return false;
@@ -1574,7 +1594,7 @@ class API
             $metas = $this->getTableColumnsMeta($table, $db);
             $dataType = strtolower(preg_replace('/[\d]/', '', $metas[$column]['data_type']));
             if (!empty($metas[$column])) {
-                $default = preg_replace("/'([^']*)'.*/si", '$1', $column['column_default']);
+                $default = preg_replace("/'([^']*)'.*/si", '$1', $metas['column_default']);
                 $isNullable = ($metas[$column]['is_nullable'] === 'YES' || strtolower(trim($default)) === 'null');
                 $numericDataType = [
                     'int', 'smallint', 'tinyint', 'bigint', 'integer',
@@ -1630,7 +1650,7 @@ class API
         $dbh = &$this->connect($db);
 
         try {
-            if ($this->getDatabase($db)->type == 'mysql') {
+            if ($this->getDatabase($db)->type === 'mysql') {
                 $q = $dbh->prepare("DESCRIBE {$table}");
             } else {
                 $q = $dbh->prepare("SELECT column_name FROM information_schema.columns WHERE table_name ='{$table}'");
@@ -1680,8 +1700,6 @@ class API
         $where_sql = [];
         $where_values = [];
 
-        $where_in = [];
-
         // column IN (args, ...)
         $cases_equal = [
             '=',
@@ -1721,6 +1739,7 @@ class API
 
         foreach ($where as $column => $values_column) {
             $table = $main_table;
+            $where_in = [];
             $_split = explode('.', $column, 2);
             if (count($_split) > 1) {
                 $table = $_split[0];
