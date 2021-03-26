@@ -6,7 +6,6 @@ namespace marcocesarato\DatabaseAPI;
  * Request Class.
  *
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
- * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  *
  * @see       https://github.com/marcocesarato/Database-Web-API
@@ -108,6 +107,9 @@ class Request
                 'auth/check' => 'check_auth=1&format=%s',
                 // Auth
                 'auth' => 'auth=1&format=%s',
+
+                /* Token required requests */
+
                 // Dataset + P1 + P2 + P3 + P4 (Custom requests)
                 '([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)' => 'custom=%s&db=%s&table=%s&where[%s]=%s&format=%s',
                 // Dataset + Table + Column + Value
@@ -158,17 +160,21 @@ class Request
     public static function getRequestURI()
     {
         $base = '';
-        $doc_root = realpath(preg_replace('/' . preg_quote($_SERVER['SCRIPT_NAME'], '/') . '$/', '', $_SERVER['SCRIPT_FILENAME']));
-        if (realpath(__API_ROOT__) != realpath($_SERVER['DOCUMENT_ROOT'])) {
-            $base = str_replace(realpath($_SERVER['DOCUMENT_ROOT']), '', __API_ROOT__) . '/';
-        } elseif (realpath(__API_ROOT__) != $doc_root) {
-            $base = str_replace($doc_root, '', __API_ROOT__) . '/';
+        $root = dirname($_SERVER['SCRIPT_FILENAME']);
+        $doc_root = realpath(preg_replace('/' . preg_quote($_SERVER['SCRIPT_NAME'], '/') . '$/', '', $root));
+
+        if ($root != realpath($_SERVER['DOCUMENT_ROOT'])) {
+            $base = str_replace(realpath($_SERVER['DOCUMENT_ROOT']), '', $root) . '/';
+        } elseif ($root != $doc_root) {
+            $base = str_replace($doc_root, '', $root) . '/';
         }
         $base = str_replace('\\', '/', $base);
 
         $request_uri = str_replace($base, '', $_SERVER['REQUEST_URI']);
         $request_uri = explode('?', $request_uri, 2);
         $request_uri = $request_uri[0];
+
+        $request_uri = str_replace(basename(__API_ROOT__), '/', $request_uri);
 
         return $request_uri;
     }
@@ -216,8 +222,6 @@ class Request
      * @param      $data mixed data to sanitize
      *
      * @return     $data sanitized data
-     *
-     * @author     Marco Cesarato <cesarato.developer@gmail.com>
      */
     public static function sanitizeHtmlentities($data)
     {
@@ -490,8 +494,6 @@ class Request
      * @param      $data mixed data to sanitize
      *
      * @return     $data sanitized data
-     *
-     * @author     Marco Cesarato <cesarato.developer@gmail.com>
      */
     public static function sanitizeRXSS($data)
     {
@@ -512,8 +514,6 @@ class Request
      * @param      $data mixed data to sanitize
      *
      * @return     $data sanitized data
-     *
-     * @author     Marco Cesarato <cesarato.developer@gmail.com>
      */
     private static function sanitizeXSS($data)
     {
@@ -549,8 +549,6 @@ class Request
      * @param      $data mixed data to sanitize
      *
      * @return     $data sanitized data
-     *
-     * @author     Marco Cesarato <cesarato.developer@gmail.com>
      */
     public static function sanitizeStriptags($data)
     {
@@ -571,8 +569,6 @@ class Request
      * @param      $data mixed data to sanitize
      *
      * @return     $data sanitized data
-     *
-     * @author     Marco Cesarato <cesarato.developer@gmail.com>
      */
     public static function sanitizeStripslashes($data)
     {
@@ -621,6 +617,53 @@ class Request
         }
 
         return false;
+    }
+
+    /**
+     * Check customer domain.
+     *
+     * @param array|string $customers
+     *
+     * @return bool
+     */
+    public static function checkDomain($customers)
+    {
+        if (!is_array($customers)) {
+            $customers = [$customers];
+        }
+
+        foreach ($customers as $customer) {
+            // Compare
+            if ((self::cleanHost($_SERVER['SERVER_NAME']) == self::cleanHost($customer))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Clean Host URL.
+     *
+     * @param $url
+     *
+     * @return string
+     */
+    public static function cleanHost($url)
+    {
+        // In case scheme relative URI is passed, e.g., //www.google.com/
+        $input = trim($url, '/');
+        // If scheme not included, prepend it
+        if (!preg_match('#^http(s)?://#', $input)) {
+            $input = 'http://' . $input;
+        }
+        $urlParts = parse_url($input);
+        // Remove www
+        $domain = preg_replace('/^www\./', '', $urlParts['host']);
+        // Lower case
+        $domain = strtolower($domain);
+
+        return $domain;
     }
 }
 
