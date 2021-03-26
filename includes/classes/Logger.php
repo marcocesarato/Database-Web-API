@@ -6,36 +6,66 @@ namespace marcocesarato\DatabaseAPI;
  * Logger Class.
  *
  * @author     Marco Cesarato <cesarato.developer@gmail.com>
- * @copyright  Copyright (c) 2019
  * @license    http://opensource.org/licenses/gpl-3.0.html GNU Public License
  *
  * @see       https://github.com/marcocesarato/Database-Web-API
  */
 class Logger
 {
-    public static $instance;
+    protected static $instances = [];
+    protected static $session_token;
     protected $log_file;
     protected $log_dir;
     protected $log_path;
     protected $file;
+    protected $params = [];
     protected $options = [
         'dateFormat' => 'd-M-Y H:i:s',
+        'onlyMessage' => false,
     ];
+    protected $cache = '';
+    protected $previously_enabled_memory_cache = false;
+    protected $use_memory_cache = false;
 
     /**
-     * Singleton class constructor.
+     * Get an instance of the logger.
+     *
+     * @param $key
+     *
+     * @return self
      */
-    public function __construct()
+    public static function getInstance($key = 'API')
     {
-        self::$instance = &$this;
+        if (empty(self::$session_token)) {
+            self::$session_token = uniqid('session_', false);
+        }
+        if (!array_key_exists($key, self::$instances)) {
+            self::$instances[$key] = new self();
+        }
+
+        return self::$instances[$key];
     }
 
     /**
-     * Returns static reference to the class instance.
+     * Logger constructor.
+     * Prevent creating multiple instances due to "protected" constructor.
      */
-    public static function &getInstance()
+    protected function __construct()
     {
-        return self::$instance;
+    }
+
+    /**
+     * Prevent the instance from being cloned.
+     */
+    protected function __clone()
+    {
+    }
+
+    /**
+     * Prevent from being unserialized.
+     */
+    protected function __wakeup()
+    {
     }
 
     /**
@@ -49,16 +79,18 @@ class Logger
         $this->log_dir = $log_dir;
         $this->log_file = $log_file;
         $this->log_path = preg_replace('/\\\\/', '\\', $log_dir . '/' . $log_file);
-        $this->params = array_merge($this->options, $params);
+        $this->params = shortcode_atts($this->options, $params);
 
-        //Create log file if it doesn't exist.
+        // Create log file if it doesn't exist.
         if (!file_exists($this->log_path)) {
             if (!file_exists(dirname($this->log_path))) {
-                mkdir(dirname($this->log_path), 0775, true);
+                if (!mkdir($concurrentDirectory = dirname($this->log_path), 0775, true) && !is_dir($concurrentDirectory)) {
+                    //throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+                }
             }
-            @fopen($this->log_path, 'w'); //or exit("Can't create $log_file!");
+            @fopen($this->log_path, 'wb'); //or exit("Can't create $log_file!");
         }
-        //Check permissions of file.
+        // Check permissions of file.
         if (!is_writable($this->log_path)) {
             //throw exception if not writable
             //throw new Exception("ERROR: Unable to write to file!", 1);
@@ -87,11 +119,6 @@ class Logger
      */
     public function writeLog($message, $severity)
     {
-        // open log file
-        if (!is_resource($this->file)) {
-            $this->openLog();
-        }
-
         // Encode to JSON if is not a string
         if (!is_string($message)) {
             $message = json_encode($message);
@@ -113,8 +140,32 @@ class Logger
 
         $path = str_replace($token . '/', '', $path);
 
+        $session_token = self::$session_token;
+
         // Write time, url, & message to end of file
-        @fwrite($this->file, "[$time] [$severity] [method $method] [url $path] [token $token] [client $ip]: $message" . PHP_EOL);
+        if ($this->params['onlyMessage']) {
+            $log = "[$time] [$severity]: $message";
+        } else {
+            $log = "[$time] [$severity] [method $method] [url $path] [token $token] [client $ip] [session $session_token]: $message";
+        }
+
+        $log .= PHP_EOL;
+
+        if ($severity === 'none') {
+            $log = '';
+        }
+
+        if (!$this->use_memory_cache || isset($this->cache[100000])) { // Write every ~ 100kb if cache was enabled
+            // open log file
+            if (!is_resource($this->file)) {
+                $this->openLog();
+            }
+
+            @fwrite($this->file, $this->cache . $log);
+            $this->cache = '';
+        } else {
+            $this->cache .= $log;
+        }
     }
 
     /**
@@ -126,10 +177,12 @@ class Logger
     {
         $openFile = $this->log_dir . '/' . $this->log_file;
         if (!file_exists(dirname($openFile))) {
-            mkdir(dirname($openFile), 0775, true);
+            if (!mkdir($concurrentDirectory = dirname($openFile), 0775, true) && !is_dir($concurrentDirectory)) {
+                //throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+            }
         }
         // 'a' option = place pointer at end of file
-        $this->file = @fopen($openFile, 'a'); // or exit("Can't open $openFile!");
+        $this->file = @fopen($openFile, 'ab'); // or exit("Can't open $openFile!");
     }
 
     /**
@@ -169,6 +222,36 @@ class Logger
     }
 
     /**
+     * Write cache on shutdown (if memory cache enabled and cache is not empty).
+     */
+    public function writeCache()
+    {
+        if ($this->use_memory_cache && !empty($this->cache)) {
+            $this->use_memory_cache = false;
+            $this->writeLog('', 'none');
+            $this->use_memory_cache = true;
+        }
+    }
+
+    /**
+     * Enable/Disable memory cache (for faster execution).
+     *
+     * @param bool $status
+     */
+    public function useMemoryCache($status = true)
+    {
+        if ($status === false) {
+            $this->writeCache();
+        }
+
+        $this->use_memory_cache = $status;
+        if ($status === true && !$this->previously_enabled_memory_cache) {
+            register_shutdown_function([$this, 'writeCache']);
+            $this->previously_enabled_memory_cache = true;
+        }
+    }
+
+    /**
      * Class destructor.
      */
     public function __destruct()
@@ -178,5 +261,3 @@ class Logger
         }
     }
 }
-
-$LOGGER = new Logger();
