@@ -60,11 +60,11 @@ function loader_on_edit_tables($data, $table)
 /**
  * Add restriction on where conditions for each query.
  *
- * @param $restriction
- * @param $table
- * @param $permission
+ * @param string $restriction
+ * @param string $table
+ * @param bool $permission
  *
- * @return mixed
+ * @return string
  */
 function filter_sql_restriction($restriction, $table, $permission)
 {
@@ -74,10 +74,10 @@ function filter_sql_restriction($restriction, $table, $permission)
 /**
  * Return if can select.
  *
- * @param $permission
- * @param $table
+ * @param bool $permission
+ * @param string $table
  *
- * @return mixed
+ * @return bool
  */
 function filter_can_read($permission, $table)
 {
@@ -90,10 +90,10 @@ function filter_can_read($permission, $table)
 /**
  * Return if can insert.
  *
- * @param $permission
- * @param $table
+ * @param bool $permission
+ * @param string $table
  *
- * @return mixed
+ * @return bool
  */
 function filter_can_write($permission, $table)
 {
@@ -106,10 +106,10 @@ function filter_can_write($permission, $table)
 /**
  * Return if can update.
  *
- * @param $permission
- * @param $table
+ * @param bool $permission
+ * @param string $table
  *
- * @return mixed
+ * @return bool
  */
 function filter_can_edit($permission, $table)
 {
@@ -122,10 +122,10 @@ function filter_can_edit($permission, $table)
 /**
  * Return if can delete.
  *
- * @param $permission
- * @param $table
+ * @param bool $permission
+ * @param string $table
  *
- * @return mixed
+ * @return bool
  */
 function filter_can_delete($permission, $table)
 {
@@ -138,10 +138,10 @@ function filter_can_delete($permission, $table)
 /**
  * On read.
  *
- * @param $data
- * @param $table
+ * @param object $data
+ * @param string $table
  *
- * @return mixed
+ * @return object
  */
 function filter_on_read($data, $table)
 {
@@ -154,10 +154,10 @@ function filter_on_read($data, $table)
 /**
  * On write.
  *
- * @param $data
- * @param $table
+ * @param object $data
+ * @param string $table
  *
- * @return mixed
+ * @return object
  */
 function filter_on_write($data, $table)
 {
@@ -168,12 +168,13 @@ function filter_on_write($data, $table)
 }
 
 /**
- * On write unique key exists.
+ * On write already exists.
  *
- * @param $data
- * @param $table
+ * @param bool $pass
+ * @param object $item
+ * @param string $table
  *
- * @return mixed
+ * @return bool
  */
 function filter_on_write_exists($bypass, $item, $table)
 {
@@ -183,10 +184,10 @@ function filter_on_write_exists($bypass, $item, $table)
 /**
  * On edit.
  *
- * @param $data
- * @param $table
+ * @param object $data
+ * @param string $table
  *
- * @return mixed
+ * @return object
  */
 function filter_on_edit($data, $table)
 {
@@ -210,12 +211,12 @@ function filter_auth_validate_token($is_valid, $token)
 }
 
 /**
- * Validate Authentication.
+ * Validate authentication.
  *
  * @param bool $is_valid
  * @param array $user_row
  *
- * @return mixed
+ * @return bool
  */
 function filter_auth_validate_user($is_valid, $user_row)
 {
