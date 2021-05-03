@@ -209,7 +209,8 @@ class API
             }
 
             if (!empty($this->query['table']) && !$this->query['docs']) {
-                if (!$this->auth->is_admin) {
+                $this->query['table'] = $this->hooks->apply_filters('get_query_table', $this->query['table']);
+                if (!$this->auth->isAdmin()) {
                     if (in_array($this->query['table'], $db->table_blacklist)) {
                         Response::error('Invalid Entity', 404, true);
                     }
@@ -229,11 +230,11 @@ class API
     /**
      * Retrieves the selected database and its properties.
      *
-     * @param string $db the DB slug (optional)
+     * @param string|object $db the DB slug (optional)
      *
-     * @return array the database property array
+     * @return object the database property array
      */
-    private function getSelectdDatabase($db = null)
+    public function getSelectedDatabase($db = null)
     {
         if ($db == null && !is_null($this->db)) {
             return $this->db;
@@ -262,9 +263,9 @@ class API
     /**
      * Retrieves a database and its properties.
      *
-     * @param string $db the DB slug (optional)
+     * @param string|object $db the DB slug (optional)
      *
-     * @return array the database property array
+     * @return object the database property array
      */
     public function getDatabase($db = null)
     {
@@ -300,7 +301,7 @@ class API
     /**
      * Sets the current database.
      *
-     * @param string $db the db slug
+     * @param string|object $db the db slug
      *
      * @return bool success/fail
      */
@@ -328,7 +329,7 @@ class API
     /**
      * Establish a database connection.
      *
-     * @param string $db the database slug
+     * @param string|object $db the database slug
      *
      * @return \PDO
      *
@@ -400,6 +401,7 @@ class API
         if ($query == null) {
             $query = $this->query;
         }
+        $query['table'] = $this->hooks->apply_filters('get_query_table', $query['table']);
         switch (Request::method()) {
             case 'GET':
                 if ($this->auth->canRead($query['table'])) {
@@ -423,7 +425,7 @@ class API
                 if ($this->auth->canDelete($query['table'])) {
                     return $this->delete($query, $db);
                 }
-                Response::noPermissions('- Can\'t delete');
+                Response::noPermissions('- Can\'t delete on ' . $query['table']);
                 break;
             default:
                 Response::failed();
@@ -537,7 +539,7 @@ class API
      * @param array $query the database query ASSUMES SANITIZED
      * @param null  $db
      *
-     * @return array an array of results
+     * @return array|object[]|void an array of results
      */
     public function get($query, $db = null)
     {
@@ -587,8 +589,6 @@ class API
             $selected_columns = $this->hooks->apply_filters('selected_columns', $selected_columns, $query['table']);
 
             $group_columns = $selected_columns;
-
-            $selected_columns = $this->auth->addSelectPermissions($selected_columns, $query['table'], '', $db);
             $select_columns = implode(', ', $selected_columns);
 
             $select_tables = [$query['table']];
@@ -891,13 +891,12 @@ class API
      *
      * @param array $query the database query ASSUMES SANITIZED
      * @param null  $db
+     * @param bool  $skipChecks
      *
-     * @return array an array of results
+     * @return array|object[]|void an array of results
      */
-    public function post($query, $db = null)
+    public function post($query, $db = null, $skipChecks = false)
     {
-        $dbh = &$this->connect($db);
-
         // check values
         if ((!empty($query['insert']) && !is_array($query['insert'])) || count($query['insert']) < 1) {
             Response::error('Invalid insert values', 400);
@@ -907,13 +906,18 @@ class API
             $query['insert'][$query['table']] = $query['insert'];
         }
 
+        $counter = 0;
         foreach ($query['insert'] as $table => $values) {
+            if (empty($table) || !$this->tableExists($table, $db)) {
+                continue;
+            }
+
             if (!$this->auth->canWrite($table)) {
-                Response::noPermissions('- Can\'t write');
+                Response::noPermissions('- Can\'t write on ' . $table);
             }
 
             $columns = [];
-            if (!$this->checkTable($table)) {
+            if (!$this->checkTable($table, $db)) {
                 Response::error('Invalid Entity', 404);
             }
 
@@ -945,14 +949,20 @@ class API
             if (is_multi_array($columns)) {
                 $all_columns = $columns;
                 foreach ($all_columns as $columns) {
-                    $this->executeInsert($table, $columns, $dbh);
+                    $this->executeInsert($table, $columns, $db);
+                    $counter++;
                 }
             } else {
-                $this->executeInsert($table, $columns, $dbh);
+                $this->executeInsert($table, $columns, $db);
+                $counter++;
             }
         }
 
-        return Response::created();
+        if ($skipChecks || $counter > 0) {
+            return Response::created();
+        }
+
+        return Response::failed();
     }
 
     /**
@@ -961,7 +971,7 @@ class API
      * @param array $query the database query ASSUMES SANITIZED
      * @param null  $db
      *
-     * @return array
+     * @return array|object[]|void
      */
     public function put($query, $db = null)
     {
@@ -971,7 +981,12 @@ class API
             Response::error('Invalid replace values', 400);
         }
 
+        $counter = 0;
         foreach ($query['update'] as $table => $u) {
+            if (empty($table) || !$this->tableExists($table, $db)) {
+                continue;
+            }
+
             if (!$this->auth->canEdit($table)) {
                 Response::noPermissions('- Can\'t edit');
             }
@@ -995,22 +1010,26 @@ class API
                         $insert['insert'] = [];
                         $insert['insert'][$table] = array_merge($update['where'], $update['values']);
                         if ($this->auth->canWrite($table)) {
-                            $this->post($insert, $db);
+                            $this->post($insert, $db, true);
                         } else {
-                            Response::noPermissions('- Can\'t write');
+                            Response::noPermissions('- Can\'t write on ' . $table);
                         }
                     } else {
                         $new_update = $query;
                         $new_update['update'] = [];
                         $new_update['update'][$table] = $update;
-                        $this->patch($new_update, $db);
+                        $this->patch($new_update, $db, true);
                     }
                 }
             }
         }
 
-        // TODO: verify all put success or failed
-        return Response::success();
+        if ($counter > 0) {
+            // TODO: verify all put success or failed
+            return Response::success();
+        }
+
+        return Response::failed();
     }
 
     /**
@@ -1018,10 +1037,11 @@ class API
      *
      * @param array $query the database query ASSUMES SANITIZED
      * @param null  $db
+     * @param bool  $skipChecks
      *
      * @return array an array of results
      */
-    public function patch($query, $db = null)
+    public function patch($query, $db = null, $skipChecks = false)
     {
         $query = $this->parseUpdateQuery($query);
 
@@ -1032,9 +1052,14 @@ class API
         try {
             $dbh = &$this->connect($db);
 
+            $counter = 0;
             foreach ($query['update'] as $table => $update) {
+                if (empty($table) || !$this->tableExists($table, $db)) {
+                    continue;
+                }
+
                 if (!$this->auth->canEdit($table)) {
-                    Response::noPermissions('- Can\'t edit');
+                    Response::noPermissions('- Can\'t edit on ' . $table);
                 }
 
                 foreach ($update as $values) {
@@ -1131,13 +1156,19 @@ class API
                     if ($sth->rowCount() < 1) {
                         Response::noPermissions();
                     }
+
+                    $counter++;
                 }
             }
         } catch (PDOException $e) {
             Response::error($e);
         }
 
-        return Response::success();
+        if ($skipChecks || $counter > 0) {
+            return Response::success();
+        }
+
+        return Response::failed();
     }
 
     /**
@@ -1216,11 +1247,39 @@ class API
      *
      * @param      $table
      * @param      $columns
+     * @param      $db
      * @param      $dbh
      */
-    private function executeInsert($table, $columns, $dbh)
+    private function executeInsert($table, $columns, $db)
     {
+        $dbh = &$this->connect($db);
         $columns = $this->hooks->apply_filters('on_write', $columns, $table);
+
+        // Check if primary key already exists
+        try {
+            $keys = $this->getPrimaryKeys($table, $db);
+            if (!empty($keys)) {
+                $check = [];
+                $check['table'] = $table;
+                $check['where'] = [];
+                $check['limit'] = 1;
+                foreach ($keys as $key) {
+                    $check['where'] = [$key => $columns[$key]];
+                }
+                $result = $this->get($check);
+                if (!empty($result)) {
+                    $item = reset($result);
+                    // Default unique primary key check bypass is disabled
+                    $bypassInsert = $this->hooks->apply_filters('on_write_exists', false, $item, $table);
+                    if ($bypassInsert) {
+                        return true;
+                    }
+                }
+            }
+        } catch (PDOException $e) {
+            $log = Logger::getInstance();
+            $log->error($e->getMessage());
+        }
 
         try {
             $sql = 'INSERT INTO ' . $table . ' (' . implode(', ', array_keys($columns)) . ') VALUES (:' . implode(', :', array_keys($columns)) . ')';
@@ -1277,7 +1336,7 @@ class API
      */
     public function renderJson($data, $simple_encode = false)
     {
-        header('Content-type: application/json');
+        @header('Content-type: application/json');
 
         if (is_multi_array($data) && !$simple_encode) {
             $prefix = '';
@@ -1378,7 +1437,7 @@ class API
      * Verify a table exists, used to sanitize queries.
      *
      * @param string $query_table the table being queried
-     * @param string $db          the database to check
+     * @param string|object $db          the database to check
      *
      * @return bool true if table exists, otherwise false
      */
@@ -1467,7 +1526,7 @@ class API
      *
      * @param string $column the column to check
      * @param string $table  the table to check
-     * @param string $db     (optional) the db to check
+     * @param string|object $db     (optional) the db to check
      *
      * @return bool
      * @retrun bool true if exists, otherwise false
@@ -1480,7 +1539,7 @@ class API
             $db = $this->getDatabase();
         }
 
-        if (!$this->auth->isAdmin() || Request::method() == 'PUT') {
+        if (!$this->auth->isAdmin() || Request::method() === 'PUT') {
             if (!empty($db->column_list[$table]) && is_array($db->column_list[$table])) {
                 if (!in_array($column, $db->column_list[$table])) {
                     return false;
@@ -1624,6 +1683,10 @@ class API
     {
         $columns = $this->getColumns($table, $db);
 
+        if (!$columns) {
+            return false;
+        }
+
         return in_array($column, $columns);
     }
 
@@ -1633,11 +1696,11 @@ class API
      * @param string $table the table to check
      * @param string $db    the database to check
      *
-     * @return array an array of the column names
+     * @return array|bool an array of the column names
      */
     public function getColumns($table, $db = null)
     {
-        if (!$this->tableExists($table)) {
+        if (!$this->tableExists($table, $db)) {
             return false;
         }
 
@@ -1670,15 +1733,74 @@ class API
      * Returns the first column in a table.
      *
      * @param string $table the table
-     * @param string $db    the datbase slug
+     * @param string $db    the database slug
      *
      * @return string the column name
      */
     public function getFirstColumn($table, $db = null)
     {
         $columns = $this->getColumns($table, $db);
+        if (in_array('id', $columns)) {
+            return 'id';
+        }
 
         return reset($columns);
+    }
+
+    /**
+     * Returns the primary key columns in a table.
+     *
+     * @param string $table        the table
+     * @param string|object $db    the database slug
+     *
+     * @return string[] the primary columns name
+     */
+    public function getPrimaryKeys($table, $db = null)
+    {
+        if (!$this->tableExists($table, $db)) {
+            return [];
+        }
+
+        $db = $this->getDatabase($db);
+        $key = crc32($db->name . '.' . $table . '.primary_keys');
+
+        if ($cache = $this->getCache($key)) {
+            return $cache;
+        }
+
+        $results = [];
+        $keys = [];
+
+        switch ($db->type) {
+            case 'pgsql':
+                $sql = "SELECT a.attname AS name
+							FROM pg_index i
+							JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+							WHERE i.indrelid = '" . $table . "'::regclass
+							AND i.indisprimary;";
+                $dbh = &$this->connect($db);
+                $sth = $dbh->query($sql);
+                $results = $sth->fetchAll();
+                break;
+            case 'mysql':
+                $sql = 'SHOW KEYS AS name FROM ' . $table . " WHERE Key_name = 'PRIMARY'";
+                $dbh = &$this->connect($db);
+                $sth = $dbh->query($sql);
+                $results = $sth->fetchAll();
+                break;
+        }
+
+        foreach ($results as $result) {
+            $keys[] = $result['name'];
+        }
+
+        if (empty($keys)) {
+            $keys = [$this->getFirstColumn($table, $db)];
+        }
+
+        $this->setCache($key, $keys, $db->ttl);
+
+        return $keys;
     }
 
     /**
@@ -1958,7 +2080,7 @@ class API
      *
      * @return string
      */
-    private static function indexValue($prefix = '_', $column, $array)
+    private static function indexValue($prefix, $column, $array)
     {
         $i = 1;
         $column = str_replace('.', '_', $column);
@@ -2016,7 +2138,7 @@ class API
      *
      * @return string|string[]|null
      */
-    private static function debugCompileSQL($string, $key, $value)
+    public static function debugCompileSQL($string, $key, $value)
     {
         $string = preg_replace('/' . $key . "([,]|\s|$|\))/i", ($value === null ? 'NULL$1' : "'" . $value . "'$1"), $string);
 

@@ -11,11 +11,11 @@ use marcocesarato\DatabaseAPI\Hooks;
 $hooks = Hooks::getInstance();
 
 /**
- * Custom API Call.
+ * Endpoint example.
  *
  * @return mixed or die (with mixed return just skip to next action until 404 error)
  */
-function action_custom_api_call_example()
+function action_endpoint_example()
 {
     $user = Auth::getUser(); // User row
     $api = API::getInstance(); // PDO Object
@@ -35,4 +35,7 @@ function action_custom_api_call_example()
     }*/
 }
 
-$hooks->add_action('custom_api_call', 'action_custom_api_call_example');
+// Private
+$hooks->add_action('endpoint', 'action_endpoint_example');
+// Public
+$hooks->add_action('public_endpoint', 'action_endpoint_example');

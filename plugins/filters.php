@@ -131,9 +131,8 @@ function filter_can_delete($permission, $table)
 {
     $user = Auth::getUser(); // User row
     $db = API::getConnection(); // PDO Object
-    $permission = false;
 
-    return $permission;
+    return false;
 }
 
 /**
@@ -169,6 +168,19 @@ function filter_on_write($data, $table)
 }
 
 /**
+ * On write unique key exists.
+ *
+ * @param $data
+ * @param $table
+ *
+ * @return mixed
+ */
+function filter_on_write_exists($bypass, $item, $table)
+{
+    return $bypass;
+}
+
+/**
  * On edit.
  *
  * @param $data
@@ -200,8 +212,8 @@ function filter_auth_validate_token($is_valid, $token)
 /**
  * Validate Authentication.
  *
- * @param $is_valid
- * @param $user_row
+ * @param bool $is_valid
+ * @param array $user_row
  *
  * @return mixed
  */
@@ -213,7 +225,7 @@ function filter_auth_validate_user($is_valid, $user_row)
 /**
  * Filter user auth login.
  *
- * @param $user_id
+ * @param string|int $user_id
  *
  * @return string
  */
@@ -225,7 +237,7 @@ function filter_auth_user_id($user_id)
 /**
  * Bypass authentication.
  *
- * @param $bypass
+ * @param bool $bypass
  *
  * @return bool
  */
@@ -240,8 +252,8 @@ function filter_auth_bypass($bypass)
 /**
  * Check if is a login request and return login action.
  *
- * @param $is_valid_request
- * @param $query
+ * @param bool $is_valid_request
+ * @param string $query
  *
  * @return string|false
  */
@@ -260,9 +272,9 @@ function filter_auth_login_request($is_valid_request, $query)
 /**
  * Login data result.
  *
- * @param $data
+ * @param array $data
  *
- * @return string|false
+ * @return array
  */
 function filter_auth_login($data)
 {
@@ -275,9 +287,9 @@ function filter_auth_login($data)
 /**
  * Token check data result.
  *
- * @param $data
+ * @param array $data
  *
- * @return string|false
+ * @return array
  */
 function filter_auth_token_check($data)
 {
@@ -291,8 +303,8 @@ function filter_auth_token_check($data)
  * Render.
  *
  * @param $data
- * @param $query
- * @param $method
+ * @param string $query
+ * @param string $method
  *
  * @return array
  */
@@ -312,4 +324,105 @@ function filter_render($data, $query, $method)
     }
 
     return $data;
+}
+
+/**
+ * Filter GET request query table.
+ *
+ * @param string $table
+ *
+ * @return string
+ */
+function filter_get_query_table($table)
+{
+    return $table;
+}
+
+/**
+ * Filter GET request SELECT columns.
+ *
+ * @param array $columns
+ *
+ * @return array
+ */
+function filter_selected_columns($columns)
+{
+    return $columns;
+}
+
+/**
+ * Filter GET request JOIN ON.
+ *
+ * @param string $on
+ * @param string $join_on_table
+ *
+ * @return string
+ */
+function filter_get_query_additional_join_on($on, $join_on_table)
+{
+    return $on;
+}
+
+/**
+ * Filter query input request.
+ *
+ * @param array $query
+ *
+ * @return array
+ */
+function filter_request_input_query($query)
+{
+    return $query;
+}
+
+/**
+ * Filter GET request WHERE values.
+ *
+ * @param string $values
+ * @param string $table
+ *
+ * @return string
+ */
+function filter_get_where_values($values, $table)
+{
+    return $values;
+}
+
+/**
+ * Filter GET request additional WHERE conditions.
+ *
+ * @param string $where
+ * @param string $table
+ *
+ * @return string
+ */
+function filter_get_query_additional_where($where, $table)
+{
+    return $where;
+}
+
+/**
+ * Filter PATCH request WHERE values.
+ *
+ * @param string $values
+ * @param string $table
+ *
+ * @return string
+ */
+function filter_patch_where_values($values, $table)
+{
+    return $values;
+}
+
+/**
+ * Filter DELETE request WHERE values.
+ *
+ * @param string $values
+ * @param string $table
+ *
+ * @return string
+ */
+function filter_delete_where_values($values, $table)
+{
+    return $values;
 }

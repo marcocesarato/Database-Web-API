@@ -62,12 +62,9 @@ function array_to_object($array)
 function is_https()
 {
     if (isset($_SERVER['HTTP_HOST'])) {
-        if (((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443)
-           || !empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' || !empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] == 'on') {
-            return true;
-        }
-
-        return false;
+        return ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443) ||
+               (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+               (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
     }
 
     return false;
@@ -130,7 +127,9 @@ function trim_all($arr, $charlist = ' ')
 {
     if (is_string($arr)) {
         return trim($arr, $charlist);
-    } elseif (is_array($arr)) {
+    }
+
+    if (is_array($arr)) {
         foreach ($arr as $key => $value) {
             if (is_array($value)) {
                 $result[$key] = trim_all($value, $charlist);
@@ -140,13 +139,13 @@ function trim_all($arr, $charlist = ' ')
         }
 
         return $result;
-    } else {
-        return $arr;
     }
+
+    return $arr;
 }
 
 /**
- * Recusively travserses through an array to propegate SimpleXML objects.
+ * Recursively traverses through an array to propagate SimpleXML objects.
  *
  * @param array  $array the array to parse
  * @param object $xml   the Simple XML object (must be at least a single empty node)

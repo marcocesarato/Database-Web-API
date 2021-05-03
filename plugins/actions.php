@@ -8,11 +8,11 @@ use marcocesarato\DatabaseAPI\API;
 use marcocesarato\DatabaseAPI\Response;
 
 /**
- * Custom API Call.
+ * Endpoint.
  *
  * @param $query
  */
-function action_custom_api_call($query)
+function action_endpoint($query)
 {
     $api = API::getInstance();
     $api->query['part_1'] = $api->query['db'];

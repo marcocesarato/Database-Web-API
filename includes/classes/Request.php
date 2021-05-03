@@ -70,17 +70,17 @@ class Request
         // Auth
         if (!empty($params['auth'])) {
             if (empty($params['user_id'])) {
-                $params['user_id'] = (!empty($_SERVER['HTTP_AUTH_ACCOUNT']) ? $_SERVER['HTTP_AUTH_ACCOUNT'] : uniqid(rand(), true));
+                $params['user_id'] = (!empty($_SERVER['HTTP_AUTH_ACCOUNT']) ? $_SERVER['HTTP_AUTH_ACCOUNT'] : uniqid(mt_rand(), true));
             }
             if (empty($params['password'])) {
-                $params['password'] = (!empty($_SERVER['HTTP_AUTH_PASSWORD']) ? $_SERVER['HTTP_AUTH_PASSWORD'] : uniqid(rand(), true));
+                $params['password'] = (!empty($_SERVER['HTTP_AUTH_PASSWORD']) ? $_SERVER['HTTP_AUTH_PASSWORD'] : uniqid(mt_rand(), true));
             }
             unset($params['token']);
         }
 
         // Check token
         if (!empty($params['check_auth']) && empty($params['check_token'])) {
-            $params['check_token'] = (!empty($_SERVER['HTTP_ACCESS_TOKEN']) ? $_SERVER['HTTP_ACCESS_TOKEN'] : uniqid(rand(), true));
+            $params['check_token'] = (!empty($_SERVER['HTTP_ACCESS_TOKEN']) ? $_SERVER['HTTP_ACCESS_TOKEN'] : uniqid(mt_rand(), true));
             unset($params['token']);
         }
 
@@ -283,12 +283,12 @@ class Request
                     if (preg_match('/^::ffff:(\d+\.\d+\.\d+\.\d+)$/', $ip, $matches)) {
                         $ip = $matches[1];
                     }
-                    if ($ip == '::1') {
+                    if ($ip === '::1') {
                         $ip = '127.0.0.1';
                     }
-                    if ($ip == '127.0.0.1' || self::isPrivateIP($ip)) {
+                    if ($ip === '127.0.0.1' || self::isPrivateIP($ip)) {
                         $ip = $_SERVER['REMOTE_ADDR'];
-                        if ($ip == '::1') {
+                        if ($ip === '::1') {
                             $ip = '127.0.0.1';
                         }
 
@@ -449,7 +449,7 @@ class Request
                     if (preg_match('/^::ffff:(\d+\.\d+\.\d+\.\d+)$/', $ip, $matches)) {
                         $ip = $matches[1];
                     }
-                    if ($ip == '::1') {
+                    if ($ip === '::1') {
                         $ips[] = '127.0.0.1';
                     } elseif (self::validateIPAddress($ip)) {
                         $ips[] = $ip;
@@ -471,13 +471,10 @@ class Request
      * @param      $params mixed data to sanitize
      *
      * @return     $params sanitized data
-     *
-     * @author     Marco Cesarato <cesarato.developer@gmail.com>
      */
     private static function sanitizeParams($params)
     {
         foreach ($params as $key => $value) {
-            $value = trim_all($value);
             $value = self::sanitizeRXSS($value);
             $value = self::sanitizeStriptags($value);
             $value = self::sanitizeHtmlentities($value);

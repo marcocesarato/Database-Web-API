@@ -15,12 +15,8 @@ class Response
     public static $instance;
     public $input;
 
-    public function __construct()
-    {
-    }
-
     /**
-     * Return success reponse.
+     * Return success response.
      *
      * @return array
      */
@@ -45,20 +41,34 @@ class Response
 
     /**
      * Return failed response.
+     *
+     * @return array
      */
     public static function failed()
     {
-        self::error('Bad request', 400);
+        $message = 'Bad request';
+        $code = 400;
+
+        self::error($message, $code);
+
+        return ['response' => (object)['status' => $code, 'message' => $message]];
     }
 
     /**
      * Return failed response.
      *
      * @param string $msg
+     *
+     * @return array
      */
     public static function noPermissions($msg = '')
     {
-        self::error('No permissions ' . $msg, 403);
+        $message = 'No permissions ' . $msg;
+        $code = 403;
+
+        self::error($message, $code);
+
+        return ['response' => (object)['status' => $code, 'message' => $message]];
     }
 
     /**
@@ -66,14 +76,17 @@ class Response
      *
      * @param string|object $error the error or a (PDO) exception object
      * @param int           $code  (optional) the error code with which to respond
-     * @param bool          $custom_call
+     * @param bool          $internal if true will fallback to the first endpoint available
+     *
+     * @return array
      */
-    public static function error($error, $code = 500, $custom_call = false)
+    public static function error($error, $code = 500, $internal = false)
     {
         $hooks = Hooks::getInstance();
-        if ($custom_call) {
-            $hooks->do_action('custom_api_call');
+        if ($internal) {
+            $hooks->do_action('endpoint');
         }
+        $hooks->do_action('public_endpoint');
         $hooks->do_action('on_error', $error, $code);
 
         $api = API::getInstance();
@@ -83,15 +96,17 @@ class Response
             $results = [
                 'response' => (object)['status' => 400, 'message' => $message],
             ];
-            $logger->error($code . ' - ' . $error);
+            $logger->error('ERROR_' . $code . ': ' . $error);
             $api->render($results);
         }
         http_response_code($code);
         $error = trim($error);
-        $logger->error($code . ' - ' . $error);
+        $logger->error('ERROR_' . $code . ': ' . $error);
         $results = [
             'response' => (object)['status' => $code, 'message' => Request::sanitizeHtmlentities($error)],
         ];
         $api->render($results);
+
+        return ['response' => (object)['status' => $code, 'message' => $error]];
     }
 }

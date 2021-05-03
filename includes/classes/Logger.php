@@ -20,7 +20,7 @@ class Logger
     protected $file;
     protected $params = [];
     protected $options = [
-        'dateFormat' => 'd-M-Y H:i:s',
+        'dateFormat' => 'd-M-Y H:i:s.u',
         'onlyMessage' => false,
     ];
     protected $cache = '';
@@ -133,8 +133,12 @@ class Logger
         $method = Request::method();
         // Grab the url path ( for troubleshooting )
         $path = $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'];
+
         // Grab time - based on timezone in php.ini
-        $time = date($this->params['dateFormat']);
+        $t = microtime(true);
+        $micro = sprintf('%06d', ($t - floor($t)) * 1000000);
+        $d = new DateTime(date('Y-m-d H:i:s.' . $micro, $t));
+        $time = $d->format($this->params['dateFormat']);
 
         $ip = Request::getIPAddress();
 

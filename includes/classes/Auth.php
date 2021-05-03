@@ -16,7 +16,9 @@ use PDOException;
 class Auth
 {
     /**
-     * @var string token storage table name
+     * Tokens storage table.
+     *
+     * @var string
      */
     public static $api_table = 'api_auth';
 
@@ -40,11 +42,24 @@ class Auth
      * @var Request
      */
     public static $settings;
-
-    public $user = [];
+    /**
+     * User data.
+     *
+     * @var object
+     */
+    public $user;
+    /**
+     * Account associated to the user.
+     *
+     * @var object
+     */
+    public $account;
     public $user_id;
     public $is_admin = false;
     public $authenticated = false;
+    /**
+     * @var PDO
+     */
     private $db;
     private $table_free = [];
     private $table_readonly = [];
@@ -63,7 +78,7 @@ class Auth
     /**
      * Get user row.
      *
-     * @return array
+     * @return object
      */
     public static function getUser()
     {
@@ -113,7 +128,7 @@ class Auth
             $this->checkAPITable();
         }
 
-        if (!empty($this->query['check_counter']) && $this->validateToken($this->query['token']) && $this->is_admin) {
+        if (!empty($this->query['check_counter']) && $this->validateToken($this->query['token']) && $this->isAdmin()) {
             $this->checkCounter();
         } elseif (!empty($this->query['check_token']) && $this->validateToken($this->query['check_token'])) {
             $this->checkToken();
@@ -165,7 +180,7 @@ class Auth
                 if ($user_row[$users_columns['password']] == $password) {
                     $token = $this->generateToken($user_row[$users_columns['id']], $user_row[$users_columns['username']]);
                     $this->user_id = $user_row[$users_columns['id']];
-                    $this->is_admin = !empty($users_columns['admin']) ? $user_row[key(reset($users_columns['admin']))] : false;
+                    $this->setIsAdmin(!empty($users_columns['admin']) ? $user_row[key(reset($users_columns['admin']))] : false);
                     // Render
                     $results = [
                         (object)[
@@ -301,7 +316,7 @@ class Auth
                     $this->user = $user_row;
                     $this->user_id = $user_row['id'];
                     if (!empty($users_columns['admin'])) {
-                        $this->is_admin = (($user_row[key($users_columns['admin'])] == reset($users_columns['admin'])) ? true : false);
+                        $this->setIsAdmin(($user_row[key($users_columns['admin'])] == reset($users_columns['admin'])) ? true : false);
                     }
                     $this->authenticated = true;
 
@@ -367,7 +382,7 @@ class Auth
     {
         $this->db = $this->getAPIDatabase();
         try {
-            $token = md5(uniqid(rand(), true));
+            $token = md5(uniqid(mt_rand(), true));
             $sth = $this->db->prepare('INSERT INTO ' . self::$api_table . ' (token,user_id,user_name,user_agent) VALUES (:token,:user_id,:user_name,:user_agent)');
             $sth->bindParam(':token', $token);
             $sth->bindParam(':user_name', $user_name);
@@ -398,7 +413,7 @@ class Auth
         $sql = '';
 
         // All allowed
-        if ($this->is_admin == true) {
+        if ($this->isAdmin()) {
             $sql = "'1' = '1'";
         }
 
@@ -524,7 +539,43 @@ class Auth
      */
     private function needIncrementCounter()
     {
-        return !(!empty($this->query['docs']) || !empty($this->query['check_token']) || !empty($this->query['check_counter']) || !empty($this->query['user_id']) && !empty($this->query['password']));
+        return !(
+            !empty($this->query['docs']) ||
+            !empty($this->query['check_token']) ||
+            !empty($this->query['check_counter']) ||
+            (
+                !empty($this->query['user_id']) &&
+                !empty($this->query['password'])
+            )
+        );
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAuthenticated()
+    {
+        return !empty(self::getUser());
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAdmin()
+    {
+        return $this->is_admin === true;
+    }
+
+    /**
+     * @param  bool  $is_admin
+     *
+     * @return self
+     */
+    public function setIsAdmin($is_admin)
+    {
+        $this->is_admin = $is_admin;
+
+        return $this;
     }
 }
 
