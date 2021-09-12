@@ -25,7 +25,7 @@ set_time_limit(3600);
 require_once __API_DIR_INCLUDES__ . '/compatibility.php';
 require_once __API_DIR_INCLUDES__ . '/functions.php';
 
-disable_php_errors();
+enable_php_errors();
 
 // Libs
 require_once __API_DIR_CLASSES__ . '/Hooks.php';

@@ -698,7 +698,6 @@ class API
                     }
                 }
                 $group_columns = $selected_columns;
-                $prefix_columns = $this->auth->addSelectPermissions($prefix_columns, $table, $prefix, $db);
                 $select_columns = implode(', ', $prefix_columns);
             }
 
@@ -842,10 +841,10 @@ class API
             // bind WHERE values
             if (!empty($where_values) && count($where_values) > 0) {
                 foreach ($where_values as $key => $value) {
-                    $value = $this->cleanConditionValue($value, $query['table'], $key, $db);
+                    $value = $this->parseValue($value, $query['table'], $key, $db);
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
-                    $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
+                    $sql_compiled = self::getPartialCompiledQuery($sql_compiled, $key, $value);
                     $sth->bindValue($key, $value, $type);
                 }
             }
@@ -853,10 +852,10 @@ class API
             // bind JOIN values
             if (!empty($join_values) && count($join_values) > 0) {
                 foreach ($join_values as $key => $value) {
-                    $value = $this->cleanConditionValue($value, $query['table'], $key, $db);
+                    $value = $this->parseValue($value, $query['table'], $key, $db);
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
-                    $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
+                    $sql_compiled = self::getPartialCompiledQuery($sql_compiled, $key, $value);
                     $sth->bindValue($key, $value, $type);
                 }
             }
@@ -1133,18 +1132,18 @@ class API
 
                     // bind PUT values
                     foreach ($column_values as $key => $value) {
-                        $value = $this->cleanConditionValue($value, $table, $key, $db);
+                        $value = $this->parseValue($value, $table, $key, $db);
                         $key = ':' . $key;
-                        $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
+                        $sql_compiled = self::getPartialCompiledQuery($sql_compiled, $key, $value);
                         $sth->bindValue($key, $value);
                     }
 
                     // bind WHERE values
                     if (!empty($where_values) && count($where_values) > 0) {
                         foreach ($where_values as $key => $value) {
-                            $value = $this->cleanConditionValue($value, $table, $key, $db);
+                            $value = $this->parseValue($value, $table, $key, $db);
                             $key = ':' . $key;
-                            $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
+                            $sql_compiled = self::getPartialCompiledQuery($sql_compiled, $key, $value);
                             $sth->bindValue($key, $value);
                         }
                     }
@@ -1211,6 +1210,10 @@ class API
             $where_additional = $this->hooks->apply_filters('delete_query_additional_where', '', $query['table']);
             $where_additional_table = $this->hooks->apply_filters('delete_query_additional_where_' . strtolower($query['table']), '', $query['table']);
 
+            if (empty(trim($restriction))) {
+                $restriction = "'1' = '1'";
+            }
+
             $sql .= ($where_exists ? ' AND ' : ' WHERE ') . ' (' . $restriction . ') ';
             $sql .= (!empty($where_additional) ? ' AND (' . $where_additional . ') ' : '');
             $sql .= (!empty($where_additional_table) ? ' AND (' . $where_additional_table . ') ' : '');
@@ -1223,10 +1226,10 @@ class API
             // bind WHERE values
             if (!empty($where_values) && count($where_values) > 0) {
                 foreach ($where_values as $key => $value) {
-                    $value = $this->cleanConditionValue($value, $query['table'], $key, $db);
+                    $value = $this->parseValue($value, $query['table'], $key, $db);
                     $type = self::detectPDOType($value);
                     $key = ':' . $key;
-                    $sql_compiled = self::debugCompileSQL($sql_compiled, $key, $value);
+                    $sql_compiled = self::getPartialCompiledQuery($sql_compiled, $key, $value);
                     $sth->bindValue($key, $value, $type);
                 }
             }
@@ -1288,10 +1291,10 @@ class API
 
             // bind POST values
             foreach ($columns as $column => $value) {
-                $value = $this->cleanConditionValue($value, $table, $column);
+                $value = $this->parseValue($value, $table, $column);
                 $column = ':' . $column;
                 $sth->bindValue($column, $value);
-                $sql_compiled = self::debugCompileSQL($sql_compiled, $column, $value);
+                $sql_compiled = self::getPartialCompiledQuery($sql_compiled, $column, $value);
             }
 
             $this->logger->debug($sql_compiled);
@@ -1334,20 +1337,23 @@ class API
      * @param $simple_encode
      * @param $query
      */
-    public function renderJson($data, $simple_encode = false)
+    public function renderJson($data, $simple_encode = false, $complex = false)
     {
-        @header('Content-type: application/json');
-
-        if (is_multi_array($data) && !$simple_encode) {
-            $prefix = '';
-            $output = '[';
-            foreach ($data as $key => $row) {
-                $output .= $prefix . json_encode($row);
-                $prefix = ',';
-            }
-            $output .= ']';
+        if ($complex) {
+            $output = $this->jsonStringify($data);
         } else {
-            $output = json_encode($data);
+            // TODO: replace with jsonStringify method, need to do some checks
+            if (is_multi_array($data) && !$simple_encode) {
+                $prefix = '';
+                $output = '[';
+                foreach ($data as $row) {
+                    $output .= $prefix . json_encode($row);
+                    $prefix = ',';
+                }
+                $output .= ']';
+            } else {
+                $output = json_encode($data);
+            }
         }
 
         // Prepare a JSONP callback.
@@ -1355,13 +1361,76 @@ class API
 
         // Only send back JSONP if that's appropriate for the request.
         if ($callback) {
-            echo "{$callback}($output);";
-
-            return;
+            $output = "{$callback}($output);";
         }
-        // If not JSONP, send back the data.
-        echo $output;
-        exit();
+
+        $compressed = gzencode($output);
+
+        ob_clean();
+
+        @header('Content-Type: application/json');
+        @header('Content-Encoding: gzip');
+        @header('Content-Length: ' . strlen($compressed));
+
+        exit($compressed);
+    }
+
+    /**
+     * Encode large amount of data into JSON.
+     *
+     * @param mixed $data
+     *
+     * @return string
+     */
+    public function jsonStringify($data, $path = 'json')
+    {
+        if (is_array($data) || is_object($data)) {
+            if (is_object($data)) {
+                $isNamedKey = true;
+            } else {
+                $isNamedKey = (is_string(key($data)));
+            }
+            if ($isNamedKey) {
+                $output = '{';
+                $prefix = '';
+                foreach ($data as $key => $value) {
+                    $nextPath = $path . ".$key";
+                    if (!is_numeric($key)) {
+                        $key = '"' . $key . '"';
+                    }
+                    $stringify = $this->hooks->apply_filters('render_json_process', true, $nextPath);
+                    if ($stringify) {
+                        $content = $this->jsonStringify($value, $nextPath);
+                        $content = $this->hooks->apply_filters('render_json_content', $content, $nextPath);
+                    } else {
+                        $content = $this->hooks->apply_filters('render_json_result', 'null', $nextPath);
+                    }
+                    $output .= $prefix . $key . ': ' . $content;
+                    $prefix = ',';
+                }
+                $output .= '}';
+            } else {
+                $output = '[';
+                $prefix = '';
+                foreach ($data as $key => $value) {
+                    $nextPath = $path . "[$key]";
+                    $stringify = $this->hooks->apply_filters('render_json_process', true, $nextPath);
+                    if ($stringify) {
+                        $content = $this->jsonStringify($value, $nextPath);
+                        $content = $this->hooks->apply_filters('render_json_content', $content, $nextPath);
+                    } else {
+                        $content = $this->hooks->apply_filters('render_json_result', 'null', $nextPath);
+                    }
+                    $output .= $prefix . $content;
+                    $prefix = ',';
+                }
+                $output .= ']';
+            }
+        } else {
+            $output = json_encode($data);
+        }
+
+        return (string)$output;
     }
 
     /**
@@ -1637,10 +1706,11 @@ class API
      * @param $table
      * @param $key
      * @param $db
+     * @param $forceNullable
      *
      * @return mixed
      */
-    private function cleanConditionValue($value, $table, $key, $db = null)
+    public function parseValue($value, $table, $key, $db = null, $forceNullable = false)
     {
         if (is_array($value)) {
             $value = serialize($value);
@@ -1663,6 +1733,8 @@ class API
                 ];
                 if (in_array($dataType, $numericDataType)) {
                     $value = ($isNullable) ? null : (float)$default;
+                } elseif ($forceNullable) {
+                    $value = null;
                 }
             }
         }
@@ -1896,7 +1968,7 @@ class API
                                 $special_value = [$special_value];
                             }
                             foreach ($special_value as $v) {
-                                $clean_value = $this->cleanConditionValue($v, $table, $column);
+                                $clean_value = $this->parseValue($v, $table, $column);
                                 if ($clean_value === null) {
                                     $clean_value = ''; // Don't accept null
                                 }
@@ -1938,7 +2010,7 @@ class API
                             if (is_null($value)) {
                                 $index_value = "''";
                             } else {
-                                $clean_value = $this->cleanConditionValue($value, $table, $column);
+                                $clean_value = $this->parseValue($value, $table, $column);
                                 if ($clean_value === null) {
                                     $clean_value = ''; // Don't accept null
                                 }
@@ -1965,7 +2037,7 @@ class API
                         if (count($_value_split) > 1 && $this->checkColumn(@$_value_split[1], @$_value_split[0])) {
                             $index_value = $_value_split[0] . '.' . $_value_split[1];
                         } else {
-                            $clean_value = $this->cleanConditionValue($value, $table, $column);
+                            $clean_value = $this->parseValue($value, $table, $column);
                             if ($clean_value === null) {
                                 $clean_value = ''; // Don't accept null
                             }
@@ -2130,19 +2202,85 @@ class API
     }
 
     /**
-     * Compile PDO prepare.
+     * Returns the partial emulated SQL string.
      *
      * @param $string
      * @param $key
      * @param $value
      *
-     * @return string|string[]|null
+     * @return string
      */
-    public static function debugCompileSQL($string, $key, $value)
+    public static function getPartialCompiledQuery($query, $key, $value)
     {
-        $string = preg_replace('/' . $key . "([,]|\s|$|\))/i", ($value === null ? 'NULL$1' : "'" . $value . "'$1"), $string);
+        $value = self::getCompiledParamValue($value);
 
-        return $string;
+        return preg_replace('/' . $key . "([,]|\s|$|\))/i", $value, $query);
+    }
+
+    /**
+     * Returns the emulated SQL string.
+     *
+     * @param string $query
+     * @param array $parameters
+     *
+     * @return string
+     */
+    public static function getCompiledQuery($query, $parameters = [])
+    {
+        $keys = [];
+        $values = [];
+
+        /**
+         * Get longest keys first, so the regex replacement doesn't cut markers
+         * (ex : replace ":username" with "marco.cesarato" if we have a param name :user ).
+         */
+        $isNamedMarkers = false;
+        if (count($parameters) && is_string(key($parameters))) {
+            uksort($parameters, function ($k1, $k2) {
+                return strlen($k2) - strlen($k1);
+            });
+            $isNamedMarkers = true;
+        }
+        foreach ($parameters as $key => $value) {
+            // Check if named parameters (':param') or anonymous parameters ('?') are used
+            if (is_string($key)) {
+                $keys[] = '/:' . ltrim($key, ':') . '/';
+            } else {
+                $keys[] = '/[?]/';
+            }
+            $values[] = self::getCompiledParamValue($value);
+        }
+        if ($isNamedMarkers) {
+            return preg_replace($keys, $values, $query);
+        }
+
+        return preg_replace($keys, $values, $query, 1, $count);
+    }
+
+    /**
+     * Bring parameter value into human-readable format.
+     *
+     * @param mixed $rawValue
+     *
+     * @return string
+     */
+    public static function getCompiledParamValue($rawValue)
+    {
+        if (is_string($rawValue)) {
+            $value = "'" . addslashes($rawValue) . "'";
+        } elseif (is_numeric($rawValue)) {
+            $value = (string)$rawValue;
+        } elseif (is_array($rawValue)) {
+            $value = implode(',', $rawValue);
+        } elseif (is_null($rawValue)) {
+            $value = 'NULL';
+        } elseif (is_bool($rawValue)) {
+            $value = (string)($rawValue);
+        } else {
+            $value = (string)($rawValue);
+        }
+
+        return $value;
     }
 
     /**

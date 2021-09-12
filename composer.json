@@ -13,8 +13,8 @@
   "scripts": {
     "post-install-cmd": "vendor/bin/cghooks add --ignore-lock",
     "post-update-cmd": "vendor/bin/cghooks update",
-    "fix-cs": "vendor/bin/php-cs-fixer fix --config=.php_cs -v",
-    "check-cs": "vendor/bin/php-cs-fixer fix --dry-run --format=txt --verbose --diff --diff-format=udiff --config=.cs.php"
+    "fix-cs": "vendor/bin/php-cs-fixer fix --config=.php_cs.php -v",
+    "check-cs": "vendor/bin/php-cs-fixer fix --dry-run --format=txt --verbose --diff --diff-format=udiff --config=.php_cs.php"
   },
   "require": {
     "php": ">=5.6",

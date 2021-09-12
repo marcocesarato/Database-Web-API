@@ -2,6 +2,8 @@
 
 namespace marcocesarato\DatabaseAPI;
 
+use DateTime;
+
 /**
  * Logger Class.
  *
